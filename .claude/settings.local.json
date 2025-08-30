@@ -6,7 +6,8 @@
       "Bash(docker:*)",
       "Bash(tree:*)",
       "Bash(dir /s src)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

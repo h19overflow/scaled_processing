@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # API Keys
     GEMINI_API_KEY: str
     OPENAI_API_KEY: str = ""
+    WANDB_API_KEY: str = ""
     
     # Database Configuration
     POSTGRES_DSN: str
@@ -31,6 +32,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"  # Ignore extra fields to prevent validation errors
 
 
 # Singleton instance
@@ -43,3 +45,9 @@ def get_settings() -> Settings:
     if _settings_instance is None:
         _settings_instance = Settings()
     return _settings_instance
+
+
+def reset_settings() -> None:
+    """Reset the singleton instance (useful for testing or config changes)."""
+    global _settings_instance
+    _settings_instance = None
