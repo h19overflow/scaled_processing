@@ -9,7 +9,8 @@
       "Bash(python:*)",
       "Bash(curl:*)",
       "mcp__ide__executeCode",
-      "WebFetch(domain:docling-project.github.io)"
+      "WebFetch(domain:docling-project.github.io)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []
