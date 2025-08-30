@@ -12,8 +12,8 @@ from threading import Thread, Event
 from kafka import KafkaConsumer
 from kafka.errors import KafkaError
 
-from ..config.settings import get_settings
-from ..interfaces.messaging import IEventConsumer
+from ...config.settings import get_settings
+from ...interfaces.messaging import IEventConsumer
 
 
 class BaseKafkaConsumer(IEventConsumer, ABC):

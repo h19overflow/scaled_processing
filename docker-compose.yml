@@ -35,7 +35,7 @@ services:
     image: postgres:15
     container_name: postgres
     ports:
-      - "5432:5432"
+      - "5444:5444"
     environment:
       POSTGRES_DB: document_processing
       POSTGRES_USER: postgres
@@ -50,6 +50,22 @@ services:
       - "8000:8000"
     volumes:
       - chromadb_data:/chroma/chroma
+
+  kafka-setup:
+    build:
+      context: .
+      dockerfile: Dockerfile.kafka-setup
+    container_name: kafka-setup
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - POSTGRES_DSN=postgresql://postgres:postgres@postgres:5432/document_processing
+    volumes:
+      - .:/app
+    command: python -m src.backend.doc_processing_system.messaging.kafka_topics_setup
+    restart: "no"
 
 volumes:
   postgres_data:

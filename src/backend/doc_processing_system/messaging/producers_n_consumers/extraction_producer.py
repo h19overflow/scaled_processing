@@ -6,8 +6,8 @@ Handles field discovery, agent scaling, and extraction events using existing dat
 from typing import List
 
 from .base_producer import BaseKafkaProducer, create_message_key
-from ..data_models.extraction import FieldSpecification, AgentScalingConfig, ExtractionResult
-from ..data_models.events import (
+from ...data_models.extraction import FieldSpecification, AgentScalingConfig, ExtractionResult
+from ...data_models.events import (
     FieldInitCompleteEvent, 
     AgentScalingCompleteEvent, 
     ExtractionTaskMessage,

@@ -5,7 +5,8 @@
       "Bash(docker-compose up:*)",
       "Bash(docker:*)",
       "Bash(tree:*)",
-      "Bash(dir /s src)"
+      "Bash(dir /s src)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

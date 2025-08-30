@@ -12,8 +12,8 @@ from datetime import datetime
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
 
-from ..config.settings import get_settings
-from ..interfaces.messaging import IEventPublisher
+from ...config.settings import get_settings
+from ...interfaces.messaging import IEventPublisher
 
 
 class BaseKafkaProducer(IEventPublisher, ABC):

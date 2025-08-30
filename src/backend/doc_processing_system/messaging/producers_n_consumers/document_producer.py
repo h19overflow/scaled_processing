@@ -7,8 +7,8 @@ from typing import Optional
 from datetime import datetime
 
 from .base_producer import BaseKafkaProducer, create_message_key, validate_event_data
-from ..data_models.document import ParsedDocument
-from ..data_models.events import DocumentReceivedEvent, WorkflowInitializedEvent
+from ...data_models.document import ParsedDocument
+from ...data_models.events import DocumentReceivedEvent, WorkflowInitializedEvent
 
 
 class DocumentProducer(BaseKafkaProducer):
