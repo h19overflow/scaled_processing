@@ -2,7 +2,7 @@
 title Structured Extraction Overview - Message-Driven Workflow Coordination
 
 ' Define Kafka Topics
-participant "Upload Topic\n(document_uploaded)" as upload_topic
+participant "Document Received Topic\n(document-received)" as upload_topic
 participant "Field Init Topic\n(field_init_requests)" as field_topic
 participant "Agent Scaling Topic\n(agent_scaling_requests)" as scaling_topic
 participant "Extraction Processing Topic\n(extraction_processing)" as processing_topic
@@ -15,8 +15,8 @@ participant "AgentScalingWorkflow\n(workflow_agent_scaling.puml)" as scaling_wor
 participant "ExtractionProcessingWorkflow\n(workflow_extraction_processing.puml)" as processing_workflow
 
 ' Workflow coordination through message passing
-upload_topic -> orchestrator : document_uploaded_event()
-note right : Model: DocumentUploadedEvent\nFunction: trigger_structured_extraction()
+upload_topic -> orchestrator : document_received_event()
+note right : Model: DocumentReceivedEvent\nFunction: trigger_structured_extraction()
 
 orchestrator -> orchestrator : initiate_extraction_pipeline()
 note right : Model: ExtractionPipeline\nFunction: coordinate_workflows()
@@ -43,11 +43,11 @@ processing_workflow -> completion_topic : publish_completion_events()
 note right : Model: ExtractionCompletionEvent\nFunction: notify_pipeline_completion()
 
 completion_topic -> orchestrator : extraction_pipeline_completed()
-note right : Model: PipelineCompletionEvent\nFunction: finalize_structured_extraction()
+note right : Model: PipelineCompletionEvent\nFunction: finalize_extraction_from_unified_docling()
 
 note over upload_topic, completion_topic
     **Message-Driven Workflow Coordination:**
-    • Upload Event → Field Initialization Request
+    • Unified Docling Processing → Field Initialization Request
     • Field Specs → Agent Scaling Request  
     • Scaling Complete → Multiple Extraction Tasks
     • Extraction Results → Completion Events

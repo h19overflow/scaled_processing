@@ -13,11 +13,18 @@ Document Upload → Document Parser → Structured Content
 
 **Why First:** All downstream processing depends on clean, parsed document content.
 
+**🚀 Docling Advantage:** Using Docling for unified document processing provides:
+- **Single API** for PDF, DOCX, and Image processing
+- **Consistent output format** across all document types
+- **Built-in structure detection** (tables, headings, sections)
+- **Simplified architecture** - no need for multiple parsers
+- **Better maintainability** - one processing pipeline to maintain
+
 **Core Components to Build:**
-1. **DocumentParserFactory** - Route to PDF/DOCX/Image parsers
-2. **TextExtractor** - Clean text extraction from documents
-3. **DocumentStructureAnalyzer** - Identify tables, headings, sections
-4. **ContentValidator** - Ensure parsing quality
+1. **DoclingProcessor** - Unified document processing for PDF/DOCX/Images using Docling
+2. **DocumentStructureAnalyzer** - Extract and analyze document structure from Docling output
+3. **ContentExtractor** - Clean text and metadata extraction from Docling results
+4. **ContentValidator** - Ensure parsing quality and completeness
 
 ---
 
@@ -54,16 +61,11 @@ Parsed Content → Field Discovery → Agent Swarm → Data Extraction → Struc
 src/backend/doc_processing_system/pipelines/
 ├── document_processing/
 │   ├── __init__.py
-│   ├── document_parser_factory.py    # Route to specific parsers
-│   ├── parsers/
+│   ├── docling_processor.py          # Unified Docling-based document processing
+│   ├── processors/
 │   │   ├── __init__.py
-│   │   ├── pdf_parser.py             # PDF processing
-│   │   ├── docx_parser.py            # Word document processing
-│   │   └── image_parser.py           # OCR for images
-│   ├── content_processing/
-│   │   ├── __init__.py
-│   │   ├── text_extractor.py         # Clean text extraction
-│   │   ├── structure_analyzer.py     # Document structure analysis
+│   │   ├── structure_analyzer.py     # Extract structure from Docling output
+│   │   ├── content_extractor.py      # Clean text/metadata extraction
 │   │   └── content_validator.py      # Quality assurance
 │   └── flows/
 │       ├── __init__.py
@@ -160,10 +162,11 @@ def extraction_flow(document_id: str, content: str):
 ## 📊 **Success Metrics Per Phase**
 
 ### **Phase 1 Complete When:**
-- ✅ Upload PDF → Get clean parsed text + structure
-- ✅ Upload DOCX → Get clean parsed text + structure  
-- ✅ Upload Image → Get OCR text + structure
-- ✅ Document processing Prefect flow working
+- ✅ Upload PDF → Get clean parsed text + structure via Docling
+- ✅ Upload DOCX → Get clean parsed text + structure via Docling  
+- ✅ Upload Image → Get OCR text + structure via Docling
+- ✅ Unified document processing Prefect flow working
+- ✅ All document types processed through single Docling pipeline
 
 ### **Phase 2 Complete When:**
 - ✅ Parsed content → Semantic chunks created

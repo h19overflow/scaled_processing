@@ -39,13 +39,17 @@ package "Structured Extraction Flow" #FFEBEE {
   [Image Agent] as ImageAgent
 }
 
+package "Document Processing Pipeline" #E1F5FE {
+  [Docling Processor] as DoclingProcessor
+  [Structure Analyzer] as StructureAnalyzer
+  [Content Extractor] as ContentExtractor
+  [Content Validator] as ContentValidator
+}
+
 package "RAG Processing Flow" #FFFDE7 {
-  [Document Parser Factory] as ParserFactory
-  [Image Parser] as ImageParser
-  [PDF Parser (Docling)] as PDFParser
-  [Text Parser] as TextParser
-  [DOCX Parser] as DocxParser
   [Semantic Chunker] as Chunker
+  [Embedding Service] as EmbeddingService
+  [Vector Storage] as VectorStorage
 }
 
 ' === Data Management ===
@@ -94,9 +98,10 @@ Consumer --> Prefect : 3. Triggers workflows
 
 ' 2. Parallel Flow Orchestration
 Prefect --> FlowMgr : manages flows
-FlowMgr --> OrchestratorAgent : 4a. Start Structured Extraction
-FlowMgr --> ParserFactory : 4b. Start RAG Processing
-Monitor --> Prefect : monitors both flows
+FlowMgr --> DoclingProcessor : 4a. Start Document Processing (First)
+FlowMgr --> OrchestratorAgent : 4b. Start Structured Extraction (After Docling)
+FlowMgr --> Chunker : 4c. Start RAG Processing (After Docling)
+Monitor --> Prefect : monitors all flows
 
 ' 3. Structured Extraction Flow
 OrchestratorAgent --> FieldAgent : collaborates on discovery
@@ -104,27 +109,29 @@ OrchestratorAgent --> ExtractionSwarm : deploys for parallel extraction
 ImageAgent --> OrchestratorAgent : provides visual analysis
 ImageAgent --> FieldAgent : enhances field discovery
 
-' 4. RAG Processing Flow
-ParserFactory --> ImageParser : routes image files
-ParserFactory --> PDFParser : routes PDF files
-ParserFactory --> TextParser : routes text files
-ParserFactory --> DocxParser : routes DOCX files
+' 4. Document Processing Flow (Sequential - First)
+DoclingProcessor --> StructureAnalyzer : extracts document structure
+DoclingProcessor --> ContentExtractor : extracts clean content
+ContentExtractor --> ContentValidator : validates extraction quality
 
-' Image Agent Integration
-ImageAgent --> ImageParser : analyzes images
-ImageAgent --> PDFParser : processes embedded images
-ImageAgent --> DocxParser : processes embedded images
+' 5. Parallel Processing (After Document Processing Complete)
+ContentValidator --> OrchestratorAgent : sends processed document
+ContentValidator --> Chunker : sends processed document
 
-' 5. Document Processing to Chunking
-ImageParser --> Chunker : parsed documents
-PDFParser --> Chunker : parsed documents
-TextParser --> Chunker : parsed documents
-DocxParser --> Chunker : parsed documents
+' Image Agent Integration (Unified)
+ImageAgent --> DoclingProcessor : enhances visual analysis
+ImageAgent --> StructureAnalyzer : provides visual insights
 
-' 6. Data Persistence (Both flows converge)
+' 6. RAG Processing Flow (Uses Docling Output)
+Chunker --> EmbeddingService : creates embeddings from chunks
+EmbeddingService --> VectorStorage : stores vectors
+
+' 7. Data Persistence (All flows converge)
 ExtractionSwarm --> PersistMgr : structured results
-Chunker --> PersistMgr : chunks & embeddings
+VectorStorage --> PersistMgr : vector data
+Chunker --> PersistMgr : chunks & metadata
 OrchestratorAgent --> PersistMgr : schemas
+ContentValidator --> PersistMgr : processed documents
 
 ' Repository Pattern
 PersistMgr --> DocRepo : document operations
@@ -138,14 +145,14 @@ ChunkRepo --> Chroma : vectors
 ChunkRepo --> Postgres : chunk metadata
 ResultRepo --> Postgres : extraction results
 
-' 7. Query Flow
-User --> RAG : 8. Ask question
+' 8. Query Flow
+User --> RAG : 9. Ask question
 RAG --> Retriever : gets context
-Retriever --> ChunkRepo : 9a. Retrieve chunks
-Retriever --> DocRepo : 9b. Get metadata
-RAG --> User : 10. Synthesized answer
+Retriever --> ChunkRepo : 10a. Retrieve chunks
+Retriever --> DocRepo : 10b. Get metadata
+RAG --> User : 11. Synthesized answer
 
-' 8. Evaluation & Monitoring
+' 9. Evaluation & Monitoring
 Evaluator --> RAG : evaluates performance
 Metrics --> ExtractionSwarm : tracks extraction metrics
 Metrics --> RAG : tracks query metrics

@@ -1,0 +1,1 @@
+# DocumentStructureAnalyzer - Extract and analyze document structure from Docling output

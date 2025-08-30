@@ -387,9 +387,10 @@ rag_db --> query_processing : "Vector Search"
 extraction_db --> query_processing : "Structured Data Lookup"
 
 note top of upload_system
-    **Document Upload & Processing**
+    **Document Upload & Unified Processing**
     • Entry point for all documents
-    • Dynamic parser selection by file type
+    • Unified Docling processing for PDF/DOCX/Images
+    • Consistent structure extraction across formats
     • Parallel workflow initialization
     • Event-driven architecture trigger
 end note

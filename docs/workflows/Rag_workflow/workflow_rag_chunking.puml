@@ -2,7 +2,7 @@
 title RAG Pipeline - Semantic Chunking Workflow
 
 ' Define participants with file paths
-participant "Kafka Topic\n(rag_processing)" as kafka_input
+participant "Kafka Topic\n(document-received)" as kafka_input
 participant "ChunkingConsumer\n(src/backend/messaging/consumers.py)" as consumer
 participant "ChunkingOrchestrator\n(src/backend/core_services/chunking_orchestrator.py)" as orchestrator
 participant "SemanticChunker\n(src/backend/core_services/chunkers.py)" as semantic_chunker
@@ -13,8 +13,8 @@ participant "KafkaProducer\n(src/backend/messaging/producers.py)" as producer
 participant "Kafka Topic\n(chunk_ready)" as kafka_output
 
 ' Workflow steps
-kafka_input -> consumer : consume_rag_messages()
-note right : Model: RagProcessingMessage\nFunction: consume_from_topic()
+kafka_input -> consumer : consume_document_received_events()
+note right : Model: DocumentReceivedEvent\nFunction: consume_from_topic()
 
 loop for each parsed document
     consumer -> orchestrator : process_document()
@@ -85,7 +85,8 @@ note over kafka_input, kafka_output
     • Context Info: Surrounding content references
     
     **Key Models:**
-    • ParsedDocument: Input from parsing stage
+    • DocumentReceivedEvent: Input from unified Docling processing
+    • ParsedDocument: Document processed by Docling (all formats)
     • EnrichedChunk: Chunk with full metadata
     • ChunkRecord: Stored chunk with ID and metadata
     • ChunkReadyEvent: Message for embedding pipeline

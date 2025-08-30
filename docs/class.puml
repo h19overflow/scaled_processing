@@ -180,12 +180,50 @@ package "Messaging" as messaging #F3E5F5 {
     }
 }
 
+' === Document Processing Layer (Light Blue Theme) ===
+package "Document Processing" as docprocessing #E1F5FE {
+    interface IDocumentProcessor #81D4FA {
+        +process_document(): IDocument
+        +supports_all_formats(): bool
+    }
+    
+    class DoclingProcessor #81D4FA {
+        -docling_client: DoclingClient
+        -image_agent: ImageAgent
+        --
+        +process_document(): IDocument
+        +supports_all_formats(): bool
+        +extract_unified_content(): dict
+        +get_document_structure(): dict
+    }
+    
+    class StructureAnalyzer #81D4FA {
+        --
+        +analyze_structure(): dict
+        +extract_tables(): List
+        +identify_sections(): List
+        +get_headings(): List
+    }
+    
+    class ContentExtractor #81D4FA {
+        --
+        +extract_text(): str
+        +extract_metadata(): dict
+        +clean_content(): str
+        +preserve_formatting(): bool
+    }
+    
+    class ContentValidator #81D4FA {
+        --
+        +validate_extraction(): bool
+        +check_completeness(): float
+        +verify_structure(): bool
+        +ensure_quality(): bool
+    }
+}
+
 ' === Core Services (Yellow Theme) ===
 package "Core Services" as core #FFFDE7 {
-    interface IDocumentParser #FFF59D {
-        +parse(): IDocument
-        +supports_format(): bool
-    }
     
     interface IChunker #FFF59D {
         +chunk(): List[IChunk]
@@ -197,48 +235,6 @@ package "Core Services" as core #FFFDE7 {
         +retrieve(): any
         +update(): bool
         +delete(): bool
-    }
-    
-    class DocumentParserFactory #FFF176 {
-        -parsers: dict
-        --
-        +get_parser(): IDocumentParser
-        +register_parser(): bool
-        +detect_format(): str
-    }
-    
-    class ImageParser #FFF176 {
-        -image_agent: ImageAgent
-        --
-        +parse(): IDocument
-        +supports_format(): bool
-        +extract_text_ocr(): str
-        +extract_metadata(): dict
-    }
-    
-    class PDFParser #FFF176 {
-        -image_agent: ImageAgent
-        -docling_client: DoclingClient
-        --
-        +parse(): IDocument
-        +supports_format(): bool
-        +parse_with_docling(): IDocument
-        +extract_tables(): List
-    }
-    
-    class TextParser #FFF176 {
-        --
-        +parse(): IDocument
-        +supports_format(): bool
-        +extract_plain_text(): str
-    }
-    
-    class DocxParser #FFF176 {
-        -image_agent: ImageAgent
-        --
-        +parse(): IDocument
-        +supports_format(): bool
-        +extract_content(): dict
     }
     
     class SemanticChunker #FFF176 {
@@ -307,10 +303,7 @@ package "Query & Evaluation" as query #E0F2F1 {
 ' Interface implementations
 Document ..|> IDocument
 Chunk ..|> IChunk
-ImageParser ..|> IDocumentParser
-PDFParser ..|> IDocumentParser
-TextParser ..|> IDocumentParser
-DocxParser ..|> IDocumentParser
+DoclingProcessor ..|> IDocumentProcessor
 SemanticChunker ..|> IChunker
 DocumentIngestionAPI ..|> IAPIController
 PrefectOrchestrator ..|> IWorkflowOrchestrator
@@ -328,20 +321,18 @@ KafkaProducer --> EventBus : sends to topics
 EventBus --> KafkaConsumer : delivers messages
 KafkaConsumer --> PrefectOrchestrator : triggers workflows
 
-' Factory Pattern
-DocumentParserFactory --> ImageParser : creates
-DocumentParserFactory --> PDFParser : creates
-DocumentParserFactory --> TextParser : creates
-DocumentParserFactory --> DocxParser : creates
+' Document Processing Flow (Sequential - First)
+PrefectOrchestrator --> DoclingProcessor : 1. starts document processing first
+DoclingProcessor --> StructureAnalyzer : uses
+DoclingProcessor --> ContentExtractor : uses
+ContentExtractor --> ContentValidator : validates
 
-' Dependency Injection in Parsers
-ImageAgent --> ImageParser : injected into
-ImageAgent --> PDFParser : injected into
-ImageAgent --> DocxParser : injected into
+' Dependency Injection in Document Processor
+ImageAgent --> DoclingProcessor : injected into
 
-' Prefect Parallel Flow Orchestration
-PrefectOrchestrator --> OrchestratorAgent : starts structured extraction
-PrefectOrchestrator --> DocumentParserFactory : starts RAG processing
+' Parallel Flow Orchestration (After Document Processing)
+ContentValidator --> OrchestratorAgent : 2a. triggers structured extraction
+ContentValidator --> SemanticChunker : 2b. triggers RAG processing
 
 ' Structured Extraction Flow
 OrchestratorAgent --> FieldDiscoveryAgent : collaborates
@@ -349,10 +340,8 @@ OrchestratorAgent ..> ExtractionSchema : creates
 ExtractionSchema --> ExtractionAgent : provides schema
 ExtractionAgent ..> ExtractionResult : creates
 
-' RAG Processing Flow (using Factory)
-DocumentParserFactory --> IDocumentParser : delegates to
-IDocumentParser ..> IDocument : creates
-SemanticChunker --> IDocument : processes
+' RAG Processing Flow (Consumes Document Processing Output)
+SemanticChunker --> IDocument : processes validated documents
 SemanticChunker ..> IChunk : creates
 
 ' Repository Pattern

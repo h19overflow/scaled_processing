@@ -1,1 +1,0 @@
-# TextExtractor - Clean text extraction from documents

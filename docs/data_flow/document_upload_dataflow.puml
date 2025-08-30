@@ -101,11 +101,11 @@ note top of input_models
 end note
 
 note top of processing_models
-    **Dynamic Parser Selection**
-    • PDF: Docling-based parsing
-    • DOCX: Structure-aware parsing  
-    • Images: OCR + visual analysis
-    • Text: Encoding detection
+    **Unified Docling Processing**
+    • All formats: PDF, DOCX, Images processed by Docling
+    • Consistent structure extraction across formats
+    • Unified content and metadata extraction
+    • Single processing pipeline for all document types
 end note
 
 note top of db_models

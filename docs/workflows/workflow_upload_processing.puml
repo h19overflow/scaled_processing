@@ -4,7 +4,7 @@ title Document Upload & Parallel Processing Initialization
 ' Define participants with file paths
 participant "User" as user
 participant "DocumentIngestionAPI\n(src/backend/api/endpoints/ingestion.py)" as api
-participant "DocumentParserFactory\n(src/backend/core_services/parsers/factory.py)" as parser_factory
+participant "DoclingProcessor\n(src/backend/pipelines/document_processing/docling_processor.py)" as docling_processor
 participant "KafkaProducer\n(src/backend/messaging/producers.py)" as producer
 participant "Kafka Topic\n(document-received)" as kafka
 participant "PrefectOrchestrator\n(src/backend/orchestration/prefect_flows.py)" as prefect
@@ -17,28 +17,17 @@ api -> api : validate_files()
 note right : Model: Document\nFunction: FileValidator.validate()
 
 loop for each document
-    api -> parser_factory : detect_file_type()
-    note right : Model: FileType\nFunction: get_file_extension()
+    api -> docling_processor : process_document()
+    note right : Model: Document\nFunction: process_with_docling()
     
-    parser_factory -> parser_factory : get_parser_for_type()
-    note right : Model: IDocumentParser\nFunction: get_parser()
+    docling_processor -> docling_processor : detect_and_process()
+    note right : Unified processing for all formats\nFunction: unified_extract()
     
-    alt PDF File
-        parser_factory -> parser_factory : create_pdf_parser()
-        note right : Parser: PDFParser\nFunction: parse_pdf()
-    else Image File  
-        parser_factory -> parser_factory : create_image_parser()
-        note right : Parser: ImageParser\nFunction: parse_image()
-    else DOCX File
-        parser_factory -> parser_factory : create_docx_parser()
-        note right : Parser: DocxParser\nFunction: parse_docx()
-    else Text File
-        parser_factory -> parser_factory : create_text_parser()
-        note right : Parser: TextParser\nFunction: parse_text()
-    end
+    docling_processor -> docling_processor : extract_structure_and_content()
+    note right : Model: ParsedDocument\nFunction: extract_unified_content()
     
-    parser_factory -> api : parsed_document
-    note right : Model: ParsedDocument\nFunction: return_parsed()
+    docling_processor -> api : parsed_document
+    note right : Model: ParsedDocument\nFunction: return_processed_document()
     
     api -> producer : publish_document_event()
     note right : Model: DocumentEvent\nFunction: publish_event()
@@ -71,19 +60,19 @@ note over user, prefect
     
     **Key Models:**
     • Document: Core document model with metadata
-    • ParsedDocument: Document after type-specific parsing
+    • ParsedDocument: Document after unified Docling processing
     • DocumentEvent: Kafka message for document processing
     • WorkflowStatus: Processing status tracking
     
-    **Dynamic Parsing Support:**
-    • PDF: Docling-based parsing with table extraction
-    • Images: OCR + visual analysis via ImageAgent
-    • DOCX: Structure-aware parsing with embedded images
-    • Text: Plain text extraction and encoding detection
+    **Unified Docling Processing:**
+    • All Formats: PDF, DOCX, Images processed through single Docling pipeline
+    • Consistent Structure: Unified structure extraction across all formats
+    • Enhanced Quality: ImageAgent integration for visual analysis
+    • Simplified Architecture: Single processor instead of multiple parsers
     
     **Communication Functions:**
     • upload_documents(): Handle file upload
-    • get_parser(): Dynamic parser selection
+    • process_with_docling(): Unified document processing
     • publish_event(): Send parsed document to Kafka
     • start_parallel_processing(): Initialize both flows
 end note

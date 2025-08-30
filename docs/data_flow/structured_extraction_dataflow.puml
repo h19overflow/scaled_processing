@@ -116,7 +116,7 @@ extraction_kafka --> extraction_processing : "Task Distribution & Coordination"
 
 note left of extraction_input
     **Input Sources:**
-    • DocumentReceivedEvent from Upload System
+    • DocumentReceivedEvent from Unified Docling Processing
     • Dynamic field discovery triggers
     
     **Referenced in:** document_upload_dataflow.puml

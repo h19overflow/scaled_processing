@@ -1,0 +1,1 @@
+# DoclingProcessor - Unified document processing for PDF/DOCX/Images using Docling

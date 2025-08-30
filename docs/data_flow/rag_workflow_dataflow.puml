@@ -104,7 +104,7 @@ rag_storage --> rag_processing : "Vector Similarity Search"
 
 note left of rag_input
     **Input Sources:**
-    • DocumentReceivedEvent from Upload System
+    • DocumentReceivedEvent from Unified Docling Processing
     • User queries for similarity search
     
     **Referenced in:** document_upload_dataflow.puml

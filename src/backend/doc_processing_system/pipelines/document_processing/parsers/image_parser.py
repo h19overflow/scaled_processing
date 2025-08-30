@@ -1,1 +1,0 @@
-# Image Parser - OCR for images
