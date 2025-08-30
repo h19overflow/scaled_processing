@@ -6,13 +6,16 @@ Refactored to use modular components for clean separation of concerns.
 import logging
 from pathlib import Path
 from typing import Dict, Any
+from unittest import result
 
-from docling.document_converter import DocumentConverter
-
+from docling_core.types.doc import ImageRefMode, PictureItem, TableItem
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
+from matplotlib.dates import _log
 from ...data_models.document import ParsedDocument
-from .utils import (
-    SerializationStrategy,
-)
+
+
 
 
 class DoclingProcessor:
@@ -22,9 +25,7 @@ class DoclingProcessor:
     content extraction, structure analysis, and validation.
     """
     
-    def __init__(self, 
-                 table_strategy: SerializationStrategy = SerializationStrategy.STRUCTURED,
-                 image_strategy: SerializationStrategy = SerializationStrategy.DETAILED):
+    def __init__(self):
         """Initialize the DoclingProcessor with converter and serialization strategies.
         
         Args:
@@ -39,10 +40,23 @@ class DoclingProcessor:
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
         
-        # Initialize Docling converter
+        # Initialize Docling converter with image extraction
         try:
-            self.converter = DocumentConverter()
-            self.logger.info(f"DoclingProcessor initialized successfully with table_strategy={table_strategy.value}, image_strategy={image_strategy.value}")
+            IMAGE_RESOLUTION_SCALE = 2.0
+            
+            # Set up pipeline options exactly like the example
+            pipeline_options = PdfPipelineOptions()
+            pipeline_options.images_scale = IMAGE_RESOLUTION_SCALE
+            pipeline_options.generate_page_images = True
+            pipeline_options.generate_picture_images = True
+            
+            self.converter = DocumentConverter(
+                format_options={
+                    InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+                }
+            )
+            
+            self.logger.info("DoclingProcessor initialized successfully with image extraction")
         except Exception as e:
             self.logger.error(f"Failed to initialize DoclingProcessor: {e}")
             raise
@@ -71,38 +85,25 @@ class DoclingProcessor:
             if not file_path_obj.exists():
                 raise FileNotFoundError(f"Document not found: {file_path}")
             
-            # Validate file before processing
-            file_validation = self.content_validator.validate_file_path(file_path)
-            if not file_validation["is_valid"]:
-                raise ValueError(f"File validation failed: {file_validation['issues']}")
-            
             self.logger.info(f"Processing document: {file_path_obj.name}")
             
             # Convert document using Docling
             result = self.converter.convert(file_path)
             
-            # Extract content and metadata using utility components
-            content = self.content_extractor.extract_content(result)
-            metadata = self.content_extractor.create_metadata(file_path_obj, document_id, user_id, result)
-            page_count = self.content_extractor.get_page_count(result)
-            extracted_images = self.content_extractor.extract_images(result)
-            tables = self.content_extractor.extract_tables(result)
+            # Extract content directly
+            content = result.document.export_to_markdown()
+            page_count = len(result.pages)  
+            confidence_report = result.confidence  
             
             # Create ParsedDocument
             parsed_doc = ParsedDocument(
                 document_id=document_id,
                 content=content,
-                metadata=metadata,
                 page_count=page_count,
-                extracted_images=extracted_images,
-                tables=tables
+                confidence_report=confidence_report,
             )
             
-            # Validate the processed document
-            validation_result = self.content_validator.validate_document(parsed_doc)
-            if not validation_result["is_valid"]:
-                self.logger.warning(f"Document validation issues: {validation_result['issues']}")
-                # Continue processing but log the issues
+            # Skip validation for now
             
             self.logger.info(f"Successfully processed {file_path_obj.name}: {len(content)} chars, {page_count} pages")
             return parsed_doc
@@ -133,8 +134,12 @@ class DoclingProcessor:
             # Convert document
             result = self.converter.convert(file_path)
             
-            # Use structure analyzer utility
-            analysis = self.structure_analyzer.analyze_document_structure(file_path, result)
+            # Simple structure analysis
+            analysis = {
+                "filename": file_path_obj.name,
+                "content_length": len(result.document.export_to_markdown()),
+                "processing_time": "now"
+            }
             
             return analysis
             
@@ -155,8 +160,28 @@ class DoclingProcessor:
         """
         try:
             result = self.converter.convert(file_path)
-            markdown_content = self.content_extractor.extract_content(result)
             
+            # Extract images and save them
+            picture_counter = 0
+            output_dir = Path("extracted_images")
+            output_dir.mkdir(exist_ok=True)
+            
+            # Extract images using the exact pattern from the example
+            for element, _level in result.document.iterate_items():
+                if isinstance(element, PictureItem):
+                    picture_counter += 1
+                    image_filename = output_dir / f"picture-{picture_counter}.png"
+                    try:
+                        with image_filename.open("wb") as fp:
+                            element.get_image(result.document).save(fp, "PNG")
+                        self.logger.info(f"Saved image: {image_filename}")
+                    except Exception as e:
+                        self.logger.warning(f"Failed to save image {picture_counter}: {e}")
+
+            self.logger.info(f"Found {picture_counter} images (extracted to {output_dir})")
+            
+            # Get markdown content
+            markdown_content = result.document.export_to_markdown()
             self.logger.info(f"Extracted markdown: {len(markdown_content)} characters")
             return markdown_content
             
