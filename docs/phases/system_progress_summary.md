@@ -193,55 +193,105 @@ curl -X POST "http://localhost:8001/api/v1/upload" \
 
 ## 🎯 **NEXT PHASE: Sprint 2 - Pipeline Implementation**
 
-After Sprint 1 steel thread verification, we'll implement:
+After Sprint 1 steel thread verification, we'll implement **dual-processing architecture** with specialized chunking strategies:
+
+### **🧠 Dual-Chunking Strategy - Optimized per Pipeline**
+
+**Key Architectural Decision:** Different pipelines need different chunking approaches for optimal performance.
+
+#### **RAG Pipeline: Custom Semantic Chunking**
+```python
+Document → Custom Semantic Chunker → Small Optimized Chunks (200-1000 tokens)
+                                   ↓
+                            Perfect for Embeddings & Retrieval
+```
+
+**Why Custom Chunking for RAG:**
+- ✅ **Embedding Model Optimization** - ModernBERT Embed Large works optimally with focused chunks
+- ✅ **Retrieval Quality** - Smaller, focused chunks = better semantic matching and retrieval precision
+- ✅ **Context Windows** - Local embedding models perform best with appropriately sized chunks
+- ✅ **Overlap Control** - Custom chunking allows precise overlap strategies for context preservation
+- ✅ **Local Processing** - Optimized chunking for local ModernBERT model inference
+
+#### **Extraction Pipeline: Docling Processing**
+```python
+Document → Docling Processor → Large Structured Chunks (pages/sections)
+                             ↓
+                      Perfect for LLM Field Extraction
+```
+
+**Why Docling for Extraction:**
+- ✅ **Long Context Handling** - Modern LLMs can handle 100k+ tokens easily
+- ✅ **Structure Preservation** - Tables, sections, formatting intact for better extraction
+- ✅ **Complete Context** - Agents see full document structure for accurate field discovery
+- ✅ **No Fragmentation** - Avoids splitting related content across chunks
 
 ### **1. RAG Pipeline Components**
 ```python
 # Core Services to Build:
-DocumentParserFactory     # ✅ Interface defined, needs implementation  
-SemanticChunker          # ✅ Interface defined, needs implementation
-EmbeddingService         # New - Generate embeddings
+CustomSemanticChunker    # New - Specialized for ModernBERT Embed Large
+EmbeddingService         # New - Local ModernBERT Embed Large inference
 ChromaRepository         # New - Vector storage operations
+ChunkValidator           # New - Quality assurance for chunk boundaries
 ```
 
 ### **2. Structured Extraction Components**
 ```python  
 # Agent System to Build:
-OrchestratorAgent        # ✅ Interface defined, needs implementation
+DoclingProcessor         # New - IBM Docling integration for structure preservation
 FieldDiscoveryAgent      # ✅ Interface defined, needs implementation  
 ExtractionAgent          # ✅ Interface defined, needs implementation
 AgentScalingManager      # New - Dynamic agent scaling
+DataValidator            # New - Extracted data quality assurance
 ```
 
-### **3. Pipeline Integration Points**
+### **3. Dual-Pipeline Architecture Integration**
+
+#### **Phase 1: Document Upload - Dual Processing Trigger**
 ```python
-# How pipelines will connect to messaging:
+# FastAPI Upload triggers BOTH pipelines with optimized inputs
+def document_upload_flow(uploaded_file):
+    document_id = generate_id()
+    
+    # Parallel Processing Setup:
+    # Path 1: RAG Pipeline (Custom Chunking)
+    custom_chunks = custom_semantic_chunker.chunk(uploaded_file.content)
+    rag_producer.send_chunking_complete(document_id, custom_chunks)
+    
+    # Path 2: Extraction Pipeline (Docling Processing) 
+    docling_content = docling_processor.process(uploaded_file)
+    extraction_producer.send_field_discovery_ready(document_id, docling_content)
+```
 
-# RAG Pipeline
-def rag_chunking_flow(document_received_event):
-    chunks = semantic_chunker.chunk(document.content)
-    rag_producer.send_chunking_complete(document_id, chunks)
-
+#### **RAG Pipeline Flow (Small Chunks)**
+```python
 def rag_embedding_flow(chunking_complete_event):  
-    embeddings = embedding_service.generate(chunks)
+    # Small chunks → ModernBERT Embed Large local inference
+    embeddings = embedding_service.generate_local(small_chunks)  # ModernBERT
     rag_producer.send_embedding_ready(document_id, embeddings)
 
 def rag_ingestion_flow(embedding_ready_event):
+    # Store vectors in ChromaDB
     chroma_repo.store_vectors(embeddings)
     rag_producer.send_ingestion_complete(document_id, vector_count, collection)
+```
 
-# Structured Extraction Pipeline  
-def extraction_field_discovery_flow(document_received_event):
-    fields = orchestrator_agent.discover_fields(document)
+#### **Extraction Pipeline Flow (Large Structured Content)**
+```python
+def extraction_field_discovery_flow(field_discovery_ready_event):
+    # Full document structure → Field discovery
+    fields = field_discovery_agent.discover_fields(docling_content)
     extraction_producer.send_field_init_complete(document_id, fields)
 
 def extraction_scaling_flow(field_init_complete_event):
-    config = scaling_manager.calculate_agents(document_size, field_count)
+    # Calculate agent scaling based on document structure
+    config = scaling_manager.calculate_agents(docling_content, fields)
     extraction_producer.send_agent_scaling_complete(document_id, config)
 
 def extraction_processing_flow(agent_scaling_complete_event):
-    for page_range in config.page_ranges:
-        task = ExtractionTaskMessage(task_id, document_id, page_range, fields, agent_id)
+    # Process large sections with full context
+    for section in docling_content.sections:
+        task = ExtractionTaskMessage(task_id, document_id, section, fields, agent_id)
         extraction_producer.send_extraction_task(task)
 ```
 
@@ -264,11 +314,17 @@ def extraction_processing_flow(agent_scaling_complete_event):
 - **Event Bus Integration**: All producers connected and publishing events ✅
 - **Documentation**: Interactive docs with complete route examples ✅
 
-### **📋 Planned (Sprints 2-5)**
-- **RAG Pipeline**: Document parsing, chunking, embedding, vector storage
-- **Structured Extraction**: Field discovery, agent swarm, data extraction  
+### **📋 Planned (Sprints 2-5) - Updated with Dual-Chunking Strategy**
+- **RAG Pipeline**: Custom semantic chunking (small chunks), embeddings, vector storage in ChromaDB
+- **Structured Extraction**: Docling processing (large sections), field discovery, agent swarm extraction  
 - **Query Processing**: RAG engine, structured queries, hybrid fusion
-- **Prefect Integration**: Workflow orchestration and monitoring
+- **Prefect Integration**: Workflow orchestration and monitoring for both pipeline architectures
+
+**Key Architectural Evolution:** 
+- ✅ **Pipeline Specialization** - Each pipeline gets optimal input format (small vs large chunks)
+- ✅ **Performance Optimization** - No compromise between retrieval quality and extraction accuracy  
+- ✅ **Dual Processing** - Parallel processing from upload with specialized chunking strategies
+- ✅ **Tool Optimization** - Custom chunker for RAG, Docling for extraction
 
 ---
 
