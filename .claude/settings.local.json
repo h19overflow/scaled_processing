@@ -7,7 +7,8 @@
       "Bash(tree:*)",
       "Bash(dir /s src)",
       "Bash(python:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "mcp__ide__executeCode"
     ],
     "deny": [],
     "ask": []
