@@ -1,1 +1,0 @@
-# Document Processors package - Docling-based processing components

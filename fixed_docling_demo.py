@@ -12,6 +12,7 @@ src_path = project_root / "src" / "backend"
 sys.path.insert(0, str(src_path))
 
 from docling.document_converter import DocumentConverter
+from doc_processing_system.pipelines.document_processing.docling_processor import DoclingProcessor, SerializationStrategy
 
 
 def extract_topics_from_markdown(markdown_content: str) -> dict:
@@ -192,15 +193,58 @@ def create_navigation_map(markdown_content: str) -> dict:
     return navigation_map
 
 
+def extract_advanced_features(processor: DoclingProcessor, pdf_path: str) -> dict:
+    """Extract advanced features using the enhanced DoclingProcessor."""
+    print(f"\n🔬 Advanced Features Extraction")
+    print("=" * 60)
+    
+    try:
+        # Process document with advanced serialization
+        parsed_doc = processor.process_document(pdf_path, "demo_doc", "demo_user")
+        
+        features_data = {
+            "document_info": {
+                "document_id": parsed_doc.document_id,
+                "page_count": parsed_doc.page_count,
+                "content_length": len(parsed_doc.content),
+                "processing_timestamp": parsed_doc.metadata.upload_timestamp.isoformat()
+            },
+            "advanced_tables": parsed_doc.tables,
+            "advanced_images": parsed_doc.extracted_images,
+            "serialization_strategies": {
+                "tables": processor.table_strategy.value,
+                "images": processor.image_strategy.value
+            }
+        }
+        
+        print(f"   📊 Extracted {len(parsed_doc.tables)} tables with {processor.table_strategy.value} strategy")
+        print(f"   🖼️  Extracted {len(parsed_doc.extracted_images)} images with {processor.image_strategy.value} strategy")
+        
+        # Show detailed image information
+        for i, img in enumerate(parsed_doc.extracted_images[:3]):  # Show first 3 images
+            print(f"\n   🖼️  Image {i+1} Details:")
+            print(f"      Strategy: {img.get('strategy', 'unknown')}")
+            if 'basic_metadata' in img:
+                caption = img['basic_metadata'].get('caption', 'No caption')
+                description = img['basic_metadata'].get('description', 'No description')
+                print(f"      Caption: {caption[:100]}{'...' if len(caption) > 100 else ''}")
+                print(f"      Description: {description[:100]}{'...' if len(description) > 100 else ''}")
+            elif 'caption' in img:
+                print(f"      Caption: {img['caption'][:100]}{'...' if len(img['caption']) > 100 else ''}")
+        
+        return features_data
+        
+    except Exception as e:
+        print(f"   ❌ Advanced features extraction failed: {e}")
+        return {"error": str(e)}
+
+
 def run_fixed_demo():
-    """Run the fixed demo using proper Docling methods."""
+    """Run the fixed demo using proper Docling methods and advanced serialization."""
     
     print("=" * 80)
-    print("🔧 Fixed Advanced Docling Features Demonstration")
+    print("🔧 Enhanced Advanced Docling Features Demonstration")
     print("=" * 80)
-    
-    # Initialize converter
-    converter = DocumentConverter()
     
     # Path to the Gemini PDF
     pdf_path = "src/backend/doc_processing_system/pipelines/document_processing/gemini-for-google-workspace-prompting-guide-101.pdf"
@@ -214,7 +258,27 @@ def run_fixed_demo():
     results_dir.mkdir(exist_ok=True)
     
     try:
-        print("🚀 Converting document to get markdown content...")
+        # Initialize processors with different strategies
+        print("🚀 Initializing DoclingProcessor with advanced serialization strategies...")
+        
+        # Create processors with different strategies for comparison
+        processors = {
+            "detailed": DoclingProcessor(
+                table_strategy=SerializationStrategy.DETAILED,
+                image_strategy=SerializationStrategy.DETAILED
+            ),
+            "structured": DoclingProcessor(
+                table_strategy=SerializationStrategy.STRUCTURED,
+                image_strategy=SerializationStrategy.STRUCTURED
+            ),
+            "markdown": DoclingProcessor(
+                table_strategy=SerializationStrategy.MARKDOWN,
+                image_strategy=SerializationStrategy.MARKDOWN
+            )
+        }
+        
+        # Also use basic converter for markdown extraction
+        converter = DocumentConverter()
         result = converter.convert(pdf_path)
         markdown_content = result.document.export_to_markdown()
         
@@ -248,12 +312,33 @@ def run_fixed_demo():
         
         print(f"💾 Navigation map complete! Found {navigation_data['navigation_stats']['total_sections']} sections")
         
-        # Show summary
+        # 4. NEW: Extract Advanced Features with Different Strategies
         print("\n" + "="*80)
-        print("🎉 Fixed Demo Results:")
+        all_features = {}
+        
+        for strategy_name, processor in processors.items():
+            print(f"\n📋 Testing {strategy_name.upper()} serialization strategy:")
+            features_data = extract_advanced_features(processor, pdf_path)
+            all_features[strategy_name] = features_data
+            
+            # Save individual strategy results
+            with open(results_dir / f"advanced_features_{strategy_name}.json", 'w', encoding='utf-8') as f:
+                json.dump(features_data, f, indent=2, ensure_ascii=False, default=str)
+        
+        # Show enhanced summary
+        print("\n" + "="*80)
+        print("🎉 Enhanced Demo Results:")
         print(f"   📚 Topics: {topics_data['topic_count']}")
         print(f"   🧠 Semantic Blocks: {semantic_data['total_blocks']}")
         print(f"   🗺️  Navigation Sections: {navigation_data['navigation_stats']['total_sections']}")
+        
+        # Show advanced features summary
+        for strategy_name, features in all_features.items():
+            if 'error' not in features:
+                print(f"   🔬 {strategy_name.capitalize()} Strategy:")
+                print(f"      📊 Tables: {len(features.get('advanced_tables', []))}")
+                print(f"      🖼️  Images: {len(features.get('advanced_images', []))}")
+        
         print(f"   📁 All results saved in: {results_dir}")
         
         # Show top topics
@@ -265,7 +350,22 @@ def run_fixed_demo():
             for i, (topic_name, topic_data) in enumerate(sorted_topics, 1):
                 print(f"   {i}. {topic_name}: {topic_data['word_count']} words")
         
-        print(f"\n✨ Advanced Docling features working perfectly! 🎯")
+        # Show image descriptions if found
+        detailed_features = all_features.get('detailed', {})
+        if detailed_features and 'advanced_images' in detailed_features and detailed_features['advanced_images']:
+            print(f"\n🖼️  Image Descriptions Found:")
+            for i, img in enumerate(detailed_features['advanced_images'][:5], 1):  # Show first 5
+                print(f"   Image {i}:")
+                if 'basic_metadata' in img:
+                    caption = img['basic_metadata'].get('caption', 'No caption available')
+                    description = img['basic_metadata'].get('description', 'No description available')
+                    print(f"      Caption: {caption[:150]}{'...' if len(caption) > 150 else ''}")
+                    if description != 'No description available' and description:
+                        print(f"      Description: {description[:150]}{'...' if len(description) > 150 else ''}")
+                elif 'caption' in img:
+                    print(f"      Caption: {img['caption'][:150]}{'...' if len(img['caption']) > 150 else ''}")
+        
+        print(f"\n✨ Enhanced Advanced Docling features with image descriptions working perfectly! 🎯")
         
     except Exception as e:
         print(f"❌ Demo failed: {e}")

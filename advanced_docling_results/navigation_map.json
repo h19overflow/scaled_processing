@@ -1,0 +1,985 @@
+{
+  "document_outline": [
+    {
+      "title": "Writing effective prompts",
+      "level": 2,
+      "line_number": 9,
+      "section_id": 0,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Here are quick tips to get you started with Gemini for Google Workspace:",
+      "level": 2,
+      "line_number": 32,
+      "section_id": 1,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Table of contents",
+      "level": 2,
+      "line_number": 49,
+      "section_id": 2,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Introduction",
+      "level": 2,
+      "line_number": 68,
+      "section_id": 3,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Gemini for Google Workspace: Prompting 101",
+      "level": 2,
+      "line_number": 70,
+      "section_id": 4,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "How to use this prompt guide",
+      "level": 2,
+      "line_number": 88,
+      "section_id": 5,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Administrative support",
+      "level": 2,
+      "line_number": 100,
+      "section_id": 6,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 108,
+      "section_id": 7,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 114,
+      "section_id": 8,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 154,
+      "section_id": 9,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Executive administrators and executive business partners",
+      "level": 2,
+      "line_number": 156,
+      "section_id": 10,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Plan business travel NEW",
+      "level": 2,
+      "line_number": 180,
+      "section_id": 11,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Track travel and entertainment budget NEW",
+      "level": 2,
+      "line_number": 188,
+      "section_id": 12,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Communications",
+      "level": 2,
+      "line_number": 198,
+      "section_id": 13,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 206,
+      "section_id": 14,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 212,
+      "section_id": 15,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 250,
+      "section_id": 16,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Analyst and public relations",
+      "level": 2,
+      "line_number": 252,
+      "section_id": 17,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Create mock interview questions to prepare spokespeople NEW",
+      "level": 2,
+      "line_number": 282,
+      "section_id": 18,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Communications manager Use case: Craft internal communications NEW",
+      "level": 2,
+      "line_number": 296,
+      "section_id": 19,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Customer service",
+      "level": 2,
+      "line_number": 306,
+      "section_id": 20,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 312,
+      "section_id": 21,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 318,
+      "section_id": 22,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 356,
+      "section_id": 23,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Customer Service Manager or Representative",
+      "level": 2,
+      "line_number": 358,
+      "section_id": 24,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Standardize communication frameworks",
+      "level": 2,
+      "line_number": 374,
+      "section_id": 25,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Improve customer service",
+      "level": 2,
+      "line_number": 392,
+      "section_id": 26,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Customer Support Specialist",
+      "level": 2,
+      "line_number": 408,
+      "section_id": 27,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Enable customer self-service",
+      "level": 2,
+      "line_number": 416,
+      "section_id": 28,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Conduct voice of the customer research",
+      "level": 2,
+      "line_number": 436,
+      "section_id": 29,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Executives",
+      "level": 2,
+      "line_number": 450,
+      "section_id": 30,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 458,
+      "section_id": 31,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 464,
+      "section_id": 32,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 508,
+      "section_id": 33,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Chief Executive Officer",
+      "level": 2,
+      "line_number": 510,
+      "section_id": 34,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Create outlines of presentations in seconds NEW",
+      "level": 2,
+      "line_number": 520,
+      "section_id": 35,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Chief Operating Officer",
+      "level": 2,
+      "line_number": 526,
+      "section_id": 36,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Streamline responses on the go",
+      "level": 2,
+      "line_number": 540,
+      "section_id": 37,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Chief Marketing Officer",
+      "level": 2,
+      "line_number": 548,
+      "section_id": 38,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Brainstorm content and thought leadership",
+      "level": 2,
+      "line_number": 562,
+      "section_id": 39,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Conduct competitive analysis",
+      "level": 2,
+      "line_number": 582,
+      "section_id": 40,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Chief Technology Officer",
+      "level": 2,
+      "line_number": 594,
+      "section_id": 41,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Chief Information Officer",
+      "level": 2,
+      "line_number": 606,
+      "section_id": 42,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Research vendor products, services, and features NEW",
+      "level": 2,
+      "line_number": 622,
+      "section_id": 43,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Develop technical summaries",
+      "level": 2,
+      "line_number": 628,
+      "section_id": 44,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Track IT assets",
+      "level": 2,
+      "line_number": 640,
+      "section_id": 45,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Chief Human Resources Officer",
+      "level": 2,
+      "line_number": 648,
+      "section_id": 46,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Assess employee satisfaction",
+      "level": 2,
+      "line_number": 664,
+      "section_id": 47,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Frontline management",
+      "level": 2,
+      "line_number": 678,
+      "section_id": 48,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 684,
+      "section_id": 49,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 692,
+      "section_id": 50,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 728,
+      "section_id": 51,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Retail associate",
+      "level": 2,
+      "line_number": 730,
+      "section_id": 52,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Improve team collaboration by finding and sharing information easily NEW",
+      "level": 2,
+      "line_number": 732,
+      "section_id": 53,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Streamline task management NEW",
+      "level": 2,
+      "line_number": 748,
+      "section_id": 54,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Warehouse worker Use case: Manage inventory NEW",
+      "level": 2,
+      "line_number": 762,
+      "section_id": 55,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Manage audits NEW",
+      "level": 2,
+      "line_number": 770,
+      "section_id": 56,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Human resources",
+      "level": 2,
+      "line_number": 786,
+      "section_id": 57,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 794,
+      "section_id": 58,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 800,
+      "section_id": 59,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 840,
+      "section_id": 60,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Recruiter",
+      "level": 2,
+      "line_number": 842,
+      "section_id": 61,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Manage the recruiting process",
+      "level": 2,
+      "line_number": 860,
+      "section_id": 62,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Manage the interview process",
+      "level": 2,
+      "line_number": 876,
+      "section_id": 63,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Communicate with candidates",
+      "level": 2,
+      "line_number": 884,
+      "section_id": 64,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "HR Manager",
+      "level": 2,
+      "line_number": 898,
+      "section_id": 65,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Conduct employee engagement and satisfaction surveys NEW",
+      "level": 2,
+      "line_number": 900,
+      "section_id": 66,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Create individualized learning and development plans NEW",
+      "level": 2,
+      "line_number": 912,
+      "section_id": 67,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Onboard employees",
+      "level": 2,
+      "line_number": 922,
+      "section_id": 68,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Communicate key findings and draft follow-up surveys",
+      "level": 2,
+      "line_number": 942,
+      "section_id": 69,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Marketing",
+      "level": 2,
+      "line_number": 956,
+      "section_id": 70,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 964,
+      "section_id": 71,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 970,
+      "section_id": 72,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 1014,
+      "section_id": 73,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Brand Manager",
+      "level": 2,
+      "line_number": 1016,
+      "section_id": 74,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Brainstorm brand partnerships NEW",
+      "level": 2,
+      "line_number": 1024,
+      "section_id": 75,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Conduct market research and identify trends",
+      "level": 2,
+      "line_number": 1030,
+      "section_id": 76,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Create and manage content and distribution",
+      "level": 2,
+      "line_number": 1040,
+      "section_id": 77,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Marketing Specialist",
+      "level": 2,
+      "line_number": 1054,
+      "section_id": 78,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Perform audience research and develop personas NEW",
+      "level": 2,
+      "line_number": 1080,
+      "section_id": 79,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Digital Marketing Manager",
+      "level": 2,
+      "line_number": 1086,
+      "section_id": 80,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Create and optimize copy for search engine marketing (SEM) NEW",
+      "level": 2,
+      "line_number": 1088,
+      "section_id": 81,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Draft customer acquisition communications",
+      "level": 2,
+      "line_number": 1102,
+      "section_id": 82,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Generate inbound marketing campaigns",
+      "level": 2,
+      "line_number": 1116,
+      "section_id": 83,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Content Marketing Manager",
+      "level": 2,
+      "line_number": 1130,
+      "section_id": 84,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Create visuals for ad campaigns NEW",
+      "level": 2,
+      "line_number": 1140,
+      "section_id": 85,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Generate inspiration for your blog",
+      "level": 2,
+      "line_number": 1148,
+      "section_id": 86,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Create social media posts",
+      "level": 2,
+      "line_number": 1164,
+      "section_id": 87,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Create a strategic marketing plan",
+      "level": 2,
+      "line_number": 1178,
+      "section_id": 88,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Project management",
+      "level": 2,
+      "line_number": 1190,
+      "section_id": 89,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 1198,
+      "section_id": 90,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 1204,
+      "section_id": 91,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 1222,
+      "section_id": 92,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Project Manager",
+      "level": 2,
+      "line_number": 1224,
+      "section_id": 93,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Create a project retrospective",
+      "level": 2,
+      "line_number": 1248,
+      "section_id": 94,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Develop an issue tracker and related communications",
+      "level": 2,
+      "line_number": 1262,
+      "section_id": 95,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Technical Project Manager",
+      "level": 2,
+      "line_number": 1282,
+      "section_id": 96,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Sales",
+      "level": 2,
+      "line_number": 1290,
+      "section_id": 97,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 1298,
+      "section_id": 98,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 1304,
+      "section_id": 99,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 1366,
+      "section_id": 100,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Customer Success Manager",
+      "level": 2,
+      "line_number": 1368,
+      "section_id": 101,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Sales Manager",
+      "level": 2,
+      "line_number": 1378,
+      "section_id": 102,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Manage the request for proposal (RFP) process NEW",
+      "level": 2,
+      "line_number": 1380,
+      "section_id": 103,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Develop customer relationships",
+      "level": 2,
+      "line_number": 1402,
+      "section_id": 104,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Support the sales team",
+      "level": 2,
+      "line_number": 1422,
+      "section_id": 105,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Coach and train the sales team",
+      "level": 2,
+      "line_number": 1436,
+      "section_id": 106,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "prompt Gemini in Docs by selecting Help me write. You type:",
+      "level": 2,
+      "line_number": 1440,
+      "section_id": 107,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Account Manager and Account Executive",
+      "level": 2,
+      "line_number": 1452,
+      "section_id": 108,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Build customer relationships",
+      "level": 2,
+      "line_number": 1478,
+      "section_id": 109,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Prepare for new customer calls",
+      "level": 2,
+      "line_number": 1492,
+      "section_id": 110,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Business Development Manager",
+      "level": 2,
+      "line_number": 1508,
+      "section_id": 111,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Generate personalized customer appreciation materials",
+      "level": 2,
+      "line_number": 1524,
+      "section_id": 112,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Small business owners and entrepreneurs",
+      "level": 2,
+      "line_number": 1538,
+      "section_id": 113,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 1546,
+      "section_id": 114,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 1552,
+      "section_id": 115,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 1588,
+      "section_id": 116,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Owner",
+      "level": 2,
+      "line_number": 1590,
+      "section_id": 117,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Enhance personal productivity",
+      "level": 2,
+      "line_number": 1592,
+      "section_id": 118,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Brainstorm and generate marketing content",
+      "level": 2,
+      "line_number": 1598,
+      "section_id": 119,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Develop a competitive analysis",
+      "level": 2,
+      "line_number": 1610,
+      "section_id": 120,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Conduct fundraising and investor relations",
+      "level": 2,
+      "line_number": 1622,
+      "section_id": 121,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Manage time off policies and tracking",
+      "level": 2,
+      "line_number": 1636,
+      "section_id": 122,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Startup leaders",
+      "level": 2,
+      "line_number": 1650,
+      "section_id": 123,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Getting started",
+      "level": 2,
+      "line_number": 1658,
+      "section_id": 124,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Prompt iteration example",
+      "level": 2,
+      "line_number": 1664,
+      "section_id": 125,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Example use cases",
+      "level": 2,
+      "line_number": 1700,
+      "section_id": 126,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Founder",
+      "level": 2,
+      "line_number": 1702,
+      "section_id": 127,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Create an elevator pitch (speech to text)",
+      "level": 2,
+      "line_number": 1704,
+      "section_id": 128,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Develop your personal brand",
+      "level": 2,
+      "line_number": 1712,
+      "section_id": 129,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Head of Operations",
+      "level": 2,
+      "line_number": 1720,
+      "section_id": 130,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Communicate and negotiate with vendors",
+      "level": 2,
+      "line_number": 1722,
+      "section_id": 131,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Plan and track budgets",
+      "level": 2,
+      "line_number": 1738,
+      "section_id": 132,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Head of Product",
+      "level": 2,
+      "line_number": 1750,
+      "section_id": 133,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Develop a product launch plan",
+      "level": 2,
+      "line_number": 1752,
+      "section_id": 134,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "You want to continue market research brainstorming. You type:",
+      "level": 2,
+      "line_number": 1758,
+      "section_id": 135,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Use case: Develop product strategy and roadmap",
+      "level": 2,
+      "line_number": 1764,
+      "section_id": 136,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Leveling up your prompt writing",
+      "level": 2,
+      "line_number": 1776,
+      "section_id": 137,
+      "estimated_content_length": 0
+    },
+    {
+      "title": "Stay up to date",
+      "level": 2,
+      "line_number": 1793,
+      "section_id": 138,
+      "estimated_content_length": 0
+    }
+  ],
+  "section_hierarchy": {},
+  "navigation_stats": {
+    "total_sections": 139,
+    "heading_levels": {
+      "2": 139
+    },
+    "average_section_title_length": 32.15827338129496
+  }
+}

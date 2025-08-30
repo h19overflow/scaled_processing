@@ -8,7 +8,8 @@
       "Bash(dir /s src)",
       "Bash(python:*)",
       "Bash(curl:*)",
-      "mcp__ide__executeCode"
+      "mcp__ide__executeCode",
+      "WebFetch(domain:docling-project.github.io)"
     ],
     "deny": [],
     "ask": []

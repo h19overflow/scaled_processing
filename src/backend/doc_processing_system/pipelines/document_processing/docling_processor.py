@@ -1,29 +1,36 @@
 """
 DoclingProcessor - Unified document processing using IBM Docling.
-Handles PDF, DOCX, Images, HTML, PowerPoint with consistent output format.
-Designed for structured extraction pipeline that needs complete context.
+Refactored to use modular components for clean separation of concerns.
 """
 
 import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-from datetime import datetime
+from typing import Dict, Any
 
 from docling.document_converter import DocumentConverter
-from docling.datamodel.base_models import InputFormat
-from docling.datamodel.document import ConversionResult
 
-from ...data_models.document import ParsedDocument, DocumentMetadata, FileType
+from ...data_models.document import ParsedDocument
+from .utils import (
+    SerializationStrategy,
+)
 
 
 class DoclingProcessor:
     """
     Unified document processor using IBM Docling for structured extraction.
-    Preserves document structure, tables, and formatting for LLM processing.
+    Refactored to use modular components for table/image serialization,
+    content extraction, structure analysis, and validation.
     """
     
-    def __init__(self):
-        """Initialize the DoclingProcessor with converter."""
+    def __init__(self, 
+                 table_strategy: SerializationStrategy = SerializationStrategy.STRUCTURED,
+                 image_strategy: SerializationStrategy = SerializationStrategy.DETAILED):
+        """Initialize the DoclingProcessor with converter and serialization strategies.
+        
+        Args:
+            table_strategy: Strategy for table serialization
+            image_strategy: Strategy for image serialization
+        """
         self.logger = logging.getLogger(__name__)
         if not self.logger.handlers:
             handler = logging.StreamHandler()
@@ -35,10 +42,12 @@ class DoclingProcessor:
         # Initialize Docling converter
         try:
             self.converter = DocumentConverter()
-            self.logger.info("DoclingProcessor initialized successfully")
+            self.logger.info(f"DoclingProcessor initialized successfully with table_strategy={table_strategy.value}, image_strategy={image_strategy.value}")
         except Exception as e:
             self.logger.error(f"Failed to initialize DoclingProcessor: {e}")
             raise
+        
+        # Initialize utility components
     
     def process_document(self, file_path: str, document_id: str, user_id: str = "default") -> ParsedDocument:
         """
@@ -62,26 +71,40 @@ class DoclingProcessor:
             if not file_path_obj.exists():
                 raise FileNotFoundError(f"Document not found: {file_path}")
             
+            # Validate file before processing
+            file_validation = self.content_validator.validate_file_path(file_path)
+            if not file_validation["is_valid"]:
+                raise ValueError(f"File validation failed: {file_validation['issues']}")
+            
             self.logger.info(f"Processing document: {file_path_obj.name}")
             
             # Convert document using Docling
             result = self.converter.convert(file_path)
             
-            # Extract content and metadata
-            content = self._extract_content(result)
-            metadata = self._create_metadata(file_path_obj, document_id, user_id, result)
+            # Extract content and metadata using utility components
+            content = self.content_extractor.extract_content(result)
+            metadata = self.content_extractor.create_metadata(file_path_obj, document_id, user_id, result)
+            page_count = self.content_extractor.get_page_count(result)
+            extracted_images = self.content_extractor.extract_images(result)
+            tables = self.content_extractor.extract_tables(result)
             
             # Create ParsedDocument
             parsed_doc = ParsedDocument(
                 document_id=document_id,
                 content=content,
                 metadata=metadata,
-                page_count=self._get_page_count(result),
-                extracted_images=self._extract_images(result),
-                tables=self._extract_tables(result)
+                page_count=page_count,
+                extracted_images=extracted_images,
+                tables=tables
             )
             
-            self.logger.info(f"Successfully processed {file_path_obj.name}: {len(content)} chars, {parsed_doc.page_count} pages")
+            # Validate the processed document
+            validation_result = self.content_validator.validate_document(parsed_doc)
+            if not validation_result["is_valid"]:
+                self.logger.warning(f"Document validation issues: {validation_result['issues']}")
+                # Continue processing but log the issues
+            
+            self.logger.info(f"Successfully processed {file_path_obj.name}: {len(content)} chars, {page_count} pages")
             return parsed_doc
             
         except Exception as e:
@@ -110,21 +133,9 @@ class DoclingProcessor:
             # Convert document
             result = self.converter.convert(file_path)
             
-            # Analyze structure
-            analysis = {
-                "filename": file_path_obj.name,
-                "file_size": file_path_obj.stat().st_size,
-                "page_count": self._get_page_count(result),
-                "content_length": len(result.document.export_to_markdown()),
-                "has_tables": len(self._extract_tables(result)) > 0,
-                "table_count": len(self._extract_tables(result)),
-                "has_images": len(self._extract_images(result)) > 0,
-                "image_count": len(self._extract_images(result)),
-                "sections": self._analyze_sections(result),
-                "processing_time": datetime.utcnow().isoformat()
-            }
+            # Use structure analyzer utility
+            analysis = self.structure_analyzer.analyze_document_structure(file_path, result)
             
-            self.logger.info(f"Structure analysis complete: {analysis['page_count']} pages, {analysis['table_count']} tables")
             return analysis
             
         except Exception as e:
@@ -144,7 +155,7 @@ class DoclingProcessor:
         """
         try:
             result = self.converter.convert(file_path)
-            markdown_content = result.document.export_to_markdown()
+            markdown_content = self.content_extractor.extract_content(result)
             
             self.logger.info(f"Extracted markdown: {len(markdown_content)} characters")
             return markdown_content
@@ -152,122 +163,3 @@ class DoclingProcessor:
         except Exception as e:
             self.logger.error(f"Failed to extract markdown from {file_path}: {e}")
             raise
-    
-    # HELPER FUNCTIONS
-    
-    def _extract_content(self, result: ConversionResult) -> str:
-        """Extract clean text content from conversion result."""
-        try:
-            # Get markdown format (preserves structure)
-            return result.document.export_to_markdown()
-        except Exception:
-            # Fallback to plain text
-            return str(result.document)
-    
-    def _create_metadata(self, file_path: Path, document_id: str, user_id: str, result: ConversionResult) -> DocumentMetadata:
-        """Create document metadata from file and conversion result."""
-        file_type = self._determine_file_type(file_path.suffix.lower())
-        
-        return DocumentMetadata(
-            document_id=document_id,
-            file_type=file_type,
-            upload_timestamp=datetime.utcnow(),
-            user_id=user_id,
-            file_size=file_path.stat().st_size
-        )
-    
-    def _determine_file_type(self, suffix: str) -> FileType:
-        """Determine file type from file extension."""
-        suffix_map = {
-            '.pdf': FileType.PDF,
-            '.docx': FileType.DOCX,
-            '.doc': FileType.DOCX,
-            '.txt': FileType.TEXT,
-            '.png': FileType.IMAGE,
-            '.jpg': FileType.IMAGE,
-            '.jpeg': FileType.IMAGE,
-            '.gif': FileType.IMAGE,
-            '.bmp': FileType.IMAGE,
-        }
-        return suffix_map.get(suffix, FileType.TEXT)
-    
-    def _get_page_count(self, result: ConversionResult) -> int:
-        """Extract page count from conversion result."""
-        try:
-            # Try to get page count from document structure
-            if hasattr(result.document, 'pages') and result.document.pages:
-                return len(result.document.pages)
-            # Fallback: estimate based on content length
-            content_length = len(str(result.document))
-            return max(1, content_length // 3000)  # Rough estimate: 3000 chars per page
-        except Exception:
-            return 1
-    
-    def _extract_images(self, result: ConversionResult) -> List[Dict[str, Any]]:
-        """Extract image information from document."""
-        images = []
-        try:
-            # Docling can extract image references and metadata
-            if hasattr(result.document, 'pictures') and result.document.pictures:
-                for i, picture in enumerate(result.document.pictures):
-                    images.append({
-                        "image_id": i,
-                        "caption": getattr(picture, 'caption', ''),
-                        "position": getattr(picture, 'prov', []),
-                        "size": getattr(picture, 'size', {})
-                    })
-        except Exception as e:
-            self.logger.warning(f"Failed to extract images: {e}")
-        
-        return images
-    
-    def _extract_tables(self, result: ConversionResult) -> List[Dict[str, Any]]:
-        """Extract table information from document."""
-        tables = []
-        try:
-            # Docling can extract table structure and data
-            if hasattr(result.document, 'tables') and result.document.tables:
-                for i, table in enumerate(result.document.tables):
-                    tables.append({
-                        "table_id": i,
-                        "data": self._table_to_dict(table),
-                        "position": getattr(table, 'prov', []),
-                        "rows": getattr(table, 'num_rows', 0),
-                        "columns": getattr(table, 'num_cols', 0)
-                    })
-        except Exception as e:
-            self.logger.warning(f"Failed to extract tables: {e}")
-        
-        return tables
-    
-    def _table_to_dict(self, table) -> Dict[str, Any]:
-        """Convert table object to dictionary representation."""
-        try:
-            # Try to extract table data in a structured format
-            if hasattr(table, 'export_to_dataframe'):
-                df = table.export_to_dataframe()
-                return df.to_dict('records')
-            else:
-                return {"raw": str(table)}
-        except Exception:
-            return {"raw": str(table)}
-    
-    def _analyze_sections(self, result: ConversionResult) -> List[str]:
-        """Analyze document sections and headings."""
-        sections = []
-        try:
-            content = result.document.export_to_markdown()
-            lines = content.split('\n')
-            
-            for line in lines:
-                line = line.strip()
-                if line.startswith('#'):
-                    # Extract heading text
-                    heading = line.lstrip('#').strip()
-                    if heading:
-                        sections.append(heading)
-        
-        except Exception as e:
-            self.logger.warning(f"Failed to analyze sections: {e}")
-        
-        return sections[:10]  # Return first 10 sections

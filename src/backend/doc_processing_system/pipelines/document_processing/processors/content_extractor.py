@@ -1,1 +1,0 @@
-# ContentExtractor - Clean text and metadata extraction from Docling results
