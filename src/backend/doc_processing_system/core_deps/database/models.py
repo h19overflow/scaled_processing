@@ -33,6 +33,7 @@ class DocumentModel(Base):
     file_size = Column(Integer, nullable=False)
     page_count = Column(Integer)
     content_path = Column(String(500))
+    content_hash = Column(String(64), nullable=False, index=True, unique=True)  # SHA-256 hash for duplicate detection
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
     
@@ -52,6 +53,7 @@ class DocumentModel(Base):
             "file_size": self.file_size,
             "page_count": self.page_count,
             "content_path": self.content_path,
+            "content_hash": self.content_hash,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }

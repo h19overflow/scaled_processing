@@ -1,6 +1,6 @@
 """
 Database components using SQLAlchemy for PostgreSQL connection and data access.
-Contains connection manager, models, and repository patterns for the document processing system.
+Contains connection manager, models, repository patterns, and modular CRUD operations.
 """
 
 from .connection_manager import ConnectionManager
@@ -12,14 +12,17 @@ from .models import (
     QueryResultModel,
     Base
 )
-from .repository import (
-    DocumentRepository,
-    ChunkRepository,
-    ExtractionRepository,
-    QueryRepository
+
+from .CRUD import (
+    BaseRepository,
+    DocumentCRUD,
+    ChunkCRUD,
+    ExtractionCRUD,
+    QueryCRUD
 )
 
 __all__ = [
+    # Connection and Models
     "ConnectionManager",
     "DocumentModel",
     "ChunkModel",
@@ -27,8 +30,11 @@ __all__ = [
     "QueryLogModel",
     "QueryResultModel",
     "Base",
-    "DocumentRepository",
-    "ChunkRepository",
-    "ExtractionRepository",
-    "QueryRepository"
+    
+    # CRUD Operations
+    "BaseRepository",
+    "DocumentCRUD",
+    "ChunkCRUD",
+    "ExtractionCRUD",
+    "QueryCRUD"
 ]
