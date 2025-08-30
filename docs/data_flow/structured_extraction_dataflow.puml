@@ -1,0 +1,165 @@
+@startuml structured_extraction_dataflow
+title Structured Extraction System - Data Flow Layer
+
+' Input Models
+package "Input Models" as extraction_input {
+    class FieldInitRequest {
+        +document_id: str
+        +page_count: int
+        +sampling_strategy: str
+        +max_sample_pages: int
+    }
+    
+    class FieldSpecification {
+        +field_name: str
+        +field_type: str
+        +description: str
+        +validation_rules: Dict[str, Any]
+        +is_required: bool
+    }
+}
+
+' Processing Models
+package "Processing Models" as extraction_processing {
+    class AgentScalingConfig {
+        +document_id: str
+        +page_count: int
+        +agent_count: int
+        +page_ranges: List[Tuple[int, int]]
+        +field_specs: List[FieldSpecification]
+    }
+    
+    class ExtractionResult {
+        +document_id: str
+        +page_range: Tuple[int, int]
+        +extracted_fields: Dict[str, Any]
+        +confidence_scores: Dict[str, float]
+        +agent_id: str
+    }
+}
+
+' Database Models
+package "PostgreSQL Database Models" as extraction_db {
+    class field_specifications_table {
+        +id: UUID (PK)
+        +document_id: UUID (FK)
+        +field_name: str
+        +field_type: str
+        +description: str
+        +validation_rules: JSON
+        +is_required: bool
+        +created_at: datetime
+    }
+    
+    class extracted_data_table {
+        +id: UUID (PK)
+        +document_id: UUID (FK)
+        +field_name: str
+        +field_value: JSON
+        +confidence_score: float
+        +page_range_start: int
+        +page_range_end: int
+        +extracted_by_agent: str
+        +created_at: datetime
+    }
+    
+    class agent_scaling_logs_table {
+        +id: UUID (PK)
+        +document_id: UUID (FK)
+        +agent_count: int
+        +page_ranges: JSON
+        +scaling_timestamp: datetime
+        +completion_timestamp: datetime
+        +performance_metrics: JSON
+    }
+}
+
+' Kafka Messages
+package "Kafka Messages" as extraction_kafka {
+    class FieldInitCompleteEvent {
+        +document_id: str
+        +field_specifications: List[FieldSpecification]
+        +discovery_method: str
+        +topic: "field-init-complete"
+    }
+    
+    class AgentScalingCompleteEvent {
+        +document_id: str
+        +scaling_config: AgentScalingConfig
+        +topic: "agent-scaling-complete"
+    }
+    
+    class ExtractionTaskMessage {
+        +task_id: str
+        +document_id: str
+        +page_range: Tuple[int, int]
+        +field_specs: List[FieldSpecification]
+        +agent_id: str
+        +topic: "extraction-tasks"
+    }
+    
+    class ExtractionCompleteEvent {
+        +document_id: str
+        +extraction_results: List[ExtractionResult]
+        +completion_status: str
+        +topic: "extraction-complete"
+    }
+}
+
+' Data Flow Connections
+extraction_input --> extraction_processing : "Field Discovery & Agent Scaling"
+extraction_processing --> extraction_db : "Store Field Specs & Extracted Data"
+extraction_processing --> extraction_kafka : "Extraction Pipeline Events"
+
+' Internal workflow connections
+extraction_kafka --> extraction_processing : "Task Distribution & Coordination"
+
+note left of extraction_input
+    **Input Sources:**
+    • DocumentReceivedEvent from Upload System
+    • Dynamic field discovery triggers
+    
+    **Referenced in:** document_upload_dataflow.puml
+end note
+
+note top of extraction_processing
+    **Sequential Field Discovery:**
+    • Page sampling strategies
+    • Multi-agent field identification
+    • Dynamic prompt generation
+    • Pydantic schema creation
+    
+    **Agent Scaling Logic:**
+    • Small docs (< 20 pages): 2 agents
+    • Medium docs (20-100 pages): 5 agents  
+    • Large docs (> 100 pages): 10 agents
+end note
+
+note top of extraction_db
+    **Structured Data Storage:**
+    • Dynamic field specifications
+    • JSON-based extracted values
+    • Confidence score tracking
+    • Agent performance logging
+    • Page-range processing audit
+end note
+
+note right of extraction_kafka
+    **Output Events Consumed By:**
+    • Query Processing System
+    • Monitoring & Analytics
+    • Agent Performance Tracking
+    
+    **File: query_processing_dataflow.puml**
+end note
+
+note bottom of extraction_db
+    **Scaling & Performance:**
+    • Partition-based task distribution
+    • Parallel page-range processing
+    • Agent swarm coordination
+    • Real-time performance metrics
+    • Automatic load balancing
+end note
+
+@enduml

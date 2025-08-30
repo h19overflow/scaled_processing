@@ -1,0 +1,96 @@
+@startuml workflow_extraction_processing
+title Extraction Processing Workflow - Parallel Processing & Database Insertion
+
+' Define participants with file paths
+participant "Kafka Topic\n(extraction_processing)" as kafka_topic
+participant "ExtractionConsumer\n(src/backend/messaging/consumers.py)" as consumer
+participant "ExtractionAgent\n(src/backend/agents/extraction_agent.py)" as agent
+participant "DocumentProcessor\n(src/backend/core_services/document_processor.py)" as doc_processor
+participant "JSONFormatter\n(src/backend/core_services/json_formatter.py)" as json_formatter
+participant "ValidationService\n(src/backend/core_services/validation_service.py)" as validator
+participant "DatabaseInserter\n(src/backend/core_services/persistence/inserter.py)" as db_inserter
+participant "CompletionProducer\n(src/backend/messaging/producers.py)" as producer
+
+' Workflow steps
+kafka_topic -> consumer : consume_extraction_task()
+note right : Model: ExtractionTaskMessage\nFunction: consume_from_topic()
+
+loop for each extraction task
+    consumer -> consumer : parse_agent_configuration()
+    note right : Model: AgentConfig\nFunction: extract_config_data()
+    
+    consumer -> agent : initialize_extraction_agent()
+    note right : Model: AgentInstance\nFunction: create_configured_agent()
+    
+    agent -> agent : load_field_specifications()
+    note right : Model: FieldSpecs\nFunction: inject_dynamic_prompts()
+    
+    agent -> agent : generate_output_schema()
+    note right : Model: PydanticSchema\nFunction: create_dynamic_schema()
+    
+    agent -> doc_processor : load_assigned_page_range()
+    note right : Model: PageRange\nFunction: extract_page_content()
+    
+    doc_processor -> doc_processor : extract_page_text()
+    note right : Model: PageContent\nFunction: parse_document_pages()
+    
+    doc_processor -> agent : return_page_content()
+    note right : Model: ProcessedPages\nFunction: provide_text_content()
+    
+    agent -> agent : process_extraction()
+    note right : Model: ExtractionResult\nFunction: run_llm_extraction()
+    
+    agent -> json_formatter : format_extraction_results()
+    note right : Model: StructuredJSON\nFunction: convert_to_json()
+    
+    json_formatter -> json_formatter : apply_field_mapping()
+    note right : Model: MappedJSON\nFunction: map_fields_to_schema()
+    
+    json_formatter -> validator : validate_json_structure()
+    note right : Model: ValidatedJSON\nFunction: check_schema_compliance()
+    
+    alt Validation Successful
+        validator -> db_inserter : insert_extraction_results()
+        note right : Model: DatabaseRecord\nFunction: save_to_postgres()
+        
+        db_inserter -> db_inserter : create_database_record()
+        note right : Model: ExtractionRecord\nFunction: prepare_pg_insert()
+        
+        db_inserter -> db_inserter : execute_pg_insertion()
+        note right : Model: InsertionResult\nFunction: commit_to_database()
+        
+        db_inserter -> producer : publish_success_event()
+        note right : Model: SuccessEvent\nFunction: notify_completion()
+        
+    else Validation Failed
+        validator -> producer : publish_failure_event()
+        note right : Model: FailureEvent\nFunction: notify_extraction_error()
+    end
+    
+    producer -> producer : send_completion_status()
+    note right : Model: CompletionStatus\nFunction: publish_final_status()
+end
+
+note over kafka_topic, producer
+    **Parallel Processing:**
+    • Each agent processes its assigned page range independently
+    • Multiple agents run simultaneously via Kafka partitions
+    • No coordination needed between agents during processing
+    
+    **JSON Structure:**
+    • Dynamic schema based on field specifications
+    • Example: {"company_name": "extracted_value", "revenue": "extracted_value"}
+    • Validation ensures schema compliance before database insertion
+    
+    **Database Schema:**
+    • PostgreSQL table with JSON column for extracted data
+    • Additional metadata: document_id, agent_id, page_range, timestamp
+    • Enables querying extracted fields across documents
+    
+    **Error Handling:**
+    • Failed extractions logged and reported via completion events
+    • Successful extractions immediately available for querying
+    • Retry logic handled at Kafka consumer level
+end note
+
+@enduml

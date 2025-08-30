@@ -1,0 +1,421 @@
+@startuml dataflow_architecture
+title Scaled Processing System - Complete Dataflow Architecture
+
+' Define main system components with their data models
+package "Document Upload & Processing" as upload_system {
+    ' Input Models
+    rectangle "Input Models" as upload_input {
+        class UploadFile {
+            +filename: str
+            +content_type: str
+            +size: int
+            +file_data: bytes
+        }
+        
+        class DocumentMetadata {
+            +document_id: str
+            +file_type: FileType
+            +upload_timestamp: datetime
+            +user_id: str
+            +file_size: int
+        }
+    }
+    
+    ' Processing Models
+    rectangle "Processing Models" as upload_processing {
+        class ParsedDocument {
+            +document_id: str
+            +content: str
+            +metadata: DocumentMetadata
+            +page_count: int
+            +extracted_images: List[Image]
+            +tables: List[Table]
+        }
+        
+        class FileType {
+            PDF
+            DOCX
+            IMAGE
+            TEXT
+        }
+    }
+    
+    ' Database Models
+    rectangle "Database Models" as upload_db {
+        class documents_table {
+            +id: UUID (PK)
+            +filename: str
+            +file_type: str
+            +upload_timestamp: datetime
+            +user_id: str
+            +processing_status: str
+            +file_size: int
+            +page_count: int
+        }
+        
+        class document_metadata_table {
+            +id: UUID (PK)
+            +document_id: UUID (FK)
+            +metadata_key: str
+            +metadata_value: str
+            +created_at: datetime
+        }
+    }
+    
+    ' Messages
+    rectangle "Kafka Messages" as upload_messages {
+        class DocumentReceivedEvent {
+            +document_id: str
+            +parsed_document: ParsedDocument
+            +timestamp: datetime
+            +topic: "document-received"
+        }
+        
+        class WorkflowInitializedEvent {
+            +document_id: str
+            +workflow_types: List[str]
+            +status: str
+            +topic: "workflow-initialized"
+        }
+    }
+}
+
+package "RAG Workflow System" as rag_system {
+    ' Input Models
+    rectangle "RAG Input Models" as rag_input {
+        class ChunkingRequest {
+            +document_id: str
+            +content: str
+            +chunk_strategy: str
+            +max_chunk_size: int
+        }
+        
+        class TextChunk {
+            +chunk_id: str
+            +document_id: str
+            +content: str
+            +page_number: int
+            +chunk_index: int
+            +metadata: Dict[str, Any]
+        }
+    }
+    
+    ' Processing Models
+    rectangle "RAG Processing Models" as rag_processing {
+        class ValidatedEmbedding {
+            +chunk_id: str
+            +document_id: str
+            +embedding_vector: List[float]
+            +embedding_model: str
+            +chunk_metadata: Dict[str, Any]
+        }
+        
+        class VectorSearchResult {
+            +chunk_id: str
+            +similarity_score: float
+            +chunk_content: str
+            +document_metadata: Dict[str, Any]
+        }
+    }
+    
+    ' Database Models
+    rectangle "RAG Database Models" as rag_db {
+        class chunks_table {
+            +id: UUID (PK)
+            +document_id: UUID (FK)
+            +chunk_id: str
+            +content: str
+            +page_number: int
+            +chunk_index: int
+            +created_at: datetime
+        }
+        
+        class chroma_collections {
+            +collection_name: str
+            +vector_dimension: int
+            +distance_function: str
+            +documents_count: int
+        }
+    }
+    
+    ' Messages
+    rectangle "RAG Kafka Messages" as rag_messages {
+        class ChunkingCompleteEvent {
+            +document_id: str
+            +chunks: List[TextChunk]
+            +chunk_count: int
+            +topic: "chunking-complete"
+        }
+        
+        class EmbeddingReadyEvent {
+            +document_id: str
+            +validated_embedding: ValidatedEmbedding
+            +topic: "embedding-ready"
+        }
+        
+        class IngestionCompleteEvent {
+            +document_id: str
+            +vector_count: int
+            +collection_name: str
+            +topic: "ingestion-complete"
+        }
+    }
+}
+
+package "Structured Extraction System" as extraction_system {
+    ' Input Models
+    rectangle "Extraction Input Models" as extraction_input {
+        class FieldInitRequest {
+            +document_id: str
+            +page_count: int
+            +sampling_strategy: str
+            +max_sample_pages: int
+        }
+        
+        class FieldSpecification {
+            +field_name: str
+            +field_type: str
+            +description: str
+            +validation_rules: Dict[str, Any]
+            +is_required: bool
+        }
+    }
+    
+    ' Processing Models
+    rectangle "Extraction Processing Models" as extraction_processing {
+        class AgentScalingConfig {
+            +document_id: str
+            +page_count: int
+            +agent_count: int
+            +page_ranges: List[Tuple[int, int]]
+            +field_specs: List[FieldSpecification]
+        }
+        
+        class ExtractionResult {
+            +document_id: str
+            +page_range: Tuple[int, int]
+            +extracted_fields: Dict[str, Any]
+            +confidence_scores: Dict[str, float]
+            +agent_id: str
+        }
+    }
+    
+    ' Database Models
+    rectangle "Extraction Database Models" as extraction_db {
+        class field_specifications_table {
+            +id: UUID (PK)
+            +document_id: UUID (FK)
+            +field_name: str
+            +field_type: str
+            +description: str
+            +validation_rules: JSON
+            +is_required: bool
+        }
+        
+        class extracted_data_table {
+            +id: UUID (PK)
+            +document_id: UUID (FK)
+            +field_name: str
+            +field_value: JSON
+            +confidence_score: float
+            +page_range_start: int
+            +page_range_end: int
+            +extracted_by_agent: str
+            +created_at: datetime
+        }
+        
+        class agent_scaling_logs_table {
+            +id: UUID (PK)
+            +document_id: UUID (FK)
+            +agent_count: int
+            +page_ranges: JSON
+            +scaling_timestamp: datetime
+            +completion_timestamp: datetime
+        }
+    }
+    
+    ' Messages
+    rectangle "Extraction Kafka Messages" as extraction_messages {
+        class FieldInitCompleteEvent {
+            +document_id: str
+            +field_specifications: List[FieldSpecification]
+            +discovery_method: str
+            +topic: "field-init-complete"
+        }
+        
+        class AgentScalingCompleteEvent {
+            +document_id: str
+            +scaling_config: AgentScalingConfig
+            +topic: "agent-scaling-complete"
+        }
+        
+        class ExtractionTaskMessage {
+            +task_id: str
+            +document_id: str
+            +page_range: Tuple[int, int]
+            +field_specs: List[FieldSpecification]
+            +agent_id: str
+            +topic: "extraction-tasks"
+        }
+        
+        class ExtractionCompleteEvent {
+            +document_id: str
+            +extraction_results: List[ExtractionResult]
+            +completion_status: str
+            +topic: "extraction-complete"
+        }
+    }
+}
+
+package "Query Processing System" as query_system {
+    ' Input Models
+    rectangle "Query Input Models" as query_input {
+        class UserQuery {
+            +query_id: str
+            +query_text: str
+            +query_type: QueryType
+            +user_id: str
+            +filters: Dict[str, Any]
+        }
+        
+        class QueryType {
+            RAG_ONLY
+            STRUCTURED_ONLY
+            HYBRID
+        }
+    }
+    
+    ' Processing Models
+    rectangle "Query Processing Models" as query_processing {
+        class RAGQueryResult {
+            +query_id: str
+            +retrieved_chunks: List[VectorSearchResult]
+            +generated_response: str
+            +source_documents: List[str]
+            +confidence_score: float
+        }
+        
+        class StructuredQueryResult {
+            +query_id: str
+            +filtered_data: List[Dict[str, Any]]
+            +aggregated_results: Dict[str, Any]
+            +matching_documents: List[str]
+        }
+        
+        class HybridQueryResult {
+            +query_id: str
+            +rag_result: RAGQueryResult
+            +structured_result: StructuredQueryResult
+            +combined_response: str
+            +confidence_score: float
+        }
+    }
+    
+    ' Database Models
+    rectangle "Query Database Models" as query_db {
+        class query_logs_table {
+            +id: UUID (PK)
+            +query_id: str
+            +user_id: str
+            +query_text: str
+            +query_type: str
+            +filters: JSON
+            +response_time_ms: int
+            +created_at: datetime
+        }
+        
+        class query_results_table {
+            +id: UUID (PK)
+            +query_id: str
+            +result_type: str
+            +result_data: JSON
+            +confidence_score: float
+            +source_documents: JSON
+            +created_at: datetime
+        }
+    }
+    
+    ' Messages
+    rectangle "Query Kafka Messages" as query_messages {
+        class QueryReceivedEvent {
+            +query_id: str
+            +user_query: UserQuery
+            +topic: "query-received"
+        }
+        
+        class RAGQueryCompleteEvent {
+            +query_id: str
+            +rag_result: RAGQueryResult
+            +topic: "rag-query-complete"
+        }
+        
+        class StructuredQueryCompleteEvent {
+            +query_id: str
+            +structured_result: StructuredQueryResult
+            +topic: "structured-query-complete"
+        }
+        
+        class HybridQueryCompleteEvent {
+            +query_id: str
+            +hybrid_result: HybridQueryResult
+            +topic: "hybrid-query-complete"
+        }
+    }
+}
+
+' Define data flow connections
+upload_input --> upload_processing : "File Upload & Parsing"
+upload_processing --> upload_db : "Persist Document Metadata"
+upload_processing --> upload_messages : "Publish Events"
+
+upload_messages --> rag_input : "Document Received Event"
+rag_input --> rag_processing : "Chunking & Embedding"
+rag_processing --> rag_db : "Store Chunks & Vectors"
+rag_processing --> rag_messages : "Pipeline Events"
+
+upload_messages --> extraction_input : "Document Received Event"
+extraction_input --> extraction_processing : "Field Discovery & Agent Scaling"
+extraction_processing --> extraction_db : "Store Extracted Data"
+extraction_processing --> extraction_messages : "Extraction Events"
+
+query_input --> query_processing : "Query Processing"
+query_processing --> query_db : "Log Query Results"
+query_processing --> query_messages : "Query Events"
+
+' Cross-system data flows
+rag_db --> query_processing : "Vector Search"
+extraction_db --> query_processing : "Structured Data Lookup"
+
+note top of upload_system
+    **Document Upload & Processing**
+    • Entry point for all documents
+    • Dynamic parser selection by file type
+    • Parallel workflow initialization
+    • Event-driven architecture trigger
+end note
+
+note top of rag_system
+    **RAG Workflow System**
+    • Semantic text chunking
+    • Embedding generation & validation
+    • ChromaDB vector storage
+    • Partition-based scaling
+end note
+
+note top of extraction_system
+    **Structured Extraction System**
+    • Dynamic field discovery
+    • Agent swarm scaling
+    • PostgreSQL structured storage
+    • Page-range parallel processing
+end note
+
+note top of query_system
+    **Query Processing System**
+    • Multi-modal query support
+    • RAG + Structured hybrid queries
+    • Real-time response generation
+    • Query performance logging
+end note
+
+@enduml

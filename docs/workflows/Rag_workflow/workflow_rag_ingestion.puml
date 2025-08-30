@@ -1,0 +1,46 @@
+@startuml workflow_rag_ingestion
+title RAG Pipeline - Vector Database Ingestion Workflow
+
+' Define participants with file paths
+participant "Kafka Topic\n(embedding_ready)" as kafka_input
+participant "IngestionConsumer\n(src/backend/messaging/consumers.py)" as consumer
+participant "ChromaDBClient\n(src/backend/core_services/persistence/chroma_client.py)" as chroma_client
+participant "KafkaProducer\n(src/backend/messaging/producers.py)" as producer
+participant "Kafka Topic\n(ingestion_complete)" as kafka_output
+
+' Workflow steps
+kafka_input -> consumer : consume_embedding_ready_events()
+note right : Model: EmbeddingReadyEvent\nFunction: consume_from_topic()
+
+loop for each embedding message
+    consumer -> chroma_client : ingest_vector()
+    note right : Model: ValidatedEmbedding\nFunction: add_vector()
+    
+    chroma_client -> chroma_client : upsert_to_collection()
+    note right : Model: UpsertResult\nFunction: upsert_vector()
+    
+    chroma_client -> producer : publish_ingestion_complete()
+    note right : Model: IngestionCompleteEvent\nFunction: publish_completion()
+    
+    producer -> kafka_output : send_to_topic("ingestion_complete")
+    note right : Message: IngestionCompleteEvent\nTopic: ingestion_complete
+end
+
+note over kafka_input, kafka_output
+    **Scaling via Kafka Partitions:**
+    • Multiple consumers per partition
+    • Each consumer ingests vectors independently
+    • Direct vector-to-ChromaDB ingestion
+    • Partition-based load distribution
+    
+    **Key Models:**
+    • ValidatedEmbedding: Input embedding with metadata
+    • UpsertResult: ChromaDB operation result
+    • IngestionCompleteEvent: Pipeline completion signal
+    
+    **Critical Functions:**
+    • add_vector(): Single vector ingestion to ChromaDB
+    • publish_completion(): Pipeline completion notification
+end note
+
+@enduml

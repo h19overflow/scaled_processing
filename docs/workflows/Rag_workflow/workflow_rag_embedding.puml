@@ -1,0 +1,46 @@
+@startuml workflow_rag_embedding
+title RAG Pipeline - Embedding Generation Workflow
+
+' Define participants with file paths
+participant "Kafka Topic\n(chunk_ready)" as kafka_input
+participant "EmbeddingConsumer\n(src/backend/messaging/consumers.py)" as consumer
+participant "EmbeddingModel\n(src/backend/core_services/embedding_models.py)" as embedding_model
+participant "KafkaProducer\n(src/backend/messaging/producers.py)" as producer
+participant "Kafka Topic\n(embedding_ready)" as kafka_output
+
+' Workflow steps
+kafka_input -> consumer : consume_chunk_ready_events()
+note right : Model: ChunkReadyEvent\nFunction: consume_from_topic()
+
+loop for each chunk message
+    consumer -> embedding_model : generate_embedding()
+    note right : Model: ChunkRecord\nFunction: create_embedding()
+    
+    embedding_model -> embedding_model : process_chunk_text()
+    note right : Model: EmbeddingVector\nFunction: embed_text()
+    
+    embedding_model -> producer : publish_embedding_ready()
+    note right : Model: EmbeddingReadyEvent\nFunction: publish_event()
+    
+    producer -> kafka_output : send_to_topic("embedding_ready")
+    note right : Message: EmbeddingReadyEvent\nTopic: embedding_ready
+end
+
+note over kafka_input, kafka_output
+    **Scaling via Kafka Partitions:**
+    • Multiple consumers per partition
+    • Each consumer processes chunks independently
+    • No batching - direct chunk-to-embedding processing
+    • Partition-based load distribution
+    
+    **Key Models:**
+    • ChunkRecord: Input chunk with metadata
+    • EmbeddingVector: Generated embedding
+    • EmbeddingReadyEvent: Message for vector storage
+    
+    **Critical Functions:**
+    • create_embedding(): Single chunk embedding
+    • publish_event(): Direct Kafka publishing
+end note
+
+@enduml

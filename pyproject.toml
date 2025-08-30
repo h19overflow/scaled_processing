@@ -1,0 +1,172 @@
+[project]
+name = "scaled-processing"
+version = "0.1.0"
+description = "Scaled Document Processing System with parallel RAG and structured extraction flows"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # Core Framework
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    # Document Processing & AI
+    "docling>=1.0.0",
+    "pydantic-ai>=0.0.1",
+    "openai>=1.6.0",
+    "google-generativeai>=0.3.0",
+    "anthropic>=0.8.0",
+    # Agent Orchestration
+    "langgraph>=0.0.55",
+    "langsmith>=0.0.69",
+    # Vector Database & Embeddings
+    "chromadb>=0.4.18",
+    "sentence-transformers>=2.2.2",
+    "faiss-cpu>=1.7.4",
+    # Database & Storage
+    "sqlalchemy>=2.0.23",
+    "asyncpg>=0.29.0",
+    "psycopg2-binary>=2.9.9",
+    "alembic>=1.13.0",
+    # Messaging & Event Streaming
+    "kafka-python>=2.0.2",
+    "aiokafka>=0.10.0",
+    # Workflow Orchestration (keeping Prefect for document processing flows)
+    "prefect>=2.14.0",
+    "prefect-dask>=0.2.6",
+    # Document Parsing
+    "pypdf>=3.17.0",
+    "python-docx>=1.1.0",
+    "python-multipart>=0.0.6",
+    "pillow>=10.1.0",
+    "pytesseract>=0.3.10",
+    "pdf2image>=1.16.3",
+    # Text Processing & NLP
+    "spacy>=3.7.2",
+    "nltk>=3.8.1",
+    "transformers>=4.36.0",
+    "torch>=2.1.0",
+    # Semantic Chunking
+    "semantic-text-splitter>=0.8.0",
+    "tiktoken>=0.5.2",
+    # Evaluation & Monitoring
+    "ragas>=0.1.0",
+    "wandb>=0.16.0",
+    "mlflow>=2.8.0",
+    # HTTP & Async
+    "httpx>=0.25.2",
+    "aiohttp>=3.9.1",
+    "aiofiles>=23.2.1",
+    # Utilities
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-dotenv>=1.0.0",
+    "structlog>=23.2.0",
+    "rich>=13.7.0",
+    "typer>=0.9.0",
+    "click>=8.1.7",
+    # Data Validation & Serialization
+    "marshmallow>=3.20.0",
+    "jsonschema>=4.20.0",
+    # Concurrency & Parallel Processing
+    "celery>=5.3.4",
+    "redis>=5.0.1",
+    "dask[complete]>=2023.12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Testing
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.21.1",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "httpx>=0.25.2",  # for testing FastAPI
+    
+    # Code Quality
+    "black>=23.11.0",
+    "isort>=5.12.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.6.0",
+    
+    # Documentation
+    "mkdocs>=1.5.3",
+    "mkdocs-material>=9.4.8",
+    "mkdocstrings[python]>=0.24.0",
+]
+
+production = [
+    # Production deployment
+    "gunicorn>=21.2.0",
+    "prometheus-client>=0.19.0",
+    "sentry-sdk[fastapi]>=1.38.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/backend/doc_processing_system"]
+
+[tool.pytest.ini_options]
+testpaths = ["src/backend/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--cov=src/backend/doc_processing_system --cov-report=html --cov-report=term-missing"
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["doc_processing_system"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "kafka.*",
+    "chromadb.*",
+    "docling.*",
+    "prefect.*",
+    "ragas.*",
+    "wandb.*",
+    "pydantic_ai.*",
+    "langgraph.*",
+    "langsmith.*"
+]
+ignore_missing_imports = true

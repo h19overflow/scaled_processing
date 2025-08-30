@@ -1,0 +1,94 @@
+@startuml workflow_agent_scaling
+title Agent Scaling Workflow - Dynamic Swarm Deployment
+
+' Define participants with file paths
+participant "Kafka Topic\n(agent_scaling_requests)" as kafka_topic
+participant "ScalingConsumer\n(src/backend/messaging/consumers.py)" as consumer
+participant "DocumentAnalyzer\n(src/backend/core_services/document_analyzer.py)" as doc_analyzer
+participant "PagePartitioner\n(src/backend/core_services/page_partitioner.py)" as partitioner
+participant "AgentSwarmManager\n(src/backend/orchestration/swarm_manager.py)" as swarm_manager
+participant "ExtractionAgent Pool\n(src/backend/agents/extraction_agent.py)" as agent_pool
+participant "ExtractionProducer\n(src/backend/messaging/producers.py)" as producer
+
+' Workflow steps
+kafka_topic -> consumer : consume_scaling_request()
+note right : Model: AgentScalingRequest\nFunction: consume_from_topic()
+
+loop for each scaling request
+    consumer -> consumer : parse_field_specifications()
+    note right : Model: FieldSpecifications\nFunction: extract_field_dict()
+    
+    consumer -> doc_analyzer : analyze_document_complexity()
+    note right : Model: DocumentMetadata\nFunction: calculate_processing_requirements()
+    
+    doc_analyzer -> doc_analyzer : calculate_page_count()
+    note right : Model: PageCount\nFunction: count_document_pages()
+    
+    doc_analyzer -> doc_analyzer : estimate_processing_time()
+    note right : Model: ProcessingEstimate\nFunction: predict_extraction_complexity()
+    
+    alt Small Document (< 20 pages)
+        doc_analyzer -> swarm_manager : spawn_minimal_swarm()
+        note right : Model: SwarmConfig\nFunction: create_2_agent_swarm()
+        
+        swarm_manager -> partitioner : create_2_page_ranges()
+        note right : Model: List[PageRange]\nFunction: split_pages_equally()
+        
+    else Medium Document (20-100 pages)
+        doc_analyzer -> swarm_manager : spawn_standard_swarm()
+        note right : Model: SwarmConfig\nFunction: create_5_agent_swarm()
+        
+        swarm_manager -> partitioner : create_5_page_ranges()
+        note right : Model: List[PageRange]\nFunction: distribute_pages_evenly()
+        
+    else Large Document (> 100 pages)
+        doc_analyzer -> swarm_manager : spawn_large_swarm()
+        note right : Model: SwarmConfig\nFunction: create_10_agent_swarm()
+        
+        swarm_manager -> partitioner : create_10_page_ranges()
+        note right : Model: List[PageRange]\nFunction: optimize_page_distribution()
+    end
+    
+    swarm_manager -> agent_pool : deploy_extraction_agents()
+    note right : Model: List[ExtractionAgent]\nFunction: instantiate_agent_swarm()
+    
+    loop for each agent in pool
+        swarm_manager -> agent_pool : assign_agent_configuration()
+        note right : Model: AgentConfig\nFunction: configure_agent()
+        
+        agent_pool -> agent_pool : load_field_specifications()
+        note right : Model: PromptTemplate\nFunction: inject_field_specs_into_prompt()
+        
+        agent_pool -> agent_pool : generate_dynamic_schema()
+        note right : Model: OutputSchema\nFunction: create_pydantic_schema_from_fields()
+        
+        agent_pool -> agent_pool : assign_page_range()
+        note right : Model: PageRange\nFunction: set_processing_boundaries()
+        
+        agent_pool -> producer : publish_extraction_task()
+        note right : Model: ExtractionTaskMessage\nFunction: send_agent_task()
+    end
+    
+    producer -> producer : send_to_extraction_processing_topic()
+    note right : Model: ExtractionProcessingRequest\nFunction: publish_to_kafka()
+end
+
+note over kafka_topic, producer
+    **Dynamic Scaling Logic:**
+    • Small (< 20 pages): 2 Agents, ~10 pages each
+    • Medium (20-100 pages): 5 Agents, ~20 pages each  
+    • Large (> 100 pages): 10 Agents, ~10-15 pages each
+    
+    **Agent Configuration:**
+    • Field Specifications → Dynamic Prompt Parameters
+    • Field Specifications → Generated Pydantic Output Schema
+    • Page Range → Processing Boundaries for each agent
+    • Example: {"company_name": "focus on legal entities"} → prompt injection + schema field
+    
+    **Task Distribution:**
+    • Each agent gets: FieldSpecs + PageRange + OutputSchema
+    • Agents process independently within their page boundaries
+    • Results sent to extraction processing topic for aggregation
+end note
+
+@enduml

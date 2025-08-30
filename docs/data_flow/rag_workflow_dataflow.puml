@@ -1,0 +1,153 @@
+@startuml rag_workflow_dataflow
+title RAG Workflow System - Data Flow Layer
+
+' Input Models
+package "Input Models" as rag_input {
+    class ChunkingRequest {
+        +document_id: str
+        +content: str
+        +chunk_strategy: str
+        +max_chunk_size: int
+    }
+    
+    class TextChunk {
+        +chunk_id: str
+        +document_id: str
+        +content: str
+        +page_number: int
+        +chunk_index: int
+        +metadata: Dict[str, Any]
+    }
+}
+
+' Processing Models
+package "Processing Models" as rag_processing {
+    class ValidatedEmbedding {
+        +chunk_id: str
+        +document_id: str
+        +embedding_vector: List[float]
+        +embedding_model: str
+        +chunk_metadata: Dict[str, Any]
+    }
+    
+    class VectorSearchResult {
+        +chunk_id: str
+        +similarity_score: float
+        +chunk_content: str
+        +document_metadata: Dict[str, Any]
+    }
+}
+
+' Database Models
+package "Database Storage" as rag_storage {
+    rectangle "PostgreSQL Tables" as pg_tables {
+        class chunks_table {
+            +id: UUID (PK)
+            +document_id: UUID (FK)
+            +chunk_id: str
+            +content: str
+            +page_number: int
+            +chunk_index: int
+            +created_at: datetime
+        }
+    }
+    
+    rectangle "ChromaDB Collections" as chroma_collections {
+        class document_embeddings {
+            +collection_name: str
+            +vector_dimension: int
+            +distance_function: str
+            +documents_count: int
+        }
+        
+        class embedding_metadata {
+            +chunk_id: str
+            +document_id: str
+            +page_number: int
+            +chunk_index: int
+            +embedding_model: str
+        }
+    }
+}
+
+' Kafka Messages
+package "Kafka Messages" as rag_kafka {
+    class ChunkingCompleteEvent {
+        +document_id: str
+        +chunks: List[TextChunk]
+        +chunk_count: int
+        +topic: "chunking-complete"
+    }
+    
+    class EmbeddingReadyEvent {
+        +document_id: str
+        +validated_embedding: ValidatedEmbedding
+        +topic: "embedding-ready"
+    }
+    
+    class IngestionCompleteEvent {
+        +document_id: str
+        +vector_count: int
+        +collection_name: str
+        +topic: "ingestion-complete"
+    }
+}
+
+' Data Flow Connections
+rag_input --> rag_processing : "Semantic Chunking & Embedding Generation"
+rag_processing --> pg_tables : "Store Text Chunks"
+rag_processing --> chroma_collections : "Store Vector Embeddings"
+rag_processing --> rag_kafka : "Pipeline Status Events"
+
+' Query Integration
+rag_storage --> rag_processing : "Vector Similarity Search"
+
+note left of rag_input
+    **Input Sources:**
+    • DocumentReceivedEvent from Upload System
+    • User queries for similarity search
+    
+    **Referenced in:** document_upload_dataflow.puml
+end note
+
+note top of rag_processing
+    **RAG Processing Pipeline**
+    • Semantic text chunking strategies
+    • Embedding model management
+    • Vector validation & normalization
+    • Similarity search algorithms
+end note
+
+note top of pg_tables
+    **PostgreSQL Chunk Storage**
+    • Text content persistence
+    • Chunk metadata tracking
+    • Document relationship mapping
+    • Full-text search capabilities
+end note
+
+note top of chroma_collections
+    **ChromaDB Vector Storage**
+    • High-dimensional embeddings
+    • Similarity search optimization
+    • Collection management
+    • Metadata filtering support
+end note
+
+note right of rag_kafka
+    **Output Events Consumed By:**
+    • Query Processing System
+    • Monitoring & Analytics
+    
+    **File: query_processing_dataflow.puml**
+end note
+
+note bottom of rag_storage
+    **Scaling Strategy:**
+    • Kafka partition-based distribution
+    • Multiple consumer groups
+    • Parallel embedding generation
+    • ChromaDB collection sharding
+end note
+
+@enduml

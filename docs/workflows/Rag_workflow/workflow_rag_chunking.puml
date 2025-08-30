@@ -1,0 +1,100 @@
+@startuml workflow_rag_chunking
+title RAG Pipeline - Semantic Chunking Workflow
+
+' Define participants with file paths
+participant "Kafka Topic\n(rag_processing)" as kafka_input
+participant "ChunkingConsumer\n(src/backend/messaging/consumers.py)" as consumer
+participant "ChunkingOrchestrator\n(src/backend/core_services/chunking_orchestrator.py)" as orchestrator
+participant "SemanticChunker\n(src/backend/core_services/chunkers.py)" as semantic_chunker
+participant "AlternativeChunker\n(src/backend/core_services/chunkers.py)" as alt_chunker
+participant "MetadataExtractor\n(src/backend/core_services/metadata_extractor.py)" as metadata
+participant "ChunkStorage\n(src/backend/core_services/persistence/chunk_storage.py)" as storage
+participant "KafkaProducer\n(src/backend/messaging/producers.py)" as producer
+participant "Kafka Topic\n(chunk_ready)" as kafka_output
+
+' Workflow steps
+kafka_input -> consumer : consume_rag_messages()
+note right : Model: RagProcessingMessage\nFunction: consume_from_topic()
+
+loop for each parsed document
+    consumer -> orchestrator : process_document()
+    note right : Model: ParsedDocument\nFunction: orchestrate_chunking()
+    
+    orchestrator -> orchestrator : select_chunking_strategy()
+    note right : Model: ChunkingStrategy\nFunction: determine_strategy()
+    
+    alt Semantic Chunking Strategy
+        orchestrator -> semantic_chunker : chunk_semantically()
+        note right : Model: ParsedDocument\nFunction: semantic_split()
+        
+        semantic_chunker -> semantic_chunker : analyze_semantic_boundaries()
+        note right : Model: List[SemanticBoundary]\nFunction: find_boundaries()
+        
+        semantic_chunker -> semantic_chunker : create_semantic_chunks()
+        note right : Model: List[RawChunk]\nFunction: split_by_semantics()
+        
+    else Alternative Strategy (Fixed/Overlap/etc)
+        orchestrator -> alt_chunker : chunk_alternative()
+        note right : Model: ParsedDocument\nFunction: alternative_split()
+        
+        alt_chunker -> alt_chunker : apply_chunking_strategy()
+        note right : Model: List[RawChunk]\nFunction: apply_strategy()
+    end
+    
+    orchestrator -> metadata : extract_chunk_metadata()
+    note right : Model: List[RawChunk]\nFunction: extract_metadata()
+    
+    metadata -> metadata : add_page_references()
+    note right : Model: PageMetadata\nFunction: add_page_info()
+    
+    metadata -> metadata : add_position_metadata()
+    note right : Model: PositionMetadata\nFunction: add_position_info()
+    
+    metadata -> metadata : add_validation_metadata()
+    note right : Model: ValidationMetadata\nFunction: add_validation_info()
+    
+    metadata -> orchestrator : return_enriched_chunks()
+    note right : Model: List[EnrichedChunk]\nFunction: return_chunks()
+    
+    orchestrator -> storage : store_chunks_with_metadata()
+    note right : Model: List[ChunkRecord]\nFunction: save_chunks()
+    
+    storage -> storage : generate_chunk_ids()
+    note right : Model: List[ChunkWithId]\nFunction: assign_ids()
+    
+    storage -> producer : publish_chunk_ready_events()
+    note right : Model: ChunkReadyEvent\nFunction: publish_per_chunk()
+    
+    loop for each chunk
+        producer -> kafka_output : send_to_topic("chunk_ready")
+        note right : Message: ChunkReadyEvent\nTopic: chunk_ready
+    end
+end
+
+note over kafka_input, kafka_output
+    **Chunking Strategies Supported:**
+    • Semantic: AI-driven boundary detection
+    • Fixed Size: Traditional token/character limits
+    • Overlapping: Sliding window approach
+    • Hybrid: Combination of strategies
+    
+    **Metadata Categories:**
+    • Page References: Source page numbers/sections
+    • Position Info: Character/token positions in original
+    • Validation Info: Checksums, quality scores
+    • Context Info: Surrounding content references
+    
+    **Key Models:**
+    • ParsedDocument: Input from parsing stage
+    • EnrichedChunk: Chunk with full metadata
+    • ChunkRecord: Stored chunk with ID and metadata
+    • ChunkReadyEvent: Message for embedding pipeline
+    
+    **Critical Functions:**
+    • semantic_split(): AI-powered semantic chunking
+    • extract_metadata(): Rich metadata extraction
+    • save_chunks(): Persistent storage with IDs
+    • publish_per_chunk(): Individual chunk messaging
+end note
+
+@enduml

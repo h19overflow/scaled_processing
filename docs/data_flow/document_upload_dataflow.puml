@@ -1,0 +1,126 @@
+@startuml document_upload_dataflow
+title Document Upload & Processing - Data Flow Layer
+
+' Input Models
+package "Input Models" as input_models {
+    class UploadFile {
+        +filename: str
+        +content_type: str
+        +size: int
+        +file_data: bytes
+    }
+    
+    class DocumentMetadata {
+        +document_id: str
+        +file_type: FileType
+        +upload_timestamp: datetime
+        +user_id: str
+        +file_size: int
+    }
+}
+
+' Processing Models
+package "Processing Models" as processing_models {
+    class ParsedDocument {
+        +document_id: str
+        +content: str
+        +metadata: DocumentMetadata
+        +page_count: int
+        +extracted_images: List[Image]
+        +tables: List[Table]
+    }
+    
+    enum FileType {
+        PDF
+        DOCX
+        IMAGE
+        TEXT
+    }
+}
+
+' Database Models
+package "PostgreSQL Database Models" as db_models {
+    class documents_table {
+        +id: UUID (PK)
+        +filename: str
+        +file_type: str
+        +upload_timestamp: datetime
+        +user_id: str
+        +processing_status: str
+        +file_size: int
+        +page_count: int
+    }
+    
+    class document_metadata_table {
+        +id: UUID (PK)
+        +document_id: UUID (FK)
+        +metadata_key: str
+        +metadata_value: str
+        +created_at: datetime
+    }
+}
+
+' Kafka Messages
+package "Kafka Messages" as kafka_messages {
+    class DocumentReceivedEvent {
+        +document_id: str
+        +parsed_document: ParsedDocument
+        +timestamp: datetime
+        +topic: "document-received"
+    }
+    
+    class WorkflowInitializedEvent {
+        +document_id: str
+        +workflow_types: List[str]
+        +status: str
+        +topic: "workflow-initialized"
+    }
+}
+
+' Data Flow Connections
+input_models --> processing_models : "File Upload & Parsing"
+processing_models --> db_models : "Persist Document Metadata"
+processing_models --> kafka_messages : "Publish Events"
+
+' Cross-references to other layers
+note right of kafka_messages
+    **Output Events Consumed By:**
+    • RAG Workflow System
+    • Structured Extraction System
+    
+    **File: rag_workflow_dataflow.puml**
+    **File: structured_extraction_dataflow.puml**
+end note
+
+note top of input_models
+    **Document Upload Entry Point**
+    • Multi-file upload support
+    • File type detection & validation
+    • Metadata extraction
+    • User authentication context
+end note
+
+note top of processing_models
+    **Dynamic Parser Selection**
+    • PDF: Docling-based parsing
+    • DOCX: Structure-aware parsing  
+    • Images: OCR + visual analysis
+    • Text: Encoding detection
+end note
+
+note top of db_models
+    **Document Registry**
+    • Central document tracking
+    • Processing status management
+    • Metadata key-value storage
+    • User ownership tracking
+end note
+
+note top of kafka_messages
+    **Event-Driven Triggers**
+    • Parallel workflow initialization
+    • Document processing notifications
+    • System-wide event coordination
+end note
+
+@enduml

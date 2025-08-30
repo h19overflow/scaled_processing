@@ -1,0 +1,97 @@
+@startuml workflow_structured_embedding
+title Structured Embedding Workflow - ChromaDB Vector Storage (Event-Driven)
+
+' Define participants with file paths
+participant "Kafka Topic\n(extraction_completed)" as kafka_topic
+participant "EmbeddingConsumer\n(src/backend/messaging/consumers.py)" as consumer
+participant "StructuredEmbeddingService\n(src/backend/core_services/structured_embedding_service.py)" as embedding_service
+participant "FieldProcessor\n(src/backend/core_services/field_processor.py)" as field_processor
+participant "EmbeddingModel\n(src/backend/core_services/embedding_model.py)" as embedding_model
+participant "ChromaManager\n(src/backend/core_services/persistence/chroma_manager.py)" as chroma_manager
+participant "MetadataLinker\n(src/backend/core_services/metadata_linker.py)" as metadata_linker
+participant "EmbeddingProducer\n(src/backend/messaging/producers.py)" as producer
+
+' Workflow steps
+kafka_topic -> consumer : consume_extraction_completion_event()
+note right : Model: ExtractionCompletionEvent\nFunction: consume_from_topic()
+
+loop for each completed extraction
+    consumer -> consumer : parse_extraction_metadata()
+    note right : Model: ExtractionMetadata\nFunction: extract_document_info()
+    
+    consumer -> embedding_service : initiate_structured_embedding()
+    note right : Model: EmbeddingRequest\nFunction: start_embedding_process()
+    
+    embedding_service -> field_processor : process_json_fields()
+    note right : Model: ProcessedFields\nFunction: decompose_json_structure()
+    
+    field_processor -> field_processor : create_field_documents()
+    note right : Model: List[FieldDocument]\nFunction: convert_fields_to_embeddable_text()
+    
+    loop for each field in extraction
+        field_processor -> field_processor : format_field_content()
+        note right : Model: FieldContent\nFunction: "field: payment_due_date, value: 2024-03-15, description: Payment deadline"
+        
+        field_processor -> embedding_model : generate_field_embedding()
+        note right : Model: FieldEmbedding\nFunction: embed_field_semantics()
+        
+        embedding_model -> embedding_model : create_vector_representation()
+        note right : Model: Vector\nFunction: generate_embedding_vector()
+        
+        embedding_model -> field_processor : return_embedding_result()
+        note right : Model: EmbeddingResult\nFunction: provide_vector_data()
+    end
+    
+    field_processor -> metadata_linker : create_metadata_links()
+    note right : Model: MetadataLinks\nFunction: link_to_rag_chunks()
+    
+    metadata_linker -> metadata_linker : find_related_chunks()
+    note right : Model: List[ChunkID]\nFunction: query_existing_rag_chunks()
+    
+    metadata_linker -> metadata_linker : build_cross_references()
+    note right : Model: CrossReferences\nFunction: create_chunk_to_extraction_mapping()
+    
+    metadata_linker -> chroma_manager : prepare_chroma_documents()
+    note right : Model: ChromaDocuments\nFunction: format_for_vector_storage()
+    
+    chroma_manager -> chroma_manager : insert_structured_embeddings()
+    note right : Model: ChromaInsertResult\nFunction: add_to_structured_collection()
+    
+    chroma_manager -> chroma_manager : update_chunk_metadata()
+    note right : Model: UpdatedMetadata\nFunction: link_chunks_to_extractions()
+    
+    chroma_manager -> producer : publish_embedding_completion()
+    note right : Model: EmbeddingCompletionEvent\nFunction: notify_embedding_complete()
+    
+    producer -> producer : send_to_completion_topic()
+    note right : Model: StructuredEmbeddingComplete\nFunction: publish_to_kafka()
+end
+
+note over kafka_topic, producer
+    **Event-Driven Embedding Flow:**
+    • Triggered by: ExtractionCompletionEvent from workflow_extraction_processing
+    • Output Event: EmbeddingCompletionEvent for downstream consumers
+    • Dual Storage: PostgreSQL (structured) + ChromaDB (embedded)
+    
+    **ChromaDB Collections:**
+    • Collection: "structured_extractions" 
+    • Documents: Semantic field representations
+    • Metadata: {source_file, chunk_ids, field_name, field_value, field_type, page_number}
+    
+    **Field Document Format:**
+    • Text: "field: payment_due_date, value: 2024-03-15, description: Payment deadline for services"
+    • Embedding: [0.1, -0.3, 0.8, ...] (semantic representation)
+    • Links: Related RAG chunk IDs for cross-reference
+    
+    **Cross-Reference Strategy:**
+    • RAG chunks get updated metadata: extraction_ids: ["ext_1", "ext_2"]
+    • Structured docs get metadata: chunk_ids: ["chunk_1", "chunk_3"]
+    • Enables bidirectional semantic search and filtering
+    
+    **Query Benefits:**
+    • Filter by source_file → Query within document scope
+    • Semantic field search → Find fields by meaning
+    • Hybrid results → RAG chunks + precise structured data
+end note
+
+@enduml

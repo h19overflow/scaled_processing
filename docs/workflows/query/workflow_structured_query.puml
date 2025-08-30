@@ -1,0 +1,92 @@
+@startuml workflow_structured_query
+title Structured Query Workflow - Filtered Embedding Search & Response Assembly
+
+' Define participants with file paths
+participant "Kafka Topic\n(structured_query_requests)" as kafka_topic
+participant "StructuredQueryConsumer\n(src/backend/messaging/consumers.py)" as consumer
+participant "StructuredQueryService\n(src/backend/query/structured_service.py)" as structured_service
+participant "ChromaDB Structured Collection\n(structured_extractions)" as chroma_structured
+participant "ResultAggregator\n(src/backend/query/result_aggregator.py)" as aggregator
+participant "ResponseFormatter\n(src/backend/query/response_formatter.py)" as formatter
+participant "ResponseProducer\n(src/backend/messaging/producers.py)" as producer
+
+' Workflow steps
+kafka_topic -> consumer : consume_structured_query_request()
+note right : Model: StructuredQueryRequest\nFunction: consume_from_topic()
+
+consumer -> consumer : parse_query_context()
+note right : Model: QueryContext\nFunction: extract_rag_results_and_sources()
+
+consumer -> structured_service : initiate_filtered_search()
+note right : Model: FilteredSearchRequest\nFunction: search_by_source_files()
+
+loop for each source file
+    structured_service -> chroma_structured : query_filtered_embeddings()
+    note right : Model: FilteredQuery\nFunction: where={"source_file": source}
+    
+    chroma_structured -> structured_service : return_field_matches()
+    note right : Model: FieldMatches\nFunction: provide_structured_results()
+end
+
+structured_service -> structured_service : aggregate_field_results()
+note right : Model: AggregatedFields\nFunction: combine_all_field_matches()
+
+structured_service -> aggregator : merge_with_rag_context()
+note right : Model: HybridMergeRequest\nFunction: combine_context_and_data()
+
+aggregator -> aggregator : correlate_chunks_with_fields()
+note right : Model: CorrelatedResults\nFunction: link_context_to_structured_data()
+
+aggregator -> aggregator : rank_hybrid_results()
+note right : Model: RankedHybridResults\nFunction: score_combined_relevance()
+
+aggregator -> formatter : format_final_response()
+note right : Model: FormattingRequest\nFunction: structure_hybrid_output()
+
+formatter -> formatter : create_context_section()
+note right : Model: ContextSection\nFunction: format_rag_chunks()
+
+formatter -> formatter : create_structured_data_section()
+note right : Model: StructuredSection\nFunction: format_extracted_fields()
+
+formatter -> formatter : add_confidence_metrics()
+note right : Model: ConfidenceMetrics\nFunction: calculate_result_confidence()
+
+formatter -> formatter : create_source_references()
+note right : Model: SourceReferences\nFunction: link_to_original_documents()
+
+formatter -> producer : publish_final_response()
+note right : Model: HybridQueryResponse\nFunction: send_complete_answer()
+
+producer -> producer : send_to_response_topic()
+note right : Model: QueryResponseMessage\nFunction: publish_to_kafka()
+
+note over kafka_topic, producer
+    **Structured Query Process:**
+    1. Consume RAG Context → Parse Source Files & Original Query
+    2. Filtered Search → Query Embeddings WHERE source_file IN [sources]
+    3. Field Aggregation → Combine All Structured Results
+    4. Hybrid Merge → Correlate RAG Chunks with Structured Fields
+    5. Response Assembly → Format Final Enhanced Answer
+    
+    **Source-Filtered Search:**
+    • Only searches structured embeddings from documents found in RAG
+    • Prevents irrelevant structured data from unrelated documents
+    • Ensures semantic coherence between context and structured data
+    
+    **Final Response Format:**
+    {
+      "context": "RAG chunk narrative providing background...",
+      "structured_data": {"payment_due": "Net 30", "late_fee": "2%"},
+      "source_documents": ["contract_xyz.pdf", "invoice_abc.pdf"],
+      "confidence_score": 0.89,
+      "correlation_strength": 0.94
+    }
+    
+    **Event-Driven Benefits:**
+    • Async processing allows independent scaling
+    • RAG and structured queries can be optimized separately
+    • Clean separation of concerns between workflows
+end note
+
+@enduml

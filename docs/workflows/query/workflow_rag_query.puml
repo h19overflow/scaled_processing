@@ -1,0 +1,74 @@
+@startuml workflow_rag_query
+title RAG Query Workflow - Document Chunk Retrieval & Source Extraction
+
+' Define participants with file paths
+participant "API Gateway\n(src/backend/api/query_endpoints.py)" as api_gateway
+participant "RAGQueryOrchestrator\n(src/backend/query/rag_orchestrator.py)" as rag_orchestrator
+participant "RAGQueryService\n(src/backend/query/rag_service.py)" as rag_service
+participant "ChromaDB RAG Collection\n(document_chunks)" as chroma_rag
+participant "SourceExtractor\n(src/backend/query/source_extractor.py)" as source_extractor
+participant "QueryProducer\n(src/backend/messaging/producers.py)" as producer
+
+' Workflow steps
+api_gateway -> rag_orchestrator : receive_user_query()
+note right : Model: UserQuery\nFunction: initiate_rag_search()
+
+rag_orchestrator -> rag_orchestrator : parse_query_intent()
+note right : Model: QueryIntent\nFunction: analyze_query_type()
+
+rag_orchestrator -> rag_service : execute_rag_query()
+note right : Model: RAGQueryRequest\nFunction: semantic_search_chunks()
+
+rag_service -> chroma_rag : query_document_chunks()
+note right : Model: ChromaQuery\nFunction: vector_similarity_search()
+
+chroma_rag -> rag_service : return_rag_results()
+note right : Model: RAGResults\nFunction: provide_chunk_matches()
+
+rag_service -> rag_service : rank_chunks_by_relevance()
+note right : Model: RankedChunks\nFunction: score_similarity_results()
+
+rag_service -> source_extractor : extract_source_files()
+note right : Model: List[RAGResult]\nFunction: parse_source_metadata()
+
+source_extractor -> source_extractor : identify_unique_sources()
+note right : Model: List[SourceFile]\nFunction: deduplicate_source_files()
+
+source_extractor -> source_extractor : prepare_structured_query_context()
+note right : Model: StructuredQueryContext\nFunction: format_context_for_structured_search()
+
+source_extractor -> producer : publish_structured_query_request()
+note right : Model: StructuredQueryRequest\nFunction: send_to_structured_query_topic()
+
+producer -> producer : send_to_structured_query_topic()
+note right : Model: StructuredQueryMessage\nFunction: publish_to_kafka()
+
+rag_orchestrator -> api_gateway : return_rag_results()
+note right : Model: RAGQueryResponse\nFunction: provide_initial_context()
+
+note over api_gateway, producer
+    **RAG Query Process:**
+    1. User Query → Semantic Vector Search
+    2. ChromaDB → Return Relevant Document Chunks
+    3. Source Extraction → Parse Metadata for Source Files
+    4. Context Preparation → Format for Structured Query
+    5. Event Publishing → Trigger Structured Query Workflow
+    
+    **RAG Results Format:**
+    • chunks: List of relevant text passages
+    • metadata: Source files, page numbers, relevance scores
+    • source_files: Unique document identifiers for filtering
+    • query_id: Tracking identifier for correlation
+    
+    **Event-Driven Handoff:**
+    • RAG completes → Publishes StructuredQueryRequest
+    • Contains: Original query + Source files + RAG context
+    • Triggers: workflow_structured_query.puml
+    
+    **Performance Optimization:**
+    • RAG search optimized for speed and relevance
+    • Source extraction prepares efficient filtering
+    • Async handoff to structured query workflow
+end note
+
+@enduml

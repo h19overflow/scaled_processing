@@ -1,0 +1,208 @@
+@startuml query_processing_dataflow
+title Query Processing System - Data Flow Layer
+
+' Input Models
+package "Input Models" as query_input {
+    class UserQuery {
+        +query_id: str
+        +query_text: str
+        +query_type: QueryType
+        +user_id: str
+        +filters: Dict[str, Any]
+        +context: Dict[str, Any]
+    }
+    
+    enum QueryType {
+        RAG_ONLY
+        STRUCTURED_ONLY
+        HYBRID
+    }
+}
+
+' Processing Models
+package "Processing Models" as query_processing {
+    class RAGQueryResult {
+        +query_id: str
+        +retrieved_chunks: List[VectorSearchResult]
+        +generated_response: str
+        +source_documents: List[str]
+        +confidence_score: float
+        +processing_time_ms: int
+    }
+    
+    class StructuredQueryResult {
+        +query_id: str
+        +filtered_data: List[Dict[str, Any]]
+        +aggregated_results: Dict[str, Any]
+        +matching_documents: List[str]
+        +field_filters: Dict[str, Any]
+    }
+    
+    class HybridQueryResult {
+        +query_id: str
+        +rag_result: RAGQueryResult
+        +structured_result: StructuredQueryResult
+        +combined_response: str
+        +confidence_score: float
+        +fusion_strategy: str
+    }
+}
+
+' Database Integration
+package "Data Sources" as data_sources {
+    rectangle "RAG Data Sources" as rag_sources {
+        class ChromaDB_Collections {
+            +vector_search()
+            +similarity_threshold: float
+            +max_results: int
+        }
+        
+        class chunks_table_read {
+            +chunk_content: str
+            +document_metadata: Dict
+            +page_references: List[int]
+        }
+    }
+    
+    rectangle "Structured Data Sources" as structured_sources {
+        class extracted_data_query {
+            +field_filters: Dict[str, Any]
+            +confidence_threshold: float
+            +document_filters: List[str]
+        }
+        
+        class field_specifications_query {
+            +available_fields: List[str]
+            +field_types: Dict[str, str]
+            +validation_rules: Dict
+        }
+    }
+}
+
+' Database Models
+package "PostgreSQL Database Models" as query_db {
+    class query_logs_table {
+        +id: UUID (PK)
+        +query_id: str
+        +user_id: str
+        +query_text: str
+        +query_type: str
+        +filters: JSON
+        +response_time_ms: int
+        +created_at: datetime
+    }
+    
+    class query_results_table {
+        +id: UUID (PK)
+        +query_id: str
+        +result_type: str
+        +result_data: JSON
+        +confidence_score: float
+        +source_documents: JSON
+        +created_at: datetime
+    }
+    
+    class query_performance_table {
+        +id: UUID (PK)
+        +query_id: str
+        +rag_processing_time_ms: int
+        +structured_processing_time_ms: int
+        +total_response_time_ms: int
+        +documents_searched: int
+        +chunks_retrieved: int
+    }
+}
+
+' Kafka Messages
+package "Kafka Messages" as query_kafka {
+    class QueryReceivedEvent {
+        +query_id: str
+        +user_query: UserQuery
+        +topic: "query-received"
+    }
+    
+    class RAGQueryCompleteEvent {
+        +query_id: str
+        +rag_result: RAGQueryResult
+        +topic: "rag-query-complete"
+    }
+    
+    class StructuredQueryCompleteEvent {
+        +query_id: str
+        +structured_result: StructuredQueryResult
+        +topic: "structured-query-complete"
+    }
+    
+    class HybridQueryCompleteEvent {
+        +query_id: str
+        +hybrid_result: HybridQueryResult
+        +topic: "hybrid-query-complete"
+    }
+}
+
+' Data Flow Connections
+query_input --> query_processing : "Query Analysis & Routing"
+query_processing --> rag_sources : "Vector Similarity Search"
+query_processing --> structured_sources : "Structured Data Filtering"
+query_processing --> query_db : "Log Query Performance"
+query_processing --> query_kafka : "Query Completion Events"
+
+' Cross-system data integration
+rag_sources --> query_processing : "Retrieved Chunks & Vectors"
+structured_sources --> query_processing : "Filtered Structured Data"
+
+note left of query_input
+    **Query Entry Points:**
+    • REST API endpoints
+    • WebSocket real-time queries
+    • Batch query processing
+    • Multi-modal query support
+end note
+
+note top of rag_sources
+    **RAG Data Integration:**
+    • ChromaDB vector similarity search
+    • Chunk content retrieval
+    • Document metadata enrichment
+    
+    **Source: rag_workflow_dataflow.puml**
+end note
+
+note top of structured_sources
+    **Structured Data Integration:**
+    • Field-based filtering
+    • Confidence-based filtering
+    • Document-scope filtering
+    
+    **Source: structured_extraction_dataflow.puml**
+end note
+
+note top of query_processing
+    **Query Processing Strategies:**
+    • RAG-only: Vector search + LLM generation
+    • Structured-only: Field filtering + aggregation
+    • Hybrid: RAG + Structured fusion with confidence weighting
+    
+    **Response Fusion:**
+    • Confidence-based weighting
+    • Source document correlation
+    • Multi-modal response assembly
+end note
+
+note right of query_kafka
+    **Output Consumers:**
+    • Real-time query response delivery
+    • Analytics & monitoring systems
+    • Query performance optimization
+    • User experience tracking
+end note
+
+note bottom of query_db
+    **Performance Tracking:**
+    • Query response time analysis
+    • Source data distribution metrics
+    • User query pattern analysis
+    • System optimization insights
+end note
+
+@enduml

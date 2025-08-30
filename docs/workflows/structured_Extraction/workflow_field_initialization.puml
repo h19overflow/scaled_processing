@@ -1,0 +1,94 @@
+@startuml workflow_field_initialization
+title Field Initialization Workflow - Page-Based Sequential Processing
+
+' Define participants with file paths
+participant "Kafka Topic\n(field_init_requests)" as kafka_topic
+participant "FieldInitConsumer\n(src/backend/messaging/consumers.py)" as consumer
+participant "PageSampler\n(src/backend/core_services/page_sampler.py)" as page_sampler
+participant "FieldInitializer Agent 1\n(src/backend/agents/field_initializer.py)" as agent1
+participant "FieldInitializer Agent 2\n(src/backend/agents/field_initializer.py)" as agent2
+participant "FieldInitializer Agent 3\n(src/backend/agents/field_initializer.py)" as agent3
+participant "FieldAggregator\n(src/backend/core_services/field_aggregator.py)" as aggregator
+participant "FieldSpecProducer\n(src/backend/messaging/producers.py)" as producer
+
+' Workflow steps
+kafka_topic -> consumer : consume_field_init_request()
+note right : Model: FieldInitRequest\nFunction: consume_from_topic()
+
+loop for each document
+    consumer -> consumer : check_document_size()
+    note right : Model: DocumentMetadata\nFunction: analyze_file_size()
+    
+    consumer -> page_sampler : sample_random_pages()
+    note right : Model: List[PageContent]\nFunction: get_page_samples()
+    
+    alt Large Document (> 50 pages)
+        page_sampler -> page_sampler : sample_15_pages()
+        note right : Model: PageSample\nFunction: random_page_selection()
+        
+        consumer -> agent1 : extract_initial_fields()
+        note right : Model: PageSample\nFunction: analyze_structure()
+        
+        agent1 -> agent1 : identify_field_candidates()
+        note right : Model: List[FieldCandidate]\nFunction: extract_titles_descriptions()
+        
+        agent1 -> consumer : return_agent1_results()
+        note right : Model: Agent1Fields\nFunction: format_field_output()
+        
+        consumer -> agent2 : extract_diverse_fields()
+        note right : Model: PageSample + Agent1Fields\nFunction: find_non_duplicate_fields()
+        
+        agent2 -> agent2 : filter_unique_fields()
+        note right : Model: List[UniqueField]\nFunction: exclude_agent1_fields()
+        
+        agent2 -> consumer : return_agent2_results()
+        note right : Model: Agent2Fields\nFunction: format_unique_output()
+        
+        consumer -> agent3 : extract_remaining_fields()
+        note right : Model: PageSample + Agent1Fields + Agent2Fields\nFunction: find_final_unique_fields()
+        
+        agent3 -> agent3 : extract_final_unique_fields()
+        note right : Model: List[FinalField]\nFunction: ensure_field_diversity()
+        
+        agent3 -> aggregator : submit_all_agent_results()
+        note right : Model: CombinedFields\nFunction: aggregate_results()
+        
+    else Small Document (<= 50 pages)
+        page_sampler -> page_sampler : sample_8_pages()
+        note right : Model: PageSample\nFunction: small_doc_sampling()
+        
+        consumer -> agent1 : extract_single_agent_fields()
+        note right : Model: PageSample\nFunction: comprehensive_analysis()
+        
+        agent1 -> aggregator : submit_single_agent_results()
+        note right : Model: SingleAgentFields\nFunction: direct_aggregation()
+    end
+    
+    aggregator -> aggregator : create_field_specifications()
+    note right : Model: Dict[str, str]\nFunction: build_field_dict()
+    
+    aggregator -> producer : publish_field_specifications()
+    note right : Model: FieldSpecificationMessage\nFunction: send_to_agent_scaling()
+    
+    producer -> producer : send_to_agent_scaling_topic()
+    note right : Model: AgentScalingRequest\nFunction: publish_to_kafka()
+end
+
+note over kafka_topic, producer
+    **Sequential Processing Logic:**
+    • Agent 1: Extract all visible field candidates from sample pages
+    • Agent 2: "Agent 1 extracted [fields], read pages and extract titles not in agent1 output"
+    • Agent 3: "Agent 1&2 extracted [fields], read pages and extract titles not in previous outputs"
+    
+    **Field Specification Output:**
+    • Format: {title: "what to focus on", description: "extraction guidance"}
+    • Used as: Dynamic prompt parameters + output schema generation
+    • Example: {"company_name": "focus on legal entities", "revenue": "focus on financial figures"}
+    
+    **Scaling Thresholds:**
+    • Document <= 50 pages: 1 Field Initializer Agent
+    • Document > 50 pages: 3 Sequential Field Initializer Agents
+    • Page Sampling: 8 pages (small) / 15 pages (large)
+end note
+
+@enduml

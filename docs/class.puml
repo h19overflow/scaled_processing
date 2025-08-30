@@ -1,0 +1,372 @@
+@startuml
+' Improved Class Diagram - Better Readability
+title Architectural Blueprint - Class Diagram (Clean Layout)
+
+' Clean layout configuration with better spacing
+left to right direction
+skinparam linetype ortho
+skinparam ranksep 120
+skinparam nodesep 100
+skinparam classAttributeIconSize 0
+skinparam minClassWidth 160
+skinparam arrowThickness 2
+skinparam dpi 150
+
+' Color-coded layers
+skinparam package {
+    BorderColor #2C3E50
+    FontColor #2C3E50
+    FontSize 11
+    FontStyle bold
+    RoundCorner 8
+}
+
+skinparam class {
+    BorderColor #34495E
+    BackgroundColor #FFFFFF
+    ArrowColor #7F8C8D
+    FontSize 9
+    RoundCorner 5
+}
+
+skinparam note {
+    BackgroundColor #FFF3CD
+    BorderColor #FFEAA7
+    FontSize 8
+}
+
+' === Configuration Layer (Blue Theme) ===
+package "Configuration" as config #E3F2FD {
+    class Settings <<Singleton>> #BBDEFB {
+        +GEMINI_API_KEY: str
+        +POSTGRES_DSN: str  
+        +KAFKA_BOOTSTRAP_SERVERS: list
+        +CHROMA_HOST: str
+        --
+        +get_config(): dict
+    }
+}
+
+' === Data Models (Green Theme) ===
+package "Data Models" as models #E8F5E8 {
+    interface IDocument #A5D6A7 {
+        +get_id(): str
+        +get_content(): str
+        +get_metadata(): dict
+        +validate(): bool
+    }
+    
+    interface IChunk #A5D6A7 {
+        +get_text(): str
+        +get_embedding(): vector
+        +get_document_id(): str
+    }
+    
+    class Document #C8E6C9 {
+        -id: str
+        -content: str
+        -metadata: dict
+        -created_at: datetime
+        --
+        +get_id(): str
+        +get_content(): str
+        +get_metadata(): dict
+        +validate(): bool
+        +update_metadata(): bool
+    }
+    
+    class Chunk #C8E6C9 {
+        -id: str
+        -text: str
+        -embedding: vector
+        -document_id: str
+        --
+        +get_text(): str
+        +get_embedding(): vector
+        +get_document_id(): str
+        +to_dict(): dict
+    }
+    
+    class ExtractionSchema #C8E6C9 {
+        -fields: list
+        -validation_rules: dict
+        -created_by: str
+        --
+        +get_fields(): list
+        +add_field(): bool
+        +validate_data(): bool
+        +to_json(): str
+    }
+    
+    class ExtractionResult #C8E6C9 {
+        -document_id: str
+        -extracted_data: dict
+        -confidence: float
+        -timestamp: datetime
+        --
+        +get_data(): dict
+        +get_confidence(): float
+        +is_valid(): bool
+        +merge_with(): ExtractionResult
+    }
+}
+
+' === Infrastructure Layer (Orange Theme) ===
+package "Infrastructure" as infra #FFF3E0 {
+    interface IAPIController #FFCC80 {
+        +handle_request(): Response
+        +validate_input(): bool
+    }
+    
+    interface IWorkflowOrchestrator #FFCC80 {
+        +start_workflow(): Task
+        +monitor(): Status
+    }
+    
+    class DocumentIngestionAPI #FFCC80 {
+        -file_validator: FileValidator
+        -event_publisher: IEventPublisher
+        --
+        +upload_document(): Response
+        +get_status(): Status
+        +list_documents(): List
+    }
+    
+    class PrefectOrchestrator #FFCC80 {
+        -flow_manager: FlowManager
+        -task_monitor: TaskMonitor
+        --
+        +start_parallel_flows(): bool
+        +trigger_structured_extraction(): Task
+        +trigger_rag_processing(): Task
+        +monitor_both_flows(): Status
+    }
+}
+
+' === Messaging Layer (Purple Theme) ===
+package "Messaging" as messaging #F3E5F5 {
+    interface IEventPublisher #CE93D8 {
+        +publish(): bool
+        +publish_event(): bool
+    }
+    
+    interface IEventConsumer #CE93D8 {
+        +consume(): List
+        +subscribe(): bool
+    }
+    
+    class KafkaProducer #CE93D8 {
+        -connection_manager: ConnectionManager
+        --
+        +publish_event(): bool
+        +send_document_received(): bool
+        +send_processing_complete(): bool
+    }
+    
+    class KafkaConsumer #CE93D8 {
+        -message_handler: MessageHandler
+        --
+        +consume_events(): List
+        +subscribe_to_topic(): bool
+        +process_message(): bool
+    }
+    
+    class EventBus #CE93D8 {
+        -topic_router: TopicRouter
+        --
+        +publish(): bool
+        +subscribe(): bool
+        +get_topics(): List
+    }
+}
+
+' === Core Services (Yellow Theme) ===
+package "Core Services" as core #FFFDE7 {
+    interface IDocumentParser #FFF59D {
+        +parse(): IDocument
+        +supports_format(): bool
+    }
+    
+    interface IChunker #FFF59D {
+        +chunk(): List[IChunk]
+        +create_embeddings(): bool
+    }
+    
+    interface IPersistenceRepository #FFF59D {
+        +save(): bool
+        +retrieve(): any
+        +update(): bool
+        +delete(): bool
+    }
+    
+    class DocumentParserFactory #FFF176 {
+        -parsers: dict
+        --
+        +get_parser(): IDocumentParser
+        +register_parser(): bool
+        +detect_format(): str
+    }
+    
+    class ImageParser #FFF176 {
+        -image_agent: ImageAgent
+        --
+        +parse(): IDocument
+        +supports_format(): bool
+        +extract_text_ocr(): str
+        +extract_metadata(): dict
+    }
+    
+    class PDFParser #FFF176 {
+        -image_agent: ImageAgent
+        -docling_client: DoclingClient
+        --
+        +parse(): IDocument
+        +supports_format(): bool
+        +parse_with_docling(): IDocument
+        +extract_tables(): List
+    }
+    
+    class TextParser #FFF176 {
+        --
+        +parse(): IDocument
+        +supports_format(): bool
+        +extract_plain_text(): str
+    }
+    
+    class DocxParser #FFF176 {
+        -image_agent: ImageAgent
+        --
+        +parse(): IDocument
+        +supports_format(): bool
+        +extract_content(): dict
+    }
+    
+    class SemanticChunker #FFF176 {
+        -embedding_service: EmbeddingService
+        --
+        +chunk(): List[IChunk]
+        +create_embeddings(): bool
+        +optimize_chunks(): List[IChunk]
+    }
+    
+    class PersistenceManager #FFF176 {
+        -document_repo: IPersistenceRepository
+        -chunk_repo: IPersistenceRepository
+        -result_repo: IPersistenceRepository
+        --
+        +save_document(): bool
+        +save_chunks(): bool
+        +retrieve_data(): dict
+    }
+}
+
+' === Agent Layer (Red Theme) ===
+package "Agent Layer" as agents #FFEBEE {
+    class OrchestratorAgent <<Schema Creator>> #FFCDD2 {
+        +scan_document(): dict
+        +identify_extractable_fields(): List
+        +create_extraction_schema(): ExtractionSchema
+    }
+    
+    class ImageAgent <<Visual Analyzer>> #FFCDD2 {
+        +analyze_image(): dict
+    }
+    
+    class FieldDiscoveryAgent <<Discovery Agent>> #FFCDD2 {
+        +discover_fields(): List
+        +validate_field_patterns(): bool
+        +analyze_document_structure(): dict
+    }
+    
+    class ExtractionAgent <<Worker Swarm>> #FFCDD2 {
+        +extract_fields(): ExtractionResult
+        +process_parallel(): List[ExtractionResult]
+        +validate_results(): bool
+        +merge_swarm_results(): ExtractionResult
+    }
+}
+
+' === Query & Evaluation (Cyan Theme) ===
+package "Query & Evaluation" as query #E0F2F1 {
+    class RAGQueryEngine #80CBC4 {
+        +query(): str
+        +retrieve_context(): List
+        +generate_answer(): str
+        +rank_results(): List
+    }
+    
+    class RagasEvaluator #80CBC4 {
+        +evaluate_performance(): dict
+        +generate_metrics(): Report
+        +compare_results(): dict
+    }
+}
+
+' === Key Relationships ===
+
+' Interface implementations
+Document ..|> IDocument
+Chunk ..|> IChunk
+ImageParser ..|> IDocumentParser
+PDFParser ..|> IDocumentParser
+TextParser ..|> IDocumentParser
+DocxParser ..|> IDocumentParser
+SemanticChunker ..|> IChunker
+DocumentIngestionAPI ..|> IAPIController
+PrefectOrchestrator ..|> IWorkflowOrchestrator
+KafkaProducer ..|> IEventPublisher
+KafkaConsumer ..|> IEventConsumer
+
+' Configuration dependencies (Dependency Injection)
+Settings ..> DocumentIngestionAPI : injects config
+Settings ..> PrefectOrchestrator : injects config
+Settings ..> PersistenceManager : injects config
+
+' Kafka messaging flow
+DocumentIngestionAPI --> KafkaProducer : uses IEventPublisher
+KafkaProducer --> EventBus : sends to topics
+EventBus --> KafkaConsumer : delivers messages
+KafkaConsumer --> PrefectOrchestrator : triggers workflows
+
+' Factory Pattern
+DocumentParserFactory --> ImageParser : creates
+DocumentParserFactory --> PDFParser : creates
+DocumentParserFactory --> TextParser : creates
+DocumentParserFactory --> DocxParser : creates
+
+' Dependency Injection in Parsers
+ImageAgent --> ImageParser : injected into
+ImageAgent --> PDFParser : injected into
+ImageAgent --> DocxParser : injected into
+
+' Prefect Parallel Flow Orchestration
+PrefectOrchestrator --> OrchestratorAgent : starts structured extraction
+PrefectOrchestrator --> DocumentParserFactory : starts RAG processing
+
+' Structured Extraction Flow
+OrchestratorAgent --> FieldDiscoveryAgent : collaborates
+OrchestratorAgent ..> ExtractionSchema : creates
+ExtractionSchema --> ExtractionAgent : provides schema
+ExtractionAgent ..> ExtractionResult : creates
+
+' RAG Processing Flow (using Factory)
+DocumentParserFactory --> IDocumentParser : delegates to
+IDocumentParser ..> IDocument : creates
+SemanticChunker --> IDocument : processes
+SemanticChunker ..> IChunk : creates
+
+' Repository Pattern
+PersistenceManager --> IPersistenceRepository : uses
+IPersistenceRepository --> IDocument : persists
+IPersistenceRepository --> IChunk : persists
+IPersistenceRepository --> ExtractionResult : persists
+
+' Query operations
+RAGQueryEngine --> PersistenceManager : queries through
+RagasEvaluator --> RAGQueryEngine : evaluates
+
+' Data relationships
+IDocument ||--o{ IChunk : contains
+ExtractionSchema ||--o{ ExtractionResult : validates
+
+@enduml

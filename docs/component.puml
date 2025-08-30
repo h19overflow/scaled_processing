@@ -1,0 +1,161 @@
+@startuml
+
+title Scaled Document Processing System - Component Architecture
+left to right direction
+skinparam linetype ortho
+skinparam ranksep 120
+skinparam nodesep 100
+skinparam classAttributeIconSize 0
+skinparam minClassWidth 160
+skinparam arrowThickness 2
+skinparam dpi 150
+' === User Interface Layer ===
+package "User Interface / API" #E3F2FD {
+  actor User
+  [Document Ingestion API] as API
+  [File Validator] as Validator
+}
+
+' === Messaging Layer ===
+package "Event-Driven Messaging" #F3E5F5 {
+  queue "Kafka Event Bus" as Kafka
+  [Event Publisher] as Publisher
+  [Event Consumer] as Consumer
+  [Topic Router] as Router
+}
+
+' === Orchestration Layer ===
+package "Workflow Orchestration" #FFF3E0 {
+  [Prefect Orchestrator] as Prefect
+  [Flow Manager] as FlowMgr
+  [Task Monitor] as Monitor
+}
+
+' === Parallel Processing Flows ===
+package "Structured Extraction Flow" #FFEBEE {
+  [Orchestrator Agent] as OrchestratorAgent
+  [Field Discovery Agent] as FieldAgent
+  [Extraction Agent Swarm] as ExtractionSwarm
+  [Image Agent] as ImageAgent
+}
+
+package "RAG Processing Flow" #FFFDE7 {
+  [Document Parser Factory] as ParserFactory
+  [Image Parser] as ImageParser
+  [PDF Parser (Docling)] as PDFParser
+  [Text Parser] as TextParser
+  [DOCX Parser] as DocxParser
+  [Semantic Chunker] as Chunker
+}
+
+' === Data Management ===
+package "Data Persistence" #E8F5E8 {
+  [Persistence Manager] as PersistMgr
+  [Document Repository] as DocRepo
+  [Chunk Repository] as ChunkRepo
+  [Result Repository] as ResultRepo
+}
+
+package "Data Stores" #F5F5F5 {
+  database "PostgreSQL\n(Metadata)" as Postgres
+  database "ChromaDB\n(Vector Store)" as Chroma
+  database "Document Store\n(Files)" as FileStore
+}
+
+' === Query & Evaluation Layer ===
+package "Query & Analytics" #E0F2F1 {
+  [RAG Query Engine] as RAG
+  [Ragas Evaluator] as Evaluator
+  [Context Retriever] as Retriever
+}
+
+' === Monitoring & Observability ===
+package "Monitoring" #FFF8E1 {
+  [WandB Monitoring] as WandB
+  [Metrics Collector] as Metrics
+  [Performance Tracker] as Perf
+}
+
+' === Configuration ===
+package "Configuration" #F3E5F5 {
+  [Settings Manager] as Config
+}
+
+' === PRIMARY FLOW RELATIONSHIPS ===
+
+' 1. Document Upload Flow
+User --> API : 1. Upload Document
+API --> Validator : validates file
+API --> Publisher : 2. Publish event
+Publisher --> Kafka : sends to topics
+Kafka --> Router : routes messages
+Router --> Consumer : delivers events
+Consumer --> Prefect : 3. Triggers workflows
+
+' 2. Parallel Flow Orchestration
+Prefect --> FlowMgr : manages flows
+FlowMgr --> OrchestratorAgent : 4a. Start Structured Extraction
+FlowMgr --> ParserFactory : 4b. Start RAG Processing
+Monitor --> Prefect : monitors both flows
+
+' 3. Structured Extraction Flow
+OrchestratorAgent --> FieldAgent : collaborates on discovery
+OrchestratorAgent --> ExtractionSwarm : deploys for parallel extraction
+ImageAgent --> OrchestratorAgent : provides visual analysis
+ImageAgent --> FieldAgent : enhances field discovery
+
+' 4. RAG Processing Flow
+ParserFactory --> ImageParser : routes image files
+ParserFactory --> PDFParser : routes PDF files
+ParserFactory --> TextParser : routes text files
+ParserFactory --> DocxParser : routes DOCX files
+
+' Image Agent Integration
+ImageAgent --> ImageParser : analyzes images
+ImageAgent --> PDFParser : processes embedded images
+ImageAgent --> DocxParser : processes embedded images
+
+' 5. Document Processing to Chunking
+ImageParser --> Chunker : parsed documents
+PDFParser --> Chunker : parsed documents
+TextParser --> Chunker : parsed documents
+DocxParser --> Chunker : parsed documents
+
+' 6. Data Persistence (Both flows converge)
+ExtractionSwarm --> PersistMgr : structured results
+Chunker --> PersistMgr : chunks & embeddings
+OrchestratorAgent --> PersistMgr : schemas
+
+' Repository Pattern
+PersistMgr --> DocRepo : document operations
+PersistMgr --> ChunkRepo : chunk operations  
+PersistMgr --> ResultRepo : result operations
+
+' Data Store Connections
+DocRepo --> Postgres : metadata
+DocRepo --> FileStore : files
+ChunkRepo --> Chroma : vectors
+ChunkRepo --> Postgres : chunk metadata
+ResultRepo --> Postgres : extraction results
+
+' 7. Query Flow
+User --> RAG : 8. Ask question
+RAG --> Retriever : gets context
+Retriever --> ChunkRepo : 9a. Retrieve chunks
+Retriever --> DocRepo : 9b. Get metadata
+RAG --> User : 10. Synthesized answer
+
+' 8. Evaluation & Monitoring
+Evaluator --> RAG : evaluates performance
+Metrics --> ExtractionSwarm : tracks extraction metrics
+Metrics --> RAG : tracks query metrics
+Perf --> WandB : sends performance data
+Metrics --> WandB : sends agent decisions
+
+' Configuration Dependencies
+Config ..> API : provides settings
+Config ..> Prefect : provides settings
+Config ..> PersistMgr : provides settings
+Config ..> Kafka : provides connection settings
+
+@enduml

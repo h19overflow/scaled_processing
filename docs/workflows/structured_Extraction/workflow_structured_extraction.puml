@@ -1,0 +1,77 @@
+@startuml workflow_structured_extraction_overview
+title Structured Extraction Overview - Message-Driven Workflow Coordination
+
+' Define Kafka Topics
+participant "Upload Topic\n(document_uploaded)" as upload_topic
+participant "Field Init Topic\n(field_init_requests)" as field_topic
+participant "Agent Scaling Topic\n(agent_scaling_requests)" as scaling_topic
+participant "Extraction Processing Topic\n(extraction_processing)" as processing_topic
+participant "Completion Topic\n(extraction_completed)" as completion_topic
+
+' Define Workflow Orchestrators
+participant "WorkflowOrchestrator\n(src/backend/orchestration/workflow_orchestrator.py)" as orchestrator
+participant "FieldInitWorkflow\n(workflow_field_initialization.puml)" as field_workflow
+participant "AgentScalingWorkflow\n(workflow_agent_scaling.puml)" as scaling_workflow
+participant "ExtractionProcessingWorkflow\n(workflow_extraction_processing.puml)" as processing_workflow
+
+' Workflow coordination through message passing
+upload_topic -> orchestrator : document_uploaded_event()
+note right : Model: DocumentUploadedEvent\nFunction: trigger_structured_extraction()
+
+orchestrator -> orchestrator : initiate_extraction_pipeline()
+note right : Model: ExtractionPipeline\nFunction: coordinate_workflows()
+
+orchestrator -> field_topic : publish_field_init_request()
+note right : Model: FieldInitRequest\nFunction: start_field_initialization()
+
+field_topic -> field_workflow : trigger_field_initialization()
+note right : Workflow: workflow_field_initialization.puml\nProcess: Page-based sequential field discovery
+
+field_workflow -> scaling_topic : publish_field_specifications()
+note right : Model: FieldSpecificationMessage\nFunction: trigger_agent_scaling()
+
+scaling_topic -> scaling_workflow : trigger_agent_scaling()
+note right : Workflow: workflow_agent_scaling.puml\nProcess: Dynamic swarm deployment with field specs
+
+scaling_workflow -> processing_topic : publish_extraction_tasks()
+note right : Model: List[ExtractionTaskMessage]\nFunction: distribute_extraction_work()
+
+processing_topic -> processing_workflow : trigger_parallel_extraction()
+note right : Workflow: workflow_extraction_processing.puml\nProcess: Parallel page-range processing + DB insertion
+
+processing_workflow -> completion_topic : publish_completion_events()
+note right : Model: ExtractionCompletionEvent\nFunction: notify_pipeline_completion()
+
+completion_topic -> orchestrator : extraction_pipeline_completed()
+note right : Model: PipelineCompletionEvent\nFunction: finalize_structured_extraction()
+
+note over upload_topic, completion_topic
+    **Message-Driven Workflow Coordination:**
+    • Upload Event → Field Initialization Request
+    • Field Specs → Agent Scaling Request  
+    • Scaling Complete → Multiple Extraction Tasks
+    • Extraction Results → Completion Events
+    
+    **Sequential Field Discovery (Page-Based):**
+    • Document > 50 pages: 3 Sequential Agents (15 page samples)
+    • Document ≤ 50 pages: 1 Agent (8 page samples)
+    • Agent 2: "Extract fields NOT in Agent 1 output"
+    • Agent 3: "Extract fields NOT in Agent 1&2 output"
+    
+    **Dynamic Agent Scaling:**
+    • Small (< 20 pages): 2 Extraction Agents
+    • Medium (20-100 pages): 5 Extraction Agents
+    • Large (> 100 pages): 10 Extraction Agents
+    
+    **Key Workflow Files:**
+    • workflow_field_initialization.puml: Page sampling + sequential field discovery
+    • workflow_agent_scaling.puml: Dynamic swarm deployment with field specs
+    • workflow_extraction_processing.puml: Parallel processing + JSON + PostgreSQL insertion
+    
+    **Data Flow:**
+    • Field Specs → Dynamic Prompts + Pydantic Schemas
+    • Page Ranges → Agent Processing Boundaries
+    • JSON Results → PostgreSQL Records
+end note
+
+@enduml

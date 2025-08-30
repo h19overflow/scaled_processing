@@ -1,0 +1,91 @@
+@startuml workflow_upload_processing
+title Document Upload & Parallel Processing Initialization
+
+' Define participants with file paths
+participant "User" as user
+participant "DocumentIngestionAPI\n(src/backend/api/endpoints/ingestion.py)" as api
+participant "DocumentParserFactory\n(src/backend/core_services/parsers/factory.py)" as parser_factory
+participant "KafkaProducer\n(src/backend/messaging/producers.py)" as producer
+participant "Kafka Topic\n(document-received)" as kafka
+participant "PrefectOrchestrator\n(src/backend/orchestration/prefect_flows.py)" as prefect
+
+' Workflow steps
+user -> api : POST /upload\n[List[UploadFile]]
+note right : Model: List[UploadFile]\nFunction: upload_documents()
+
+api -> api : validate_files()
+note right : Model: Document\nFunction: FileValidator.validate()
+
+loop for each document
+    api -> parser_factory : detect_file_type()
+    note right : Model: FileType\nFunction: get_file_extension()
+    
+    parser_factory -> parser_factory : get_parser_for_type()
+    note right : Model: IDocumentParser\nFunction: get_parser()
+    
+    alt PDF File
+        parser_factory -> parser_factory : create_pdf_parser()
+        note right : Parser: PDFParser\nFunction: parse_pdf()
+    else Image File  
+        parser_factory -> parser_factory : create_image_parser()
+        note right : Parser: ImageParser\nFunction: parse_image()
+    else DOCX File
+        parser_factory -> parser_factory : create_docx_parser()
+        note right : Parser: DocxParser\nFunction: parse_docx()
+    else Text File
+        parser_factory -> parser_factory : create_text_parser()
+        note right : Parser: TextParser\nFunction: parse_text()
+    end
+    
+    parser_factory -> api : parsed_document
+    note right : Model: ParsedDocument\nFunction: return_parsed()
+    
+    api -> producer : publish_document_event()
+    note right : Model: DocumentEvent\nFunction: publish_event()
+    
+    producer -> kafka : send_to_topic("document-received")
+    note right : Message: DocumentReceivedEvent\nTopic: document-received
+end
+
+kafka -> prefect : consume_document_events()
+note right : Function: document_consumer_flow()
+
+prefect -> prefect : initialize_parallel_workflows()
+note right : Function: start_parallel_processing()
+
+' Parallel initialization split
+prefect -> prefect : start_structured_extraction_flow()
+note right : Model: ParsedDocument\nFunction: trigger_extraction_workflow()
+
+prefect -> prefect : start_rag_processing_flow()
+note right : Model: ParsedDocument\nFunction: trigger_rag_workflow()
+
+prefect -> api : workflow_initialized()
+note right : Model: WorkflowStatus\nFunction: update_status()
+
+api -> user : HTTP 202 Accepted\n[ProcessingStatus]
+note right : Model: ProcessingResponse\nFunction: get_processing_status()
+
+note over user, prefect
+    **Workflow stops here - Parallel processing flows continue in separate diagrams**
+    
+    **Key Models:**
+    • Document: Core document model with metadata
+    • ParsedDocument: Document after type-specific parsing
+    • DocumentEvent: Kafka message for document processing
+    • WorkflowStatus: Processing status tracking
+    
+    **Dynamic Parsing Support:**
+    • PDF: Docling-based parsing with table extraction
+    • Images: OCR + visual analysis via ImageAgent
+    • DOCX: Structure-aware parsing with embedded images
+    • Text: Plain text extraction and encoding detection
+    
+    **Communication Functions:**
+    • upload_documents(): Handle file upload
+    • get_parser(): Dynamic parser selection
+    • publish_event(): Send parsed document to Kafka
+    • start_parallel_processing(): Initialize both flows
+end note
+
+@enduml
