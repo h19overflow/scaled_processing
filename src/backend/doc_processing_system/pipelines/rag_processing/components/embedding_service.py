@@ -1,0 +1,1 @@
+# EmbeddingService - Generate vector embeddings

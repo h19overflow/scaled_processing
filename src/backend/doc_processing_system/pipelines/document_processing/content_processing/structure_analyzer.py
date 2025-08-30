@@ -1,0 +1,1 @@
+# DocumentStructureAnalyzer - Identify tables, headings, sections

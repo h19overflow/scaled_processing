@@ -1,0 +1,1 @@
+# AgentScalingManager - Dynamic agent allocation

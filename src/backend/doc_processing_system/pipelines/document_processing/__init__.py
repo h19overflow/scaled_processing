@@ -1,0 +1,1 @@
+# Document Processing Pipeline - Phase 1 Foundation
