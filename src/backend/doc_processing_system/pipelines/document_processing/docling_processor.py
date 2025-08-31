@@ -5,6 +5,7 @@ Enhanced with vision processing for AI-powered image descriptions.
 
 import asyncio
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
 
@@ -12,7 +13,7 @@ from docling_core.types.doc import ImageRefMode, PictureItem, TableItem
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.document_converter import DocumentConverter, PdfFormatOption
-from ...data_models.document import ParsedDocument
+from ...data_models.document import ParsedDocument, DocumentMetadata, FileType
 from .utils import VisionProcessor, VisionConfig
 
 
@@ -122,12 +123,22 @@ class DoclingProcessor:
                 except Exception as e:
                     self.logger.warning(f"Vision processing failed, using original content: {e}")
             
+            # Create metadata
+            file_type = self._get_file_type(file_path_obj)
+            metadata = DocumentMetadata(
+                document_id=document_id,
+                file_type=file_type,
+                upload_timestamp=datetime.now(),
+                user_id=user_id,
+                file_size=file_path_obj.stat().st_size
+            )
+            
             # Create ParsedDocument
             parsed_doc = ParsedDocument(
                 document_id=document_id,
                 content=content,
-                page_count=page_count,
-                confidence_report=confidence_report,
+                metadata=metadata,
+                page_count=page_count
             )
             
             self.logger.info(f"Successfully processed {file_path_obj.name}: {len(content)} chars, {page_count} pages")
@@ -285,3 +296,20 @@ class DoclingProcessor:
         except Exception as e:
             self.logger.error(f"Failed to extract markdown from {file_path}: {e}")
             raise
+    
+    # HELPER FUNCTIONS
+    def _get_file_type(self, file_path: Path) -> FileType:
+        """Determine file type from file extension."""
+        suffix = file_path.suffix.lower()
+        
+        if suffix == '.pdf':
+            return FileType.PDF
+        elif suffix in ['.docx', '.doc']:
+            return FileType.DOCX
+        elif suffix in ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff']:
+            return FileType.IMAGE
+        elif suffix in ['.txt', '.md']:
+            return FileType.TEXT
+        else:
+            # Default to PDF for unsupported types
+            return FileType.PDF

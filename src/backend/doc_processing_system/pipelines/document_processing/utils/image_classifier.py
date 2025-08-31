@@ -7,6 +7,7 @@ from PIL import Image
 from google import genai
 from google.genai import types
 import io
+import concurrent.futures
 
 from .vision_config import VisionConfig
 from dotenv import load_dotenv
@@ -36,16 +37,17 @@ class ImageClassifier:
             image.save(img_byte_arr, format='PNG')
             img_byte_arr = img_byte_arr.getvalue()
             
-            response = await self.client.models.generate_content(
-                model=self.config.model_name,
-                contents=[
-                    types.Part.from_bytes(data=img_byte_arr, mime_type='image/png'),
-                    prompt
-                ],
-                generation_config={
-                    "max_output_tokens": self.config.classification_max_tokens,
-                    "temperature": 0.1,
-                }
+            # Run the sync API call in a thread pool
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: self.client.models.generate_content(
+                    model=self.config.model_name,
+                    contents=[
+                        types.Part.from_bytes(data=img_byte_arr, mime_type='image/png'),
+                        prompt
+                    ]
+                )
             )
             
             # Parse minimal response
