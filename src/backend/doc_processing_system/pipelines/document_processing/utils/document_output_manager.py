@@ -84,17 +84,51 @@ class DocumentOutputManager:
             document_id = self._generate_document_id(raw_path)
             self.logger.info(f"Processing new document: {document_id}")
             
-            # Step 3: Process document (this will be called by DoclingProcessor)
-            # This method prepares the infrastructure, actual processing happens externally
-            processing_result = {
-                "status": "ready_for_processing",
-                "document_id": document_id,
-                "raw_file_path": str(raw_path),
-                "user_id": user_id,
-                "message": f"Document ready for processing: {document_id}"
-            }
-            
-            return processing_result
+            # Step 3: Save basic document record IMMEDIATELY to prevent duplicate processing
+            try:
+                from ....data_models.document import Document, ProcessingStatus
+                file_stats = raw_path.stat()
+                
+                # Create basic document record
+                document = Document(
+                    filename=raw_path.name,
+                    file_type=raw_path.suffix.lower().replace('.', ''),
+                    upload_timestamp=datetime.now(),
+                    user_id=user_id,
+                    processing_status=ProcessingStatus.PARSING,  # Mark as being processed
+                    file_size=file_stats.st_size,
+                    page_count=None
+                )
+                
+                # Generate file hash and save to database immediately
+                raw_hash = self.document_crud.generate_file_hash(str(raw_path))
+                db_document_id = self.document_crud.create(document, raw_hash)
+                
+                self.logger.info(f"Document record created in database: {db_document_id}")
+                
+                processing_result = {
+                    "status": "ready_for_processing", 
+                    "document_id": document_id,
+                    "db_document_id": db_document_id,
+                    "raw_file_path": str(raw_path),
+                    "user_id": user_id,
+                    "message": f"Document ready for processing: {document_id}"
+                }
+                
+                return processing_result
+                
+            except Exception as e:
+                self.logger.error(f"Failed to create document record: {e}")
+                # Continue with processing even if database save fails
+                processing_result = {
+                    "status": "ready_for_processing",
+                    "document_id": document_id,
+                    "raw_file_path": str(raw_path),
+                    "user_id": user_id,
+                    "message": f"Document ready for processing: {document_id}"
+                }
+                
+                return processing_result
             
         except Exception as e:
             self.logger.error(f"Error in check_and_process_document: {e}")

@@ -1,0 +1,14 @@
+{
+  "document_id": "doc_20250831_141742_d74b54e4",
+  "user_id": "test_user",
+  "processing_timestamp": "2025-08-31T14:20:49.010085",
+  "filename": "gemini-for-google-workspace-prompting-guide-101.pdf",
+  "page_count": 68,
+  "content_length": 310948,
+  "file_type": "pdf",
+  "file_size": 5262736,
+  "vision_processing": true,
+  "document_directory": "data\\documents\\processed\\doc_20250831_141742_d74b54e4",
+  "processed_file": "doc_20250831_141742_d74b54e4_processed.md",
+  "status": "completed"
+}
