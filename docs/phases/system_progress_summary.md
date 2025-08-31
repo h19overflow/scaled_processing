@@ -516,3 +516,498 @@ The messaging infrastructure is **production-ready** and provides:
 **✅ COMPLETED:** FastAPI upload endpoint implemented and steel thread verified! End-to-end message flow from API → Kafka → Consumer logs is working perfectly.
 
 **🚀 Ready for Sprint 2:** Pipeline implementation can now begin with confidence that the messaging infrastructure is production-ready and fully tested.
+
+---
+
+## 🎯 **CURRENT PHASE: Database Integration & Document Processing Pipeline**
+
+We now have a complete database system with SQLAlchemy integration and are ready to implement the first stage of our document processing pipeline with duplicate detection and vision AI integration.
+
+### **✅ COMPLETED: Database Infrastructure (100%)**
+
+#### **Database System Architecture**
+```python
+# SQLAlchemy Database Components
+from core_deps.database import (
+    ConnectionManager,      # ✅ Connection pooling & session management
+    DocumentModel,          # ✅ Document storage with content hash
+    ChunkModel,            # ✅ Text chunks with embeddings
+    ExtractionResultModel, # ✅ Structured extraction results  
+    QueryLogModel,         # ✅ Query tracking and analytics
+    DocumentCRUD,          # ✅ Document CRUD operations
+    ChunkCRUD,            # ✅ Chunk CRUD operations
+)
+
+# ✅ Automated table creation with Docker Compose
+docker-compose up postgres-setup  # Creates all tables automatically
+```
+
+**Key Database Features:**
+- ✅ **UUID Primary Keys** with proper relationships and cascade deletes
+- ✅ **Content Hash Duplicate Detection** - SHA-256 hash prevents duplicate processing
+- ✅ **JSON Fields** for flexible metadata and configuration storage
+- ✅ **Array Fields** for embeddings and source document tracking
+- ✅ **Optimized Indexes** for user queries, status filtering, and content hash lookups
+- ✅ **Connection Pooling** with 10-20 connections for production scalability
+
+#### **Docker Infrastructure Enhancement**
+```yaml
+# Enhanced Docker Compose Configuration
+services:
+  postgres:          # ✅ PostgreSQL 15 on port 5444:5432
+  postgres-setup:    # ✅ Automated table creation service
+  kafka-setup:       # ✅ Automated Kafka topic creation
+  chromadb:         # ✅ Vector storage on port 8000
+  kafdrop:          # ✅ Kafka monitoring on port 9000
+```
+
+**Key Achievements:**
+- ✅ **Organized Docker Files** - All Dockerfiles moved to `docker/` folder
+- ✅ **Automated Setup** - Both database tables and Kafka topics created automatically
+- ✅ **Production-Ready Configuration** - Proper port mapping and persistent storage
+
+---
+
+## 🚀 **NEXT PHASE: End-to-End Document Processing Pipeline**
+
+### **📋 Sprint 2 Plan: Document Processing with Duplicate Detection**
+
+#### **Phase 1: Data Folder Structure & Pipeline Setup**
+```
+data/
+├── documents/
+│   ├── raw/              # 📁 Input documents (PDF, DOCX, etc.)
+│   └── processed/        # 📁 Processed markdown + extracted images
+├── rag/                  # 📁 RAG pipeline outputs
+│   ├── chunks/          
+│   ├── embeddings/      
+│   └── vectors/         
+└── extraction/           # 📁 Structured extraction outputs
+    ├── schemas/         
+    ├── results/         
+    └── agents/          
+```
+
+#### **Phase 2: Document Processing Flow with Duplicate Detection**
+```python
+# Enhanced Document Processing Pipeline
+def process_documents_pipeline():
+    # 1. Scan raw documents folder
+    raw_documents = scan_raw_documents("data/documents/raw/")
+    
+    # 2. Check for duplicates using content hash
+    for doc_path in raw_documents:
+        content_hash = calculate_sha256(doc_path)
+        
+        # Skip if document already processed
+        if document_exists_by_hash(content_hash):
+            logger.info(f"Document {doc_path} already processed, skipping")
+            continue
+        
+        # 3. Process new document with Docling + Vision AI
+        processed_doc = docling_processor.process_with_vision(doc_path)
+        
+        # 4. Save processed markdown + images to processed folder
+        save_processed_document(processed_doc, "data/documents/processed/")
+        
+        # 5. Store document record in database
+        store_document_record(processed_doc, content_hash)
+        
+        # 6. Publish document-received event for downstream processing
+        document_producer.send_document_received(processed_doc)
+```
+
+#### **Phase 3: Vision Agent Event Integration**
+```python
+# Vision Agent Event Listener
+class VisionAgentConsumer(BaseConsumer):
+    def __init__(self):
+        super().__init__("vision-processing")
+        self.vision_agent = VisionAgent()
+    
+    def process_document_received(self, event: DocumentReceivedEvent):
+        """Process document with AI image descriptions."""
+        document_id = event.document_id
+        processed_path = event.processed_path
+        
+        # Load processed markdown with image placeholders
+        markdown_content = load_processed_markdown(processed_path)
+        
+        # Generate AI descriptions for all extracted images
+        enhanced_markdown = self.vision_agent.enhance_with_descriptions(
+            markdown_content, 
+            image_folder=f"{processed_path}/images/"
+        )
+        
+        # Save enhanced markdown with AI descriptions
+        save_enhanced_markdown(enhanced_markdown, processed_path)
+        
+        # Publish vision-complete event for chunking pipeline
+        vision_producer.send_vision_complete(document_id, enhanced_markdown)
+```
+
+#### **Phase 4: Database Integration Points**
+```python
+# Document CRUD Operations with Duplicate Detection
+class DocumentProcessor:
+    def __init__(self):
+        self.connection_manager = ConnectionManager()
+        self.document_crud = DocumentCRUD(self.connection_manager)
+        self.docling_processor = DoclingProcessor()
+        
+    def process_if_new(self, file_path: str) -> Optional[str]:
+        """Process document only if not already in database."""
+        
+        # Calculate content hash for duplicate detection
+        content_hash = self.calculate_content_hash(file_path)
+        
+        # Check if document already exists
+        existing_doc = self.document_crud.get_by_content_hash(content_hash)
+        if existing_doc:
+            logger.info(f"Document {file_path} already exists: {existing_doc.id}")
+            return None
+        
+        # Process new document
+        processed_doc = self.docling_processor.process(file_path)
+        
+        # Store in database
+        document_id = self.document_crud.create_with_hash(processed_doc, content_hash)
+        
+        return document_id
+```
+
+### **📊 Pipeline Testing & Verification**
+
+#### **End-to-End Test Flow**
+```bash
+# 1. Place test documents in raw folder
+cp test_documents/*.pdf data/documents/raw/
+
+# 2. Start all services
+docker-compose up -d
+
+# 3. Run document processing pipeline  
+python -m src.backend.doc_processing_system.pipelines.document_processor
+
+# 4. Verify results
+# - Check processed folder for markdown + images
+# - Verify database records created
+# - Check Kafka events published
+# - Confirm vision agent processing
+```
+
+#### **Success Criteria**
+- ✅ **Duplicate Detection**: Same document uploaded twice should be skipped
+- ✅ **Markdown Generation**: Clean markdown with image placeholders created
+- ✅ **Image Extraction**: High-resolution images saved in processed folder
+- ✅ **Database Storage**: Document records with content hash stored correctly
+- ✅ **Event Publishing**: Kafka events published for downstream processing
+- ✅ **Vision AI Integration**: AI descriptions generated and integrated into markdown
+
+### **🎯 Implementation Priority**
+
+1. **📁 Data Folder Setup** - Create organized folder structure
+2. **🔍 Duplicate Detection** - Implement content hash checking
+3. **🏗️ Processing Pipeline** - Build raw-to-processed document flow
+4. **👁️ Vision Agent Integration** - Add AI image description processing
+5. **📊 Database Integration** - Store document records and processing status
+6. **🧪 End-to-End Testing** - Verify complete pipeline functionality
+
+**🚀 Ready for Implementation:** Database infrastructure is complete and ready to support the document processing pipeline with proper duplicate detection and vision AI integration.
+
+---
+
+## 🚀 **COMPLETED: File System Watcher & Event-Driven Document Processing (100%)**
+
+We have successfully implemented a complete file system monitoring and event-driven document processing architecture that automatically processes documents when they are added to the raw directory.
+
+### **✅ COMPLETED: File System Watcher Service**
+
+#### **Automated File Detection Architecture**
+```python
+# File System Watcher with Kafka Integration
+from services.file_watcher import FileWatcherService
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+# ✅ Real-time file monitoring using Watchdog
+# ✅ Automatic Kafka event publishing when files are detected
+# ✅ Duplicate detection to prevent processing the same file multiple times
+# ✅ Support for PDF, DOCX, TXT, MD file types
+```
+
+**Key Components Implemented:**
+- ✅ **DocumentFileHandler** - Handles file system events (create/modify)
+- ✅ **FileWatcherService** - Monitors `data/documents/raw/` directory
+- ✅ **Event Publishing** - Publishes `file-detected` events to Kafka
+- ✅ **File Validation** - Checks file exists and size matches before processing
+
+#### **Enhanced Kafka Event Model**
+```python
+# New Event Model Added to events.py
+class FileDetectedEvent(BaseModel):
+    """Event published when a new file is detected in the raw directory."""
+    file_path: str
+    filename: str 
+    file_size: int
+    file_extension: str
+    detected_at: str
+    event_type: str
+    topic: str = "file-detected"
+```
+
+### **✅ COMPLETED: Enhanced Document Producer**
+
+#### **File Detection Event Publishing**
+```python
+# Enhanced DocumentProducer with new send_file_detected method
+class DocumentProducer(BaseKafkaProducer):
+    def send_file_detected(self, file_data: dict) -> bool:
+        """Send file detected event from file system watcher."""
+        event = FileDetectedEvent(**file_data)
+        success = self.publish_event(
+            topic=event.topic,
+            event_data=event.dict(),
+            key=create_message_key(file_path=file_data["file_path"])
+        )
+        return success
+```
+
+### **✅ COMPLETED: File Processing Consumer**
+
+#### **Event-Driven Document Processing**
+```python
+# New FileProcessingConsumer for handling file-detected events
+class FileProcessingConsumer(BaseKafkaConsumer):
+    def __init__(self):
+        super().__init__("file_processing_group")
+        self.document_pipeline = OptimizedDocumentPipeline()
+    
+    def _handle_file_detected(self, message_data: Dict[str, Any]) -> bool:
+        """Trigger document processing pipeline when file is detected."""
+        event = FileDetectedEvent(**message_data)
+        
+        # Validate file still exists and size matches
+        file_path = Path(event.file_path)
+        if not file_path.exists() or file_path.stat().st_size != event.file_size:
+            return True  # Skip if file moved/changed
+        
+        # Process document through existing pipeline
+        result = self.document_pipeline.process_document(event.file_path, user_id)
+        
+        return result["status"] in ["processed", "duplicate"]
+```
+
+**Consumer Features:**
+- ✅ **File Validation** - Ensures file still exists and hasn't changed size
+- ✅ **Pipeline Integration** - Uses existing `OptimizedDocumentPipeline` class
+- ✅ **Error Handling** - Comprehensive error handling and logging
+- ✅ **Status Tracking** - Handles processed/duplicate/error statuses
+
+### **✅ COMPLETED: Enhanced Kafka Topics Architecture**
+
+#### **New Topic Added to Event System**
+```python
+# Updated EventType enum in event_bus.py
+class EventType(str, Enum):
+    FILE_DETECTED = "file-detected"        # ✅ NEW: File system events
+    DOCUMENT_RECEIVED = "document-received"
+    WORKFLOW_INITIALIZED = "workflow-initialized"
+    # ... existing topics
+```
+
+#### **Topic Configuration in Kafka Setup**
+```python
+# Enhanced kafka_topics_setup.py
+topic_configs = {
+    # File system monitoring (low-medium throughput)
+    EventType.FILE_DETECTED.value: {
+        **base_config,
+        'partitions': 3,
+        'replication_factor': 1
+    },
+    # ... existing topic configurations
+}
+```
+
+### **✅ COMPLETED: Document Processing Service Runner**
+
+#### **Coordinated Service Management**
+```python
+# New DocumentProcessingService for orchestrating components
+class DocumentProcessingService:
+    def __init__(self):
+        self.file_watcher = FileWatcherService()
+        self.file_consumer = FileProcessingConsumer()
+    
+    def start(self):
+        """Start file watcher and consumer in parallel."""
+        self.file_watcher.start()           # Monitor file system
+        self.consumer_thread.start()        # Consume Kafka events
+    
+    def stop(self):
+        """Graceful shutdown of all components."""
+        self.file_watcher.stop()
+        self.file_consumer.stop_consuming()
+```
+
+**Service Features:**
+- ✅ **Parallel Execution** - File watcher and consumer run simultaneously
+- ✅ **Graceful Shutdown** - Proper signal handling and cleanup
+- ✅ **Status Monitoring** - Health checks for all components
+- ✅ **Error Recovery** - Automatic retry logic for failed operations
+
+### **🎯 Event-Driven Architecture Flow**
+
+#### **Complete Processing Pipeline**
+```mermaid
+graph TB
+    subgraph "File System"
+        RAW[data/documents/raw/] --> FW[FileWatcher]
+    end
+    
+    subgraph "Event Publishing"
+        FW --> DP[DocumentProducer]
+        DP --> FDT[file-detected topic]
+    end
+    
+    subgraph "Event Processing" 
+        FDT --> FPC[FileProcessingConsumer]
+        FPC --> ODP[OptimizedDocumentPipeline]
+    end
+    
+    subgraph "Document Processing"
+        ODP --> DD[Duplicate Detection]
+        ODP --> DOCLING[Docling Processing]
+        ODP --> DB[(Database Storage)]
+    end
+    
+    subgraph "Downstream Events"
+        ODP --> DRT[document-received topic]
+        DRT --> WORKFLOWS[RAG & Extraction Pipelines]
+    end
+    
+    style FDT fill:#ffeb3b
+    style DRT fill:#4caf50
+    style DD fill:#ff5722
+```
+
+#### **End-to-End Flow Explanation**
+1. **📁 File Detection** - User drops file into `data/documents/raw/`
+2. **👁️ File Monitoring** - `FileWatcherService` detects new file via Watchdog
+3. **📤 Event Publishing** - `DocumentProducer.send_file_detected()` publishes to Kafka
+4. **📥 Event Consumption** - `FileProcessingConsumer` receives `file-detected` event
+5. **🔍 File Validation** - Consumer validates file still exists and size matches
+6. **⚙️ Document Processing** - `OptimizedDocumentPipeline.process_document()` triggered
+7. **🔍 Duplicate Check** - Early duplicate detection using content hash
+8. **📄 Docling Processing** - Document processed if not duplicate
+9. **💾 Database Storage** - Document metadata stored with processing status
+10. **📤 Downstream Events** - `document-received` event published for RAG/Extraction
+
+### **🔧 Implementation Details**
+
+#### **File Monitoring Configuration**
+```python
+# Supported file types
+supported_extensions = {'.pdf', '.docx', '.txt', '.md', '.doc'}
+
+# Watch directory (configurable)
+watch_directory = Path(settings.data_dir) / "documents" / "raw"
+
+# Event handling with duplicate prevention
+processing_files: Set[str] = set()  # Prevents duplicate processing
+```
+
+#### **Kafka Message Structure**
+```python
+# file-detected event payload
+{
+    "file_path": "/absolute/path/to/document.pdf",
+    "filename": "document.pdf", 
+    "file_size": 2547392,
+    "file_extension": ".pdf",
+    "detected_at": "2025-08-31T14:30:45.123456",
+    "event_type": "file_detected"
+}
+```
+
+#### **Consumer Group Strategy**
+```python
+# Consumer group configuration
+group_id = "file_processing_group"  # Ensures only one consumer processes each event
+auto_offset_reset = "latest"        # Only process new events
+enable_auto_commit = True           # Automatic offset management
+```
+
+### **📊 Benefits of Event-Driven Architecture**
+
+#### **Operational Benefits**
+- ✅ **Zero Manual Intervention** - Documents processed automatically when dropped
+- ✅ **Scalable Processing** - Can add more consumers to handle increased load
+- ✅ **Fault Tolerance** - Kafka ensures events aren't lost if consumer is down
+- ✅ **Monitoring Capability** - All file processing events are logged and traceable
+
+#### **Development Benefits**
+- ✅ **Clean Separation** - File monitoring, event processing, and document processing are decoupled
+- ✅ **Easy Testing** - Can test each component independently
+- ✅ **Flexible Deployment** - Components can run on different servers
+- ✅ **Future-Proof** - Easy to add new file types or processing logic
+
+#### **Performance Benefits**
+- ✅ **Asynchronous Processing** - File detection doesn't block document processing
+- ✅ **Batch Optimization** - Multiple files can be processed in parallel
+- ✅ **Resource Efficiency** - Only processes new/changed files
+- ✅ **Early Duplicate Detection** - Avoids expensive processing for duplicates
+
+### **🚀 Usage Instructions**
+
+#### **Starting the Service**
+```bash
+# Start all infrastructure
+docker-compose up -d
+
+# Run the document processing service
+python -m src.backend.doc_processing_system.services.document_processing_service
+
+# Output:
+# 🚀 Starting Document Processing Service...
+# 📁 Watching directory: /path/to/data/documents/raw
+# 📨 Consuming file-detected events from Kafka
+# ✅ Service running. Press Ctrl+C to stop.
+```
+
+#### **Adding Documents for Processing**
+```bash
+# Simply copy files to the watched directory
+cp my_document.pdf data/documents/raw/
+
+# Service automatically detects and processes:
+# File created: /path/to/data/documents/raw/my_document.pdf
+# Published file detection event for: my_document.pdf
+# Starting document processing for: my_document.pdf
+# Document processing completed: doc_12345 (15 pages)
+```
+
+#### **Monitoring Processing**
+```bash
+# Check Kafka topics
+curl http://localhost:9000  # Kafdrop UI
+
+# Check database records
+docker exec -it postgres psql -U user -d doc_processing
+
+# Check processing logs
+tail -f logs/pipelines/document_processing.log
+```
+
+### **🎯 Current Status: Ready for Production**
+
+The file system watcher and event-driven document processing is now **production-ready** with:
+
+1. **🔄 Automated Workflow** - Complete automation from file detection to processing
+2. **⚡ Real-time Processing** - Documents processed as soon as they're added
+3. **🛡️ Robust Error Handling** - Comprehensive validation and error recovery
+4. **📈 Scalable Architecture** - Ready for horizontal scaling with multiple consumers
+5. **🔍 Complete Observability** - Full logging and monitoring capabilities
+
+**Next Steps:** Users can now simply drop documents into `data/documents/raw/` and the system will automatically detect, validate, process, and store them with full duplicate detection and downstream event publishing.

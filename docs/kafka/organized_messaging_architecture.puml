@@ -1,0 +1,257 @@
+@startuml Organized_Event_Driven_Architecture
+
+!define RECTANGLE class
+
+title Event-Driven Document Processing Architecture\nOrganized by Processing Stages
+skinparam linetype ortho
+package "File System Layer" {
+  RECTANGLE FileSystem {
+    + data/documents/raw/
+    + File drops
+  }
+}
+
+package "messaging/file_ingestion/" {
+  note top of FileWatcherService : **STAGE 1: File Detection**
+  RECTANGLE FileWatcherService {
+    + Watchdog Observer
+    + DocumentFileHandler
+    + Monitors file system changes
+    --
+    + start()
+    + stop()
+    + is_running()
+  }
+  
+  RECTANGLE FileProcessingConsumer {
+    + Subscribes to file-detected
+    + Direct database operations
+    + Direct DoclingProcessor calls
+    + Duplicate detection logic
+    + Error handling & recovery
+    + Event publishing
+    --
+    + process_message()
+    + _handle_file_detected()
+    + _process_document_directly()
+  }
+}
+
+package "messaging/document_processing/" {
+  note top of DocumentProducer : **STAGE 2: Document Events**
+  RECTANGLE DocumentProducer {
+    + send_file_detected()
+    + send_document_received()
+    + Kafka client
+    --
+    + publish_event()
+  }
+  
+  RECTANGLE DocumentConsumer {
+    + Subscribes to document-received
+    + Triggers workflow initialization
+    + Coordinates RAG & Extraction
+    --
+    + process_message()
+    + _handle_document_received()
+    + _trigger_processing_workflows()
+  }
+}
+
+package "messaging/orchestration/" {
+  note top of EventBus : **SYSTEM: Event Routing**
+  RECTANGLE EventBus {
+    + Central event routing
+    + Producer/Consumer management
+    + Topic coordination
+    --
+    + publish()
+    + subscribe()
+    + get_topics()
+  }
+  
+  RECTANGLE KafkaTopicManager {
+    + Automated topic creation
+    + Topic configuration
+    + Partition management
+    --
+    + create_all_topics()
+    + verify_all_topics()
+  }
+}
+
+package "messaging/rag_pipeline/" {
+  note top of RAGProducer : **STAGE 3: RAG Processing**
+  RECTANGLE RAGProducer {
+    + send_chunking_complete()
+    + send_embedding_ready()
+    + send_ingestion_complete()
+    --
+    + publish_event()
+  }
+}
+
+package "messaging/extraction_pipeline/" {
+  note top of ExtractionProducer : **STAGE 4: Structured Extraction**
+  RECTANGLE ExtractionProducer {
+    + send_field_init_complete()
+    + send_agent_scaling_complete()
+    + send_extraction_task()
+    + send_extraction_complete()
+    --
+    + publish_event()
+  }
+}
+
+package "messaging/query_processing/" {
+  note top of QueryProducer : **STAGE 5: Query Handling**
+  RECTANGLE QueryProducer {
+    + send_query_received()
+    + send_rag_query_complete()
+    + send_structured_query_complete()
+    + send_hybrid_query_complete()
+    --
+    + publish_event()
+  }
+}
+
+package "messaging/base/" {
+  note top of BaseKafkaProducer : **FOUNDATION: Base Classes**
+  RECTANGLE BaseKafkaProducer {
+    + Connection management
+    + Retry logic
+    + Serialization
+    --
+    + publish_event()
+    + close()
+  }
+  
+  RECTANGLE BaseKafkaConsumer {
+    + Threading support
+    + Polling logic
+    + Error handling
+    --
+    + consume_events()
+    + process_message()
+    + start_consuming()
+  }
+}
+
+package "Core Processing Layer" {
+  RECTANGLE DoclingProcessor {
+    + IBM Docling integration
+    + PDF/DOCX processing
+    + Image extraction
+    + Markdown generation
+    --
+    + process_document()
+    + extract_images()
+    + generate_markdown()
+  }
+}
+
+package "Persistence Layer" {
+  RECTANGLE DatabaseLayer {
+    + ConnectionManager
+    + DocumentCRUD
+    + Duplicate detection
+    + Content hash checking
+    --
+    + create()
+    + check_duplicate_by_raw_file()
+    + update_metadata()
+  }
+}
+
+package "Message Broker" {
+  RECTANGLE KafkaTopics {
+    + file-detected (3 partitions)
+    + document-received (6 partitions)
+    + chunking-complete (4 partitions)
+    + embedding-ready (4 partitions)
+    + extraction-tasks (8 partitions)
+    + query-received (4 partitions)
+    + ... other workflow topics
+  }
+}
+
+' Inheritance relationships
+BaseKafkaProducer <|-- DocumentProducer
+BaseKafkaProducer <|-- RAGProducer
+BaseKafkaProducer <|-- ExtractionProducer
+BaseKafkaProducer <|-- QueryProducer
+
+BaseKafkaConsumer <|-- FileProcessingConsumer
+BaseKafkaConsumer <|-- DocumentConsumer
+
+' Flow relationships
+FileSystem --> FileWatcherService : "File created/modified"
+FileWatcherService --> DocumentProducer : "Publish file-detected event"
+DocumentProducer --> KafkaTopics : "Send to file-detected topic"
+KafkaTopics --> FileProcessingConsumer : "Consume file-detected event"
+FileProcessingConsumer --> DatabaseLayer : "Check duplicates\nStore metadata"
+FileProcessingConsumer --> DoclingProcessor : "Process document content"
+FileProcessingConsumer --> DocumentProducer : "Publish document-received event"
+
+DocumentProducer --> KafkaTopics : "Send to document-received topic"
+KafkaTopics --> DocumentConsumer : "Consume document-received event"
+DocumentConsumer --> RAGProducer : "Trigger RAG pipeline"
+DocumentConsumer --> ExtractionProducer : "Trigger extraction pipeline"
+
+' Management relationships
+EventBus --> DocumentProducer : "Manages"
+EventBus --> RAGProducer : "Manages"
+EventBus --> ExtractionProducer : "Manages"
+EventBus --> QueryProducer : "Manages"
+
+KafkaTopicManager --> KafkaTopics : "Creates & manages"
+
+' Styling
+skinparam class {
+  BackgroundColor<<stage1>> LightBlue
+  BorderColor<<stage1>> Blue
+  BackgroundColor<<stage2>> LightGreen
+  BorderColor<<stage2>> Green
+  BackgroundColor<<stage3>> LightYellow
+  BorderColor<<stage3>> Orange
+  BackgroundColor<<stage4>> LightPink
+  BorderColor<<stage4>> Red
+  BackgroundColor<<stage5>> LightCyan
+  BorderColor<<stage5>> Cyan
+  BackgroundColor<<foundation>> LightGray
+  BorderColor<<foundation>> DarkGray
+  BackgroundColor<<system>> Lavender
+  BorderColor<<system>> Purple
+}
+
+FileWatcherService <<stage1>>
+FileProcessingConsumer <<stage1>>
+DocumentProducer <<stage2>>
+DocumentConsumer <<stage2>>
+RAGProducer <<stage3>>
+ExtractionProducer <<stage4>>
+QueryProducer <<stage5>>
+BaseKafkaProducer <<foundation>>
+BaseKafkaConsumer <<foundation>>
+EventBus <<system>>
+KafkaTopicManager <<system>>
+
+note bottom
+  **ORGANIZED MESSAGING STRUCTURE:**
+  ✅ Clear separation by processing stages
+  ✅ Easy to navigate and understand
+  ✅ Logical grouping of related components
+  ✅ Scalable architecture for future growth
+  
+  **Directory Structure:**
+  messaging/
+  ├── base/ (Foundation classes)
+  ├── file_ingestion/ (Stage 1)
+  ├── document_processing/ (Stage 2)
+  ├── rag_pipeline/ (Stage 3)
+  ├── extraction_pipeline/ (Stage 4)
+  ├── query_processing/ (Stage 5)
+  └── orchestration/ (System management)
+end note
+
+@enduml

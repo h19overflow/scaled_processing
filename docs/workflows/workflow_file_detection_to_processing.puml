@@ -1,0 +1,122 @@
+@startuml workflow_file_detection_to_processing
+
+title File Detection to Document Processing Workflow\nEvent-Driven Architecture Sequence
+
+actor User as "User"
+participant FileSystem as "File System\n(data/documents/raw/)"
+participant FileWatcher as "FileWatcherService\n(file_ingestion/)"
+participant FileHandler as "DocumentFileHandler\n(file_ingestion/)"
+participant DocProducer as "DocumentProducer\n(document_processing/)"
+participant Kafka as "Kafka Topics\n(file-detected,\ndocument-received)"
+participant FileConsumer as "FileProcessingConsumer\n(file_ingestion/)"
+participant Database as "DocumentCRUD\n(Database Layer)"
+participant DoclingProc as "DoclingProcessor\n(Core Processing)"
+
+== File Detection Phase ==
+
+User -> FileSystem: Drop document\n(copy file.pdf)
+note right: User places file in\ndata/documents/raw/
+
+FileSystem -> FileWatcher: File created event
+note right: Watchdog detects\nfile system change
+
+FileWatcher -> FileHandler: on_created()\n/on_modified()
+note right: Event handler processes\nfile system event
+
+FileHandler -> FileHandler: _handle_file_event()
+note right: Validate file type\nand prevent duplicates
+
+FileHandler -> FileHandler: Check supported extensions\n(.pdf, .docx, .txt, .md)
+alt File type supported
+    FileHandler -> FileHandler: Add to processing_files set
+    FileHandler -> FileHandler: _publish_file_detected()
+    
+    FileHandler -> DocProducer: send_file_detected(event_data)
+    note right: Publish file detection event\nwith file metadata
+    
+    DocProducer -> Kafka: Publish to 'file-detected' topic
+    note right: Event includes:\n- file_path\n- filename\n- file_size\n- file_extension\n- detected_at
+    
+    FileHandler -> FileHandler: _cleanup_processing_file()\n(after 5 seconds)
+else File type not supported
+    FileHandler -> FileHandler: Log and ignore
+end
+
+== File Processing Phase ==
+
+Kafka -> FileConsumer: Consume 'file-detected' event
+note right: Consumer receives event\nfrom file-detected topic
+
+FileConsumer -> FileConsumer: _handle_file_detected()
+note right: Parse FileDetectedEvent\nand validate
+
+FileConsumer -> FileSystem: Validate file exists\nand size matches
+alt File validation successful
+    FileConsumer -> FileConsumer: _extract_user_id()
+    note right: Extract user ID from\nfile path or use default
+    
+    FileConsumer -> FileConsumer: _process_document_directly()
+    note right: Start direct document\nprocessing (simplified architecture)
+    
+    == Duplicate Detection ==
+    
+    FileConsumer -> Database: check_duplicate_by_raw_file()
+    note right: Generate SHA-256 hash\nand check for duplicates
+    
+    alt Document is new (not duplicate)
+        FileConsumer -> FileConsumer: _create_document_record()
+        note right: Create Document object\nwith metadata
+        
+        FileConsumer -> Database: generate_file_hash()
+        FileConsumer -> Database: create(document, raw_hash)
+        note right: Store document with\nPARSING status
+        
+        Database -> FileConsumer: Return document_id
+        
+        == Document Processing ==
+        
+        FileConsumer -> DoclingProc: process_document()
+        note right: Process with IBM Docling:\n- Extract text\n- Extract images\n- Generate markdown
+        
+        DoclingProc -> FileSystem: Save processed content\n(images, markdown)
+        DoclingProc -> FileConsumer: Return processed_result
+        note right: Contains:\n- page_count\n- extracted_content\n- image_paths
+        
+        FileConsumer -> Database: update_metadata()\nstatus=COMPLETED
+        note right: Update processing status\nand page count
+        
+        == Downstream Event Publishing ==
+        
+        FileConsumer -> DocProducer: send_document_received()
+        note right: Publish completion event\nfor downstream processing
+        
+        DocProducer -> Kafka: Publish to 'document-received' topic
+        note right: Event triggers:\n- RAG pipeline\n- Extraction pipeline
+        
+        FileConsumer -> FileConsumer: Log success\n"Document processing completed"
+        
+    else Document is duplicate
+        FileConsumer -> FileConsumer: Log duplicate\n"Document already processed"
+        note right: Skip processing,\nreturn existing document_id
+    end
+    
+else File validation failed
+    FileConsumer -> FileConsumer: Log warning\n"File no longer exists or changed"
+    note right: File may have been moved\nor still being written
+end
+
+== Error Handling ==
+
+alt Processing error occurs
+    FileConsumer -> Database: update_metadata()\nstatus=FAILED
+    note right: Mark document as failed\nfor debugging
+    
+    FileConsumer -> FileConsumer: Log error and return false
+end
+
+== Cleanup ==
+
+FileHandler -> FileHandler: Remove from processing_files\n(async cleanup)
+note right: Prevent duplicate processing\nof same file
+
+@enduml

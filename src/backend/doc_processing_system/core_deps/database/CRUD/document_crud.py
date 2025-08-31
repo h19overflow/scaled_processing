@@ -17,12 +17,12 @@ from ....data_models.document import Document, ProcessingStatus
 class DocumentCRUD(BaseRepository):
     """CRUD operations for document entities."""
     
-    def create(self, document: Document, content_hash: str) -> str:
-        """Create a new document and return its ID.
+    def create(self, document: Document, raw_file_hash: str) -> str:
+        """Create a new document using raw file hash for duplicate detection.
         
         Args:
             document: Document object to create
-            content_hash: SHA-256 hash of document content for duplicate detection
+            raw_file_hash: SHA-256 hash of raw file content for duplicate detection
             
         Returns:
             str: Created document ID
@@ -32,10 +32,10 @@ class DocumentCRUD(BaseRepository):
             ValueError: If document with same hash already exists
         """
         try:
-            # Check for existing document with same hash
-            existing_doc = self.get_by_hash(content_hash)
+            # Check for existing document with same raw file hash
+            existing_doc = self.get_by_hash(raw_file_hash)
             if existing_doc:
-                raise ValueError(f"Document with hash {content_hash} already exists: {existing_doc.id}")
+                raise ValueError(f"Document with hash {raw_file_hash} already exists: {existing_doc.id}")
             
             with self.connection_manager.get_session() as session:
                 doc_model = DocumentModel(
@@ -46,25 +46,25 @@ class DocumentCRUD(BaseRepository):
                     processing_status=document.processing_status.value,
                     file_size=document.file_size,
                     page_count=document.page_count,
-                    content_hash=content_hash
+                    content_hash=raw_file_hash
                 )
                 
                 session.add(doc_model)
                 session.flush()  # Get the ID without committing
                 document_id = str(doc_model.id)
                 
-                self._log_operation("Created document", document_id, f"filename: {document.filename}, hash: {content_hash[:16]}...")
+                self._log_operation("Created document", document_id, f"filename: {document.filename}, hash: {raw_file_hash[:16]}...")
                 return document_id
         
         except Exception as e:
             self.logger.error(f"Failed to create document: {e}")
             raise
     
-    def get_by_hash(self, content_hash: str) -> Optional[Document]:
-        """Get document by content hash.
+    def get_by_hash(self, file_hash: str) -> Optional[Document]:
+        """Get document by file hash (raw or processed content).
         
         Args:
-            content_hash: SHA-256 hash of document content
+            file_hash: SHA-256 hash of file content
             
         Returns:
             Optional[Document]: Document object if found, None otherwise
@@ -72,33 +72,43 @@ class DocumentCRUD(BaseRepository):
         try:
             with self.connection_manager.get_session() as session:
                 doc_model = session.query(DocumentModel).filter(
-                    DocumentModel.content_hash == content_hash
+                    DocumentModel.content_hash == file_hash
                 ).first()
                 
                 if not doc_model:
-                    self.logger.debug(f"Document not found for hash: {content_hash[:16]}...")
+                    self.logger.debug(f"Document not found for hash: {file_hash[:16]}...")
                     return None
                 
                 return self._model_to_document(doc_model)
         
         except Exception as e:
-            self.logger.error(f"Failed to get document by hash {content_hash}: {e}")
+            self.logger.error(f"Failed to get document by hash {file_hash}: {e}")
             raise
     
-    def check_duplicate(self, content_hash: str) -> bool:
-        """Check if a document with the given hash already exists.
+    def check_duplicate_by_raw_file(self, file_path: str) -> tuple[bool, Optional[str]]:
+        """Check if document is duplicate by computing raw file hash.
+        
         
         Args:
-            content_hash: SHA-256 hash of document content
+            file_path: Path to raw file to check
             
         Returns:
-            bool: True if duplicate exists, False otherwise
+            tuple[bool, Optional[str]]: (is_duplicate, existing_document_id)
         """
         try:
-            return self.get_by_hash(content_hash) is not None
+            raw_hash = self.generate_file_hash(file_path)
+            existing_doc = self.get_by_hash(raw_hash)
+            
+            if existing_doc:
+                self._log_operation("Duplicate detected", existing_doc.get_id(), f"file: {file_path}, hash: {raw_hash[:16]}...")
+                return True, existing_doc.get_id()
+            
+            return False, None
+            
         except Exception as e:
-            self.logger.error(f"Failed to check duplicate for hash {content_hash}: {e}")
+            self.logger.error(f"Failed to check duplicate for file {file_path}: {e}")
             raise
+    
     
     def get_by_id(self, document_id: str) -> Optional[Document]:
         """Get document by ID.
@@ -290,7 +300,7 @@ class DocumentCRUD(BaseRepository):
         )
     
     @staticmethod
-    def generate_content_hash(file_path: str) -> str:
+    def generate_file_hash(file_path: str) -> str:
         """Generate SHA-256 hash of file content for duplicate detection.
         
         Args:

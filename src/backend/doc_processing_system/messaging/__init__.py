@@ -1,42 +1,47 @@
 """
-Messaging package for Kafka producers and consumers.
-Provides event-driven communication between system components.
+Event-driven messaging system organized by processing stages.
+
+This package contains all Kafka producers and consumers organized by the
+document processing pipeline stages for clear data flow and maintainability.
+
+Structure:
+- base/: Base classes for producers and consumers
+- file_ingestion/: File detection and initial processing
+- document_processing/: Document workflow coordination  
+- rag_pipeline/: RAG processing events
+- extraction_pipeline/: Structured extraction events
+- query_processing/: Query handling events
+- orchestration/: Event routing and system management
 """
 
-# Base classes
-from .producers_n_consumers.base_producer import BaseKafkaProducer
-from .producers_n_consumers.base_consumer import BaseKafkaConsumer
-
-# Specific producers
-from .producers_n_consumers.document_producer import DocumentProducer
-from .producers_n_consumers.rag_producer import RAGProducer
-from .producers_n_consumers.extraction_producer import ExtractionProducer
-from .producers_n_consumers.query_producer import QueryProducer
-
-# Specific consumers  
-from .producers_n_consumers.document_consumer import DocumentConsumer, create_simple_document_consumer
-
-# Event bus
-from .producers_n_consumers.event_bus import EventBus, EventType, create_event_bus, get_all_event_types
+# Import key components for easy access
+from .base import BaseKafkaConsumer, BaseKafkaProducer
+from .file_ingestion import FileProcessingConsumer
+from .document_processing import DocumentProducer, DocumentConsumer
+from .rag_pipeline import RAGProducer
+from .extraction_pipeline import ExtractionProducer
+from .query_processing import QueryProducer
+from .orchestration import EventBus, EventType, KafkaTopicManager
 
 __all__ = [
     # Base classes
-    "BaseKafkaProducer",
     "BaseKafkaConsumer",
+    "BaseKafkaProducer",
     
-    # Producers
+    # File ingestion
+    "FileProcessingConsumer",
+    
+    # Document processing
     "DocumentProducer",
-    "RAGProducer", 
-    "ExtractionProducer",
+    "DocumentConsumer",
+    
+    # Pipeline producers
+    "RAGProducer",
+    "ExtractionProducer", 
     "QueryProducer",
     
-    # Consumers
-    "DocumentConsumer",
-    "create_simple_document_consumer",
-    
-    # Event bus
+    # Orchestration
     "EventBus",
     "EventType",
-    "create_event_bus",
-    "get_all_event_types"
+    "KafkaTopicManager"
 ]

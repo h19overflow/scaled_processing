@@ -14,6 +14,17 @@ from .query import UserQuery, RAGQueryResult, StructuredQueryResult, HybridQuery
 
 
 # Document Upload Events
+class FileDetectedEvent(BaseModel):
+    """Event published when a new file is detected in the raw directory."""
+    file_path: str
+    filename: str
+    file_size: int
+    file_extension: str
+    detected_at: str
+    event_type: str
+    topic: str = "file-detected"
+
+
 class DocumentReceivedEvent(BaseModel):
     """Event published when document is received and parsed."""
     document_id: str

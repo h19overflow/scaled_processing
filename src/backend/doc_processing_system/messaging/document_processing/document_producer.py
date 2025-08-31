@@ -6,9 +6,9 @@ Handles all document-related event publishing using existing data models.
 from typing import Optional
 from datetime import datetime
 
-from .base_producer import BaseKafkaProducer, create_message_key, validate_event_data
+from ..base.base_producer import BaseKafkaProducer, create_message_key, validate_event_data
 from ...data_models.document import ParsedDocument
-from ...data_models.events import DocumentReceivedEvent, WorkflowInitializedEvent
+from ...data_models.events import FileDetectedEvent, DocumentReceivedEvent, WorkflowInitializedEvent
 
 
 class DocumentProducer(BaseKafkaProducer):
@@ -20,6 +20,45 @@ class DocumentProducer(BaseKafkaProducer):
     def get_default_topic(self) -> str:
         """Default topic for document events."""
         return "document-received"
+    
+    def send_file_detected(self, file_data: dict) -> bool:
+        """
+        Send file detected event from file system watcher.
+        
+        Args:
+            file_data: File detection data
+            
+        Returns:
+            bool: True if event sent successfully
+        """
+        try:
+            # Create event using existing data model
+            event = FileDetectedEvent(**file_data)
+            
+            # Convert to dict for Kafka
+            event_data = event.dict()
+            
+            # Create message key for partitioning
+            message_key = create_message_key(
+                file_path=file_data["file_path"],
+                filename=file_data["filename"]
+            )
+            
+            # Publish event
+            success = self.publish_event(
+                topic=event.topic,
+                event_data=event_data,
+                key=message_key
+            )
+            
+            if success:
+                self.logger.info(f"File detected event sent: {file_data['file_path']}")
+            
+            return success
+            
+        except Exception as e:
+            self.logger.error(f"Failed to send file detected event: {e}")
+            return False
     
     def send_document_received(self, parsed_document: ParsedDocument) -> bool:
         """

@@ -9,7 +9,7 @@ from kafka import KafkaAdminClient
 from kafka.admin import ConfigResource, ConfigResourceType, NewTopic
 from kafka.errors import TopicAlreadyExistsError, KafkaError
 
-from src.backend.doc_processing_system.messaging.producers_n_consumers.event_bus import EventType
+from .event_bus import EventType
 from src.backend.doc_processing_system.config.settings import get_settings
 
 
@@ -76,6 +76,13 @@ class KafkaTopicManager:
         
         # Topic-specific configurations
         topic_configs = {
+            # File system monitoring (low-medium throughput)
+            EventType.FILE_DETECTED.value: {
+                **base_config,
+                'partitions': 3,
+                'replication_factor': 1
+            },
+            
             # Document lifecycle topics (high throughput)
             EventType.DOCUMENT_RECEIVED.value: {
                 **base_config,

@@ -64,7 +64,7 @@ services:
       - POSTGRES_DSN=postgresql://postgres:postgres@postgres:5444/document_processing
     volumes:
       - .:/app
-    command: python -m src.backend.doc_processing_system.messaging.kafka_topics_setup
+    command: python -m src.backend.doc_processing_system.messaging.orchestration.kafka_topics_setup
     restart: "no"
 
   postgres-setup:

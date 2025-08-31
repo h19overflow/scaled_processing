@@ -8,15 +8,16 @@ from typing import Dict, List, Optional, Callable, Any
 from threading import Thread, Event as ThreadEvent
 from enum import Enum
 
-from .document_producer import DocumentProducer
-from .document_consumer import DocumentConsumer
-from .rag_producer import RAGProducer
-from .extraction_producer import ExtractionProducer
-from .query_producer import QueryProducer
+from ..document_processing.document_producer import DocumentProducer
+from ..document_processing.document_consumer import DocumentConsumer
+from ..rag_pipeline.rag_producer import RAGProducer
+from ..extraction_pipeline.extraction_producer import ExtractionProducer
+from ..query_processing.query_producer import QueryProducer
 
 
 class EventType(str, Enum):
     """Types of events in the system."""
+    FILE_DETECTED = "file-detected"
     DOCUMENT_RECEIVED = "document-received"
     WORKFLOW_INITIALIZED = "workflow-initialized"
     CHUNKING_COMPLETE = "chunking-complete"
@@ -73,6 +74,7 @@ class EventBus:
     def _create_topic_router(self) -> Dict[str, str]:
         """Create mapping of event types to producer types."""
         return {
+            EventType.FILE_DETECTED: "document",
             EventType.DOCUMENT_RECEIVED: "document",
             EventType.WORKFLOW_INITIALIZED: "document",
             EventType.CHUNKING_COMPLETE: "rag",

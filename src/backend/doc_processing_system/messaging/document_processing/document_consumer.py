@@ -5,7 +5,7 @@ Handles document-received events and triggers appropriate workflows.
 
 from typing import Dict, Any, List, Optional
 
-from ..producers_n_consumers.base_consumer import BaseKafkaConsumer
+from ..base.base_consumer import BaseKafkaConsumer
 from ...data_models.events import DocumentReceivedEvent, WorkflowInitializedEvent
 
 

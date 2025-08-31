@@ -6,7 +6,7 @@ Handles chunking, embedding, and ingestion events using existing data models.
 from typing import List
 from datetime import datetime
 
-from .base_producer import BaseKafkaProducer, create_message_key
+from ..base.base_producer import BaseKafkaProducer, create_message_key
 from ...data_models.chunk import TextChunk, ValidatedEmbedding
 from ...data_models.events import ChunkingCompleteEvent, EmbeddingReadyEvent, IngestionCompleteEvent
 

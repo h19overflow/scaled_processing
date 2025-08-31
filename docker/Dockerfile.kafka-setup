@@ -27,4 +27,4 @@ COPY .env* ./
 ENV PYTHONPATH=/app
 
 # Default command (will be overridden by docker-compose)
-CMD ["python", "-m", "src.backend.doc_processing_system.messaging.kafka_topics_setup"]
+CMD ["python", "-m", "src.backend.doc_processing_system.messaging.orchestration.kafka_topics_setup"]

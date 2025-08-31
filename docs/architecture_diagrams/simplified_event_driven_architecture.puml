@@ -1,0 +1,148 @@
+@startuml Simplified_Event_Driven_Architecture
+
+!define RECTANGLE class
+
+title Simplified Event-Driven Document Processing Architecture\nDirect DoclingProcessor Integration
+
+package "File System Layer" {
+  RECTANGLE FileSystem {
+    + data/documents/raw/
+    + File drops
+  }
+}
+
+package "Monitoring Layer" {
+  RECTANGLE FileWatcherService {
+    + Watchdog Observer
+    + DocumentFileHandler
+    + Monitors file system changes
+    --
+    + start()
+    + stop()
+    + is_running()
+  }
+}
+
+package "Event Publishing Layer" {
+  RECTANGLE DocumentProducer {
+    + send_file_detected()
+    + send_document_received()
+    + Kafka client
+    --
+    + publish_event()
+  }
+}
+
+package "Message Broker" {
+  RECTANGLE KafkaTopics {
+    + file-detected (3 partitions)
+    + document-received (6 partitions)
+    + Other workflow topics
+  }
+}
+
+package "Enhanced Event Consumption Layer" {
+  note top of EnhancedFileProcessingConsumer : **SIMPLIFIED CONSUMER**\nDirect integration with core components
+  RECTANGLE EnhancedFileProcessingConsumer {
+    + Subscribes to file-detected
+    + Direct database operations
+    + Direct DoclingProcessor calls
+    + Duplicate detection logic
+    + Error handling & recovery
+    + Event publishing
+    --
+    + process_message()
+    + _handle_file_detected()
+    + _check_duplicate()
+    + _process_with_docling()
+    + _store_document()
+    + _publish_completed()
+  }
+}
+
+package "Core Processing Layer" {
+  RECTANGLE DoclingProcessor {
+    + IBM Docling integration
+    + PDF/DOCX processing
+    + Image extraction
+    + Markdown generation
+    --
+    + process_document()
+    + extract_images()
+    + generate_markdown()
+  }
+}
+
+package "Persistence Layer" {
+  RECTANGLE DatabaseLayer {
+    + ConnectionManager
+    + DocumentCRUD
+    + Duplicate detection
+    + Content hash checking
+    --
+    + create()
+    + check_duplicate_by_raw_file()
+    + update_metadata()
+  }
+}
+
+package "Service Orchestration" {
+  RECTANGLE DocumentProcessingService {
+    + Coordinates file watcher
+    + Manages consumer threads
+    + Service lifecycle
+    --
+    + start()
+    + stop()
+    + get_status()
+  }
+}
+
+' Flow relationships
+FileSystem --> FileWatcherService : "File created/modified"
+FileWatcherService --> DocumentProducer : "Publish file-detected event"
+DocumentProducer --> KafkaTopics : "Send to file-detected topic"
+KafkaTopics --> EnhancedFileProcessingConsumer : "Consume file-detected event"
+EnhancedFileProcessingConsumer --> DatabaseLayer : "Check duplicates\nStore metadata"
+EnhancedFileProcessingConsumer --> DoclingProcessor : "Process document content"
+EnhancedFileProcessingConsumer --> DocumentProducer : "Publish document-received event"
+
+' Service orchestration
+DocumentProcessingService --> FileWatcherService : "Manages lifecycle"
+DocumentProcessingService --> EnhancedFileProcessingConsumer : "Manages lifecycle"
+
+' Styling
+skinparam class {
+  BackgroundColor<<enhanced>> LightGreen
+  BorderColor<<enhanced>> Green
+  BackgroundColor<<removed>> LightGray
+  BorderColor<<removed>> Red
+}
+
+EnhancedFileProcessingConsumer <<enhanced>>
+
+note right of EnhancedFileProcessingConsumer
+  **SIMPLIFIED ARCHITECTURE:**
+  Consumer now directly handles:
+  ✅ Duplicate detection via DatabaseLayer
+  ✅ Document processing via DoclingProcessor  
+  ✅ Database storage operations
+  ✅ Event publishing for downstream
+  ✅ Error handling and recovery
+  
+  **Benefits:**
+  - Fewer abstraction layers
+  - Clearer data flow
+  - Easier to understand and debug
+  - More direct control over processing
+end note
+
+note as N1
+  **REMOVED LAYER:**
+  OptimizedDocumentPipeline
+  
+  **Responsibilities moved to:**
+  EnhancedFileProcessingConsumer
+end note
+
+@enduml

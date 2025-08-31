@@ -3,7 +3,7 @@ Query-specific Kafka producer for query processing events.
 Handles RAG, structured, and hybrid query events using existing data models.
 """
 
-from .base_producer import BaseKafkaProducer, create_message_key
+from ..base.base_producer import BaseKafkaProducer, create_message_key
 from ...data_models.query import UserQuery, RAGQueryResult, StructuredQueryResult, HybridQueryResult
 from ...data_models.events import (
     QueryReceivedEvent,
