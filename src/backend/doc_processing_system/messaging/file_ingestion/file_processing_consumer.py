@@ -12,7 +12,6 @@ from datetime import datetime
 from ..base.base_consumer import BaseKafkaConsumer
 from ..document_processing.document_producer import DocumentProducer
 from ...data_models.events import FileDetectedEvent
-from ...pipelines.document_processing.docling_processor import DoclingProcessor
 from ...core_deps.database import ConnectionManager, DocumentCRUD
 from ...data_models.document import Document, ProcessingStatus, FileType
 
@@ -36,6 +35,9 @@ class FileProcessingConsumer(BaseKafkaConsumer):
         # Initialize core components directly (no wrapper layers)
         self.connection_manager = ConnectionManager()
         self.document_crud = DocumentCRUD(self.connection_manager)
+        
+        # Lazy import to avoid circular imports
+        from ...pipelines.document_processing.docling_processor import DoclingProcessor
         self.docling_processor = DoclingProcessor()
         self.document_producer = DocumentProducer()
         

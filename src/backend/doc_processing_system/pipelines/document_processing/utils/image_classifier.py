@@ -58,29 +58,48 @@ class ImageClassifier:
             
         except Exception as e:
             self.logger.warning(f"Classification failed: {e}")
-            # Conservative default: analyze when uncertain
+            # Aggressive default: skip when classification fails
             return {
-                'action': 'analyze',
-                'confidence': 0.5,
-                'reason': f'Classification failed: {e}',
+                'action': 'skip',
+                'confidence': 0.3,
+                'reason': f'Classification failed: {e} - defaulting to skip (aggressive mode)',
                 'tokens_used': 0
             }
     
     def _parse_classification(self, response: str) -> Dict[str, any]:
-        """Parse classification response."""
+        """Parse classification response with aggressive filtering."""
         try:
             parts = response.strip().upper().split()
             action = parts[0]
             confidence = float(parts[1]) if len(parts) > 1 else 0.7
             
+            # Be more aggressive - require high confidence for analysis
+            if action == 'ANALYZE':
+                # Only analyze if confidence is reasonably high
+                if confidence < 0.6:
+                    return {
+                        'action': 'skip',
+                        'confidence': confidence,
+                        'reason': f'Low confidence analysis ({confidence}) - skipping'
+                    }
+                else:
+                    return {
+                        'action': 'analyze',
+                        'confidence': confidence,
+                        'reason': f'High confidence analysis ({confidence})'
+                    }
+            else:
+                # Default to skip for anything that's not clearly analyze
+                return {
+                    'action': 'skip',
+                    'confidence': confidence,
+                    'reason': f'Classified as {action}'
+                }
+                
+        except Exception as e:
+            # Be aggressive on parse failure - default to skip instead of analyze
             return {
-                'action': 'analyze' if action == 'ANALYZE' else 'skip',
-                'confidence': confidence,
-                'reason': f'Classified as {action}'
-            }
-        except:
-            return {
-                'action': 'analyze',
-                'confidence': 0.5,
-                'reason': 'Parse failed, defaulting to analyze'
+                'action': 'skip',
+                'confidence': 0.3,
+                'reason': f'Parse failed: {e} - defaulting to skip (aggressive mode)'
             }

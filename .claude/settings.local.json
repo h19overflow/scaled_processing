@@ -11,7 +11,9 @@
       "mcp__ide__executeCode",
       "WebFetch(domain:docling-project.github.io)",
       "Bash(mkdir:*)",
-      "WebFetch(domain:ai.google.dev)"
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(uv run:*)",
+      "Bash(..venvScriptspython.exe test_vision_integration.py)"
     ],
     "deny": [],
     "ask": []

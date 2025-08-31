@@ -25,8 +25,10 @@ class VisionConfig:
     classification_prompt: str = """Classify this document image. Context: {context}
 
 Reply with exactly: ACTION confidence
-- ANALYZE: Charts, graphs, diagrams, technical content, text
-- SKIP: Logos, decorative, pure photos, UI screenshots
+- ANALYZE: Charts, graphs, diagrams, tables, technical content, readable text, data visualizations
+- SKIP: Logos, decorative, pure photos, UI screenshots, empty images, images without text or data
+
+Be aggressive - only analyze if image contains meaningful text, data, or technical information.
 
 Example: ANALYZE 0.9"""
     
