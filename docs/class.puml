@@ -5,10 +5,10 @@ title Architectural Blueprint - Class Diagram (Clean Layout)
 ' Clean layout configuration with better spacing
 left to right direction
 skinparam linetype ortho
-skinparam ranksep 200
-skinparam nodesep 200
+skinparam ranksep 100
+skinparam nodesep 100
 skinparam classAttributeIconSize 0
-skinparam minClassWidth 200
+skinparam minClassWidth 100
 skinparam arrowThickness 3
 skinparam dpi 150
 
@@ -132,14 +132,35 @@ package "Infrastructure" as infra #FFF3E0 {
         +list_documents(): List
     }
     
-    class PrefectOrchestrator #FFCC80 {
-        -flow_manager: FlowManager
-        -task_monitor: TaskMonitor
+    class DocumentProcessingOrchestrator #FFCC80 {
+        -file_watcher: FileWatcherService
+        -prefect_consumers: List[PrefectFlowConsumer]
+        -consumer_threads: List
         --
-        +start_parallel_flows(): bool
-        +trigger_structured_extraction(): Task
-        +trigger_rag_processing(): Task
-        +monitor_both_flows(): Status
+        +start(): None
+        +stop(): None
+        +is_running(): bool
+        +get_status(): dict
+    }
+    
+    class FileWatcherService #FFCC80 {
+        -document_producer: DocumentProducer
+        -event_handler: DocumentFileHandler
+        -observer: Observer
+        --
+        +start(): None
+        +stop(): None
+        +is_running(): bool
+    }
+    
+    class PrefectFlowConsumer #FFCC80 {
+        -document_producer: DocumentProducer
+        -processing_files: set
+        --
+        +get_subscribed_topics(): list
+        +process_message(): bool
+        +start_consuming(): None
+        +stop_consuming(): None
     }
 }
 
@@ -153,22 +174,27 @@ package "Messaging" as messaging #F3E5F5 {
     interface IEventConsumer #CE93D8 {
         +consume(): List
         +subscribe(): bool
+        +get_subscribed_topics(): List
+        +process_message(): bool
     }
     
-    class KafkaProducer #CE93D8 {
+    class DocumentProducer #CE93D8 {
         -connection_manager: ConnectionManager
         --
-        +publish_event(): bool
+        +send_file_detected(): bool
         +send_document_received(): bool
+        +send_workflow_initialized(): bool
         +send_processing_complete(): bool
     }
     
-    class KafkaConsumer #CE93D8 {
-        -message_handler: MessageHandler
+    class BaseKafkaConsumer #CE93D8 {
+        -consumer: KafkaConsumer
+        -stop_event: Event
         --
         +consume_events(): List
         +subscribe_to_topic(): bool
-        +process_message(): bool
+        +start_consuming(): None
+        +stop_consuming(): None
     }
     
     class EventBus #CE93D8 {
@@ -189,18 +215,48 @@ package "Document Processing" as docprocessing #E1F5FE {
     
     class DoclingProcessor #81D4FA {
         -vision_processor: VisionProcessor
+        -output_manager: DocumentOutputManager
         --
-        +process_document(): IDocument
+        +process_document_with_vision(): ParsedDocument
+        +process_document_with_duplicate_check(): Dict
+        +_extract_images_to_dict(): Dict
+        +_extract_document_context(): str
     }
 
-    class VisionProcessor <<Orchestrator>> {
-        -agent: VisionAgent
+    class DocumentOutputManager #81D4FA {
+        -connection_manager: ConnectionManager
+        -document_crud: DocumentCRUD
+        -document_producer: DocumentProducer
+        --
+        +check_and_process_document(): Dict
+        +save_processed_document(): Dict
+        +prepare_kafka_message(): Dict
+        +get_document_path_info(): Dict
+    }
+
+    class VisionProcessor #81D4FA {
+        -classifier: ImageClassifier
+        -vision_agent: VisionAgent
+        -enhancer: MarkdownEnhancer
         --
         +process_document_images(): str
+        +_process_with_classification(): Dict
+        +_process_all_images(): Dict
     }
 
-    class VisionAgent <<Visual Analyzer>> {
+    class VisionAgent #81D4FA {
+        +describe_image_async(): str
         +analyze_image(): dict
+    }
+    
+    class ImageClassifier #81D4FA {
+        +classify_image(): Dict
+        +should_analyze(): bool
+    }
+    
+    class MarkdownEnhancer #81D4FA {
+        +enhance_content(): str
+        +replace_image_placeholders(): str
     }
 }
 
@@ -260,6 +316,30 @@ package "Agent Layer" as agents #FFEBEE {
     }
 }
 
+' === Prefect Workflow Layer (Lavender Theme) ===
+package "Prefect Workflows" as prefect #F8BBD9 {
+    class DocumentProcessingFlow #F48FB1 {
+        +document_processing_flow(): Dict
+        +process_document_with_flow(): Dict
+    }
+    
+    class DuplicateDetectionTask #F48FB1 {
+        +duplicate_detection_task(): Dict
+    }
+    
+    class VisionProcessingTask #F48FB1 {
+        +vision_processing_task(): Dict
+    }
+    
+    class DocumentSavingTask #F48FB1 {
+        +document_saving_task(): Dict
+    }
+    
+    class KafkaMessagePrepTask #F48FB1 {
+        +kafka_message_preparation_task(): Dict
+    }
+}
+
 ' === Query & Evaluation (Cyan Theme) ===
 package "Query & Evaluation" as query #E0F2F1 {
     class RAGQueryEngine #80CBC4 {
@@ -276,7 +356,7 @@ package "Query & Evaluation" as query #E0F2F1 {
     }
 }
 
-' === Key Relationships ===
+' === Updated Relationships ===
 
 ' Interface implementations
 Document ..|> IDocument
@@ -284,29 +364,46 @@ Chunk ..|> IChunk
 DoclingProcessor ..|> IDocumentProcessor
 SemanticChunker ..|> IChunker
 DocumentIngestionAPI ..|> IAPIController
-PrefectOrchestrator ..|> IWorkflowOrchestrator
-KafkaProducer ..|> IEventPublisher
-KafkaConsumer ..|> IEventConsumer
+DocumentProcessingOrchestrator ..|> IWorkflowOrchestrator
+DocumentProducer ..|> IEventPublisher
+PrefectFlowConsumer ..|> IEventConsumer
+BaseKafkaConsumer ..|> IEventConsumer
 
 ' Configuration dependencies (Dependency Injection)
 Settings ..> DocumentIngestionAPI : injects config
-Settings ..> PrefectOrchestrator : injects config
+Settings ..> DocumentProcessingOrchestrator : injects config
 Settings ..> PersistenceManager : injects config
 
-' Kafka messaging flow
-DocumentIngestionAPI --> KafkaProducer : uses IEventPublisher
-KafkaProducer --> EventBus : sends to topics
-EventBus --> KafkaConsumer : delivers messages
-KafkaConsumer --> PrefectOrchestrator : triggers workflows
+' File System Monitoring Flow
+FileWatcherService --> DocumentProducer : uses for file-detected events
+DocumentProducer --> EventBus : sends to topics
 
-' Document Processing Flow (Sequential - First)
-PrefectOrchestrator --> DoclingProcessor : 1. starts document processing first
-DoclingProcessor --> VisionProcessor : uses
-VisionProcessor --> VisionAgent : uses
+' Event-Driven Processing Flow
+EventBus --> PrefectFlowConsumer : delivers file-detected events
+PrefectFlowConsumer --> DocumentProcessingOrchestrator : coordinates services
 
-' Parallel Flow Orchestration (After Document Processing)
-PrefectOrchestrator --> OrchestratorAgent : 2a. triggers structured extraction
-PrefectOrchestrator --> SemanticChunker : 2b. triggers RAG processing
+' Prefect Workflow Flow
+PrefectFlowConsumer --> DocumentProcessingFlow : triggers flow
+DocumentProcessingFlow --> DuplicateDetectionTask : step 1
+DuplicateDetectionTask --> VisionProcessingTask : step 2 (if new)
+VisionProcessingTask --> DocumentSavingTask : step 3
+DocumentSavingTask --> KafkaMessagePrepTask : step 4
+
+' Document Processing Flow (Enhanced)
+VisionProcessingTask --> DoclingProcessor : processes document
+DoclingProcessor --> DocumentOutputManager : manages workflow
+DoclingProcessor --> VisionProcessor : enhances with AI
+VisionProcessor --> VisionAgent : describes images
+VisionProcessor --> ImageClassifier : classifies images
+VisionProcessor --> MarkdownEnhancer : enhances content
+
+' Document Output Management
+DocumentOutputManager --> PersistenceManager : saves to database
+DocumentOutputManager --> DocumentProducer : prepares messages
+
+' Orchestration Relationships
+DocumentProcessingOrchestrator --> FileWatcherService : manages
+DocumentProcessingOrchestrator --> PrefectFlowConsumer : manages
 
 ' Structured Extraction Flow
 OrchestratorAgent --> FieldDiscoveryAgent : collaborates

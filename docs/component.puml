@@ -1,14 +1,15 @@
 @startuml
 
-title Scaled Document Processing System - Component Architecture
+title Scaled Document Processing System - Component Architecture (Updated)
 left to right direction
 skinparam linetype ortho
-skinparam ranksep 200
-skinparam nodesep 200
+skinparam ranksep 100
+skinparam nodesep 100
 skinparam classAttributeIconSize 0
-skinparam minClassWidth 200
+skinparam minClassWidth 100
 skinparam arrowThickness 3
 skinparam dpi 150
+
 ' === User Interface Layer ===
 package "User Interface / API" #E3F2FD {
   actor User
@@ -16,19 +17,39 @@ package "User Interface / API" #E3F2FD {
   [File Validator] as Validator
 }
 
+' === File System Monitoring ===
+package "File System Monitoring" #FFF8E1 {
+  folder "Raw Documents" as RawDocs
+  [File Watcher Service] as FileWatcher
+  [Document File Handler] as FileHandler
+}
+
 ' === Messaging Layer ===
 package "Event-Driven Messaging" #F3E5F5 {
   queue "Kafka Event Bus" as Kafka
-  [Event Publisher] as Publisher
-  [Event Consumer] as Consumer
+  [Document Producer] as DocProducer
+  [Prefect Flow Consumer] as FlowConsumer
   [Topic Router] as Router
 }
 
-' === Orchestration Layer ===
-package "Workflow Orchestration" #FFF3E0 {
-  [Prefect Orchestrator] as Prefect
-  [Flow Manager] as FlowMgr
-  [Task Monitor] as Monitor
+' === Workflow Orchestration Layer ===
+package "Prefect Workflow Orchestration" #FFF3E0 {
+  [Document Processing Orchestrator] as Orchestrator
+  [Document Processing Flow] as PrefectFlow
+  [Duplicate Detection Task] as DupTask
+  [Vision Processing Task] as VisionTask
+  [Document Saving Task] as SaveTask
+  [Kafka Message Prep Task] as KafkaTask
+}
+
+' === Document Processing Pipeline ===
+package "Document Processing Pipeline" #E1F5FE {
+  [Docling Processor] as DoclingProcessor
+  [Document Output Manager] as OutputManager
+  [Vision Processor] as VisionProcessor
+  [Vision Agent] as VisionAgent
+  [Image Classifier] as ImageClassifier
+  [Markdown Enhancer] as MarkdownEnhancer
 }
 
 ' === Parallel Processing Flows ===
@@ -36,12 +57,6 @@ package "Structured Extraction Flow" #FFEBEE {
   [Orchestrator Agent] as OrchestratorAgent
   [Field Discovery Agent] as FieldAgent
   [Extraction Agent Swarm] as ExtractionSwarm
-}
-
-package "Document Processing Pipeline" #E1F5FE {
-  [Docling Processor] as DoclingProcessor
-  [Vision Processor] as VisionProcessor
-  [Image Agent] as ImageAgent
 }
 
 package "RAG Processing Flow" #FFFDE7 {
@@ -83,50 +98,55 @@ package "Configuration" #F3E5F5 {
   [Settings Manager] as Config
 }
 
-' === PRIMARY FLOW RELATIONSHIPS ===
+' === UPDATED FLOW RELATIONSHIPS ===
 
-' 1. Document Upload Flow
-User --> API : 1. Upload Document
-API --> Validator : validates file
-API --> Publisher : 2. Publish event
-Publisher --> Kafka : sends to topics
-Kafka --> Router : routes messages
-Router --> Consumer : delivers events
-Consumer --> Prefect : 3. Triggers workflows
+' 1. File System Monitoring Flow
+User --> RawDocs : drops file
+RawDocs --> FileWatcher : monitors directory
+FileWatcher --> FileHandler : detects file events
+FileHandler --> DocProducer : publishes file-detected event
 
-' 2. Parallel Flow Orchestration
-Prefect --> FlowMgr : manages flows
-FlowMgr --> DoclingProcessor : 4a. Start Document Processing (First)
-FlowMgr --> OrchestratorAgent : 4b. Start Structured Extraction (After Docling)
-FlowMgr --> Chunker : 4c. Start RAG Processing (After Docling)
-Monitor --> Prefect : monitors all flows
+' 2. Event-Driven Processing Flow
+DocProducer --> Kafka : sends file-detected to topic
+Kafka --> FlowConsumer : delivers event
+FlowConsumer --> Orchestrator : coordinates services
+Orchestrator --> PrefectFlow : triggers document processing
 
-' 3. Structured Extraction Flow
+' 3. Prefect Workflow Orchestration
+PrefectFlow --> DupTask : 1. Check duplicates
+DupTask --> VisionTask : 2. Process with AI (if new)
+VisionTask --> SaveTask : 3. Save processed doc
+SaveTask --> KafkaTask : 4. Prepare downstream messages
+
+' 4. Document Processing Pipeline
+VisionTask --> DoclingProcessor : processes document
+DoclingProcessor --> OutputManager : manages workflow
+DoclingProcessor --> VisionProcessor : enhances with AI
+VisionProcessor --> VisionAgent : describes images
+VisionProcessor --> ImageClassifier : classifies images
+VisionProcessor --> MarkdownEnhancer : enhances content
+
+' 5. Document Output Management
+OutputManager --> PersistMgr : saves to database
+OutputManager --> DocProducer : prepares Kafka messages
+KafkaTask --> DocProducer : publishes document-received event
+
+' 6. Downstream Pipeline Triggers
+DocProducer --> Kafka : sends to document-received topic
+Kafka --> OrchestratorAgent : triggers extraction pipeline
+Kafka --> Chunker : triggers RAG pipeline
+
+' 7. Parallel Processing (After Document Processing Complete)
 OrchestratorAgent --> FieldAgent : collaborates on discovery
 OrchestratorAgent --> ExtractionSwarm : deploys for parallel extraction
-ImageAgent --> OrchestratorAgent : provides visual analysis
-ImageAgent --> FieldAgent : enhances field discovery
-
-' 4. Document Processing Flow (Sequential - First)
-DoclingProcessor --> VisionProcessor : uses for image analysis
-
-' 5. Parallel Processing (After Document Processing Complete)
-Prefect --> OrchestratorAgent : sends processed document
-Prefect --> Chunker : sends processed document
-
-' Image Agent Integration (Unified)
-VisionProcessor --> ImageAgent : uses
-
-' 6. RAG Processing Flow (Uses Docling Output)
 Chunker --> EmbeddingService : creates embeddings from chunks
 EmbeddingService --> VectorStorage : stores vectors
 
-' 7. Data Persistence (All flows converge)
+' 8. Data Persistence (All flows converge)
 ExtractionSwarm --> PersistMgr : structured results
 VectorStorage --> PersistMgr : vector data
 Chunker --> PersistMgr : chunks & metadata
 OrchestratorAgent --> PersistMgr : schemas
-ContentValidator --> PersistMgr : processed documents
 
 ' Repository Pattern
 PersistMgr --> DocRepo : document operations
