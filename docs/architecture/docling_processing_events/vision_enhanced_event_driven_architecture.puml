@@ -1,8 +1,8 @@
-@startuml Simplified_Event_Driven_Architecture
+@startuml Vision_Enhanced_Event_Driven_Architecture
 
 !define RECTANGLE class
-
-title Simplified Event-Driven Document Processing Architecture\nDirect DoclingProcessor Integration
+skinparam linetype ortho
+title Vision-Enhanced Event-Driven Architecture
 
 package "File System Layer" {
   RECTANGLE FileSystem {
@@ -61,16 +61,26 @@ package "Enhanced Event Consumption Layer" {
 }
 
 package "Core Processing Layer" {
+  note top of DoclingProcessor: **Vision-Enhanced Processing**
   RECTANGLE DoclingProcessor {
     + IBM Docling integration
+    + Vision AI Enhancement
     + PDF/DOCX processing
-    + Image extraction
-    + Markdown generation
+    + Image extraction & analysis
+    + Enhanced markdown generation
     --
     + process_document()
-    + extract_images()
-    + generate_markdown()
   }
+
+  RECTANGLE VisionProcessor {
+    + Image Classification
+    + Vision Agent (Gemini)
+    + Markdown Enhancement
+    --
+    + process_document_images()
+  }
+
+  DoclingProcessor o--> VisionProcessor : "uses for vision tasks"
 }
 
 package "Persistence Layer" {

@@ -36,14 +36,12 @@ package "Structured Extraction Flow" #FFEBEE {
   [Orchestrator Agent] as OrchestratorAgent
   [Field Discovery Agent] as FieldAgent
   [Extraction Agent Swarm] as ExtractionSwarm
-  [Image Agent] as ImageAgent
 }
 
 package "Document Processing Pipeline" #E1F5FE {
   [Docling Processor] as DoclingProcessor
-  [Structure Analyzer] as StructureAnalyzer
-  [Content Extractor] as ContentExtractor
-  [Content Validator] as ContentValidator
+  [Vision Processor] as VisionProcessor
+  [Image Agent] as ImageAgent
 }
 
 package "RAG Processing Flow" #FFFDE7 {
@@ -110,17 +108,14 @@ ImageAgent --> OrchestratorAgent : provides visual analysis
 ImageAgent --> FieldAgent : enhances field discovery
 
 ' 4. Document Processing Flow (Sequential - First)
-DoclingProcessor --> StructureAnalyzer : extracts document structure
-DoclingProcessor --> ContentExtractor : extracts clean content
-ContentExtractor --> ContentValidator : validates extraction quality
+DoclingProcessor --> VisionProcessor : uses for image analysis
 
 ' 5. Parallel Processing (After Document Processing Complete)
-ContentValidator --> OrchestratorAgent : sends processed document
-ContentValidator --> Chunker : sends processed document
+Prefect --> OrchestratorAgent : sends processed document
+Prefect --> Chunker : sends processed document
 
 ' Image Agent Integration (Unified)
-ImageAgent --> DoclingProcessor : enhances visual analysis
-ImageAgent --> StructureAnalyzer : provides visual insights
+VisionProcessor --> ImageAgent : uses
 
 ' 6. RAG Processing Flow (Uses Docling Output)
 Chunker --> EmbeddingService : creates embeddings from chunks

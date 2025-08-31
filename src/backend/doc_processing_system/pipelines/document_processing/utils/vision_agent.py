@@ -8,7 +8,8 @@ from PIL import Image
 import google.generativeai as genai
 
 from .vision_config import VisionConfig
-
+from dotenv import load_dotenv
+load_dotenv()
 
 class VisionAgent:
     """Simple vision agent using Google Gemini for image descriptions."""

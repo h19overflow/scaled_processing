@@ -28,8 +28,8 @@ The Scaled Processing System is designed to handle large-scale document processi
 ```mermaid
 graph TB
     subgraph "Document Upload"
-        A[📄 Multi-Format Documents] --> B[🔍 Dynamic Parser]
-        B --> C[📊 Metadata Extraction]
+        A[📄 Multi-Format Documents] --> B[�️ Vision-Enhanced Parser (Docling)]
+        B --> C[� Content Validator]
         C --> D[🎯 Parallel Workflow Trigger]
     end
     
@@ -67,8 +67,7 @@ graph TD
     subgraph "Processing Layer"
         subgraph "Document Ingestion"
             UPLOAD[📤 Upload Service]
-            PARSER[🔍 Parser Factory]
-            VALIDATOR[✅ File Validator]
+            PARSER[�️ Docling Processor]
         end
         
         subgraph "RAG Workflow"
@@ -109,8 +108,7 @@ graph TD
     UI --> API
     API --> UPLOAD
     UPLOAD --> PARSER
-    PARSER --> VALIDATOR
-    VALIDATOR --> KAFKA
+    PARSER --> KAFKA
     
     KAFKA --> CHUNK
     KAFKA --> FIELD
@@ -133,6 +131,7 @@ graph TD
     STRUCT_Q --> POSTGRES
     
     PREFECT --> CHUNK
+    PREFECT --> FIELD
     LANGGRAPH --> AGENT
     
     style KAFKA fill:#fff3e0
@@ -143,47 +142,9 @@ graph TD
 
 ### Event-Driven Architecture Flow
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant API
-    participant Kafka
-    participant RAG
-    participant Extraction
-    participant Query
-    
-    User->>API: Upload Document
-    API->>Kafka: DocumentReceivedEvent
-    
-    par RAG Processing
-        Kafka->>RAG: Trigger Chunking
-        RAG->>RAG: Generate Embeddings
-        RAG->>Kafka: EmbeddingReadyEvent
-        RAG->>Kafka: IngestionCompleteEvent
-    and Structured Extraction
-        Kafka->>Extraction: Trigger Field Discovery
-        Extraction->>Extraction: Scale Agent Swarm
-        Extraction->>Kafka: ExtractionCompleteEvent
-    end
-    
-    User->>API: Submit Query
-    API->>Query: Route Query Type
-    
-    alt RAG Query
-        Query->>RAG: Vector Search
-        RAG-->>Query: Semantic Results
-    else Structured Query
-        Query->>Extraction: Field Filtering
-        Extraction-->>Query: Structured Data
-    else Hybrid Query
-        Query->>RAG: Vector Search
-        Query->>Extraction: Field Filtering
-        Query->>Query: Fusion Algorithm
-    end
-    
-    Query-->>API: Unified Response
-    API-->>User: Intelligent Answer
-```
+The system uses an event-driven architecture to decouple services and enable parallel processing. When a document is uploaded, it triggers two independent workflows that run simultaneously.
+
+![Event-Driven Architecture](docs/architecture/vision_enhanced_event_driven_architecture.puml)
 
 ## 🔄 Processing Workflows
 
@@ -402,13 +363,14 @@ graph LR
 ## 🚀 Key Features
 
 ### 🎯 **Intelligent Document Processing**
+- **Vision AI Integration**: Google Gemini for image analysis and description.
 - **Multi-Format Support**: PDF, DOCX, Images, Text files
 - **Dynamic Parser Selection**: Automatic format detection and optimal parsing
 - **Metadata Extraction**: Comprehensive document analysis and cataloging
 
 ### ⚡ **Parallel Processing Architecture**
+- **Dual Pipelines**: Independent, parallel RAG and structured extraction workflows.
 - **Event-Driven**: Kafka-based message streaming for scalability
-- **Independent Pipelines**: RAG and structured extraction run simultaneously
 - **Horizontal Scaling**: Partition-based load distribution
 
 ### 🧠 **Advanced AI Integration**
@@ -441,17 +403,16 @@ graph TB
     end
     
     subgraph "AI & ML"
-        D[Pydantic-AI] --> E[OpenAI]
-        D --> F[Anthropic]
-        D --> G[Google AI]
-        H[LangGraph] --> I[LangSmith]
-        J[Sentence Transformers] --> K[ChromaDB]
+        D[Pydantic-AI] --> E[Google Gemini]
+        F[LangGraph] --> G[Agent Orchestration]
+        H[Hugging Face] --> I[Local Inference]
+        J[ModernBERT] --> K[ChromaDB]
     end
     
     subgraph "Document Processing"
-        L[Docling] --> M[PDF Processing]
-        N[python-docx] --> O[DOCX Processing]
-        P[Pillow + Tesseract] --> Q[Image OCR]
+        L[IBM Docling] --> M[PDF Processing]
+        N[Pillow] --> O[Image Manipulation]
+        P[OpenCV] --> Q[Image Analysis]
         R[Semantic Text Splitter] --> S[Intelligent Chunking]
     end
     
@@ -634,3 +595,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 [⭐ Star this project](https://github.com/h19overflow/scaled_processing) if you find it useful!
 
 </div>
+
+### Vision AI Integration Architecture
+
+The vision processing capabilities are encapsulated in a set of utility classes that are integrated directly into the `DoclingProcessor`. This modular design ensures clean separation of concerns and allows for easy maintenance and testing.
+
+![Vision Architecture Diagram](docs/architecture/vision_architecture.puml)

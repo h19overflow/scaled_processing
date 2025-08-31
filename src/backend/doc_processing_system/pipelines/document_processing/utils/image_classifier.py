@@ -7,7 +7,8 @@ from PIL import Image
 from google import genai
 
 from .vision_config import VisionConfig
-
+from dotenv import load_dotenv
+load_dotenv()
 
 class ImageClassifier:
     """Smart classifier to filter images before expensive analysis."""

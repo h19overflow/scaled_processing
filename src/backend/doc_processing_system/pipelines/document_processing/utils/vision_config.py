@@ -3,7 +3,8 @@
 from dataclasses import dataclass
 from typing import Optional
 import os
-
+from dotenv import load_dotenv
+load_dotenv()
 
 @dataclass
 class VisionConfig:

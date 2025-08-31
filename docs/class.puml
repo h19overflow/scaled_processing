@@ -188,37 +188,19 @@ package "Document Processing" as docprocessing #E1F5FE {
     }
     
     class DoclingProcessor #81D4FA {
-        -docling_client: DoclingClient
-        -image_agent: ImageAgent
+        -vision_processor: VisionProcessor
         --
         +process_document(): IDocument
-        +supports_all_formats(): bool
-        +extract_unified_content(): dict
-        +get_document_structure(): dict
     }
-    
-    class StructureAnalyzer #81D4FA {
+
+    class VisionProcessor <<Orchestrator>> {
+        -agent: VisionAgent
         --
-        +analyze_structure(): dict
-        +extract_tables(): List
-        +identify_sections(): List
-        +get_headings(): List
+        +process_document_images(): str
     }
-    
-    class ContentExtractor #81D4FA {
-        --
-        +extract_text(): str
-        +extract_metadata(): dict
-        +clean_content(): str
-        +preserve_formatting(): bool
-    }
-    
-    class ContentValidator #81D4FA {
-        --
-        +validate_extraction(): bool
-        +check_completeness(): float
-        +verify_structure(): bool
-        +ensure_quality(): bool
+
+    class VisionAgent <<Visual Analyzer>> {
+        +analyze_image(): dict
     }
 }
 
@@ -262,10 +244,6 @@ package "Agent Layer" as agents #FFEBEE {
         +scan_document(): dict
         +identify_extractable_fields(): List
         +create_extraction_schema(): ExtractionSchema
-    }
-    
-    class ImageAgent <<Visual Analyzer>> #FFCDD2 {
-        +analyze_image(): dict
     }
     
     class FieldDiscoveryAgent <<Discovery Agent>> #FFCDD2 {
@@ -323,16 +301,12 @@ KafkaConsumer --> PrefectOrchestrator : triggers workflows
 
 ' Document Processing Flow (Sequential - First)
 PrefectOrchestrator --> DoclingProcessor : 1. starts document processing first
-DoclingProcessor --> StructureAnalyzer : uses
-DoclingProcessor --> ContentExtractor : uses
-ContentExtractor --> ContentValidator : validates
-
-' Dependency Injection in Document Processor
-ImageAgent --> DoclingProcessor : injected into
+DoclingProcessor --> VisionProcessor : uses
+VisionProcessor --> VisionAgent : uses
 
 ' Parallel Flow Orchestration (After Document Processing)
-ContentValidator --> OrchestratorAgent : 2a. triggers structured extraction
-ContentValidator --> SemanticChunker : 2b. triggers RAG processing
+PrefectOrchestrator --> OrchestratorAgent : 2a. triggers structured extraction
+PrefectOrchestrator --> SemanticChunker : 2b. triggers RAG processing
 
 ' Structured Extraction Flow
 OrchestratorAgent --> FieldDiscoveryAgent : collaborates

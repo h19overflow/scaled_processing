@@ -1,0 +1,91 @@
+@startuml vision_architecture
+' Vision Processing Architecture Diagram
+title Vision Processing Architecture
+
+left to right direction
+skinparam linetype ortho
+skinparam ranksep 120
+skinparam nodesep 100
+skinparam classAttributeIconSize 0
+skinparam minClassWidth 180
+skinparam arrowThickness 2
+skinparam dpi 150
+
+skinparam package {
+    BorderColor #2C3E50
+    FontColor #2C3E50
+    FontSize 11
+    FontStyle bold
+    RoundCorner 8
+}
+
+skinparam class {
+    BorderColor #34495E
+    BackgroundColor #FFFFFF
+    ArrowColor #7F8C8D
+    FontSize 9
+    RoundCorner 5
+}
+
+' === Document Processing Layer ===
+package "Document Processing" as docprocessing #E1F5FE {
+    class DoclingProcessor #81D4FA {
+        -vision_processor: VisionProcessor
+        --
+        +process_document(): ParsedDocument
+        +extract_unified_content(): dict
+    }
+}
+
+' === Vision Utilities Layer ===
+package "Vision Utilities" as visionutils #E8F5E8 {
+    class VisionProcessor <<Orchestrator>> #C8E6C9 {
+        -classifier: ImageClassifier
+        -agent: VisionAgent
+        -enhancer: MarkdownEnhancer
+        -config: VisionConfig
+        --
+        +process_document_images(): str
+    }
+
+    class ImageClassifier <<Filter>> #C8E6C9 {
+        -config: VisionConfig
+        --
+        +classify_image(): str
+    }
+
+    class VisionAgent <<API Client>> #C8E6C9 {
+        -config: VisionConfig
+        -client: GoogleGenerativeAI
+        --
+        +get_image_description(): str
+    }
+
+    class MarkdownEnhancer <<Integration>> #C8E6C9 {
+        --
+        +enhance_markdown(): str
+    }
+
+    class VisionConfig <<Settings>> #C8E6C9 {
+        +GEMINI_MODEL: str
+        +ANALYSIS_PROMPT: str
+        +MIN_IMAGE_SIZE: int
+    }
+}
+
+' === Relationships ===
+
+' DoclingProcessor integrates the VisionProcessor
+DoclingProcessor o--> VisionProcessor : contains
+
+' VisionProcessor orchestrates the utilities
+VisionProcessor --> ImageClassifier : uses
+VisionProcessor --> VisionAgent : uses
+VisionProcessor --> MarkdownEnhancer : uses
+
+' All utilities are configured by VisionConfig
+VisionProcessor --> VisionConfig : uses
+ImageClassifier --> VisionConfig : uses
+VisionAgent --> VisionConfig : uses
+
+@enduml
