@@ -5,6 +5,8 @@ import logging
 from typing import Dict
 from PIL import Image
 from google import genai
+from google.genai import types
+import io
 
 from .vision_config import VisionConfig
 from dotenv import load_dotenv
@@ -29,9 +31,17 @@ class ImageClassifier:
             # Use minimal prompt to reduce tokens
             prompt = self.config.classification_prompt.format(context=context)
             
+            # Convert PIL image to bytes
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+            
             response = await self.client.models.generate_content(
                 model=self.config.model_name,
-                contents=[image, prompt],
+                contents=[
+                    types.Part.from_bytes(data=img_byte_arr, mime_type='image/png'),
+                    prompt
+                ],
                 generation_config={
                     "max_output_tokens": self.config.classification_max_tokens,
                     "temperature": 0.1,

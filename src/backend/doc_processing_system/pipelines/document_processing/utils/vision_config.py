@@ -11,7 +11,7 @@ class VisionConfig:
     """Configuration for vision processing pipeline."""
     
     # Model settings
-    model_name: str = "gemini-2.5-flash-image-preview"
+    model_name: str = "gemini-2.0-flash"
     
     # Concurrency settings
     classification_concurrency: int = 10

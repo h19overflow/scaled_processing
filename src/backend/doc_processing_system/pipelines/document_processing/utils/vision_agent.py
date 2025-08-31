@@ -5,7 +5,9 @@ Enhanced with async support for better performance.
 
 import logging
 from PIL import Image
-import google.generativeai as genai
+from google import genai
+from google.genai import types
+import io
 
 from .vision_config import VisionConfig
 from dotenv import load_dotenv
@@ -27,9 +29,17 @@ class VisionAgent:
         try:
             prompt = f"Describe this image in the context of a document. Context: {context}" if context else "Describe this image."
             
+            # Convert PIL image to bytes
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+            
             response = self.client.models.generate_content(
                 model=self.model,
-                contents=[image, prompt]
+                contents=[
+                    types.Part.from_bytes(data=img_byte_arr, mime_type='image/png'),
+                    prompt
+                ]
             )
             
             return response.text
@@ -63,9 +73,17 @@ class VisionAgent:
         try:
             prompt = self.config.analysis_prompt.format(context=context)
             
+            # Convert PIL image to bytes
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+            
             response = await self.client.models.generate_content(
                 model=self.model,
-                contents=[image, prompt],
+                contents=[
+                    types.Part.from_bytes(data=img_byte_arr, mime_type='image/png'),
+                    prompt
+                ],
                 generation_config={
                     "max_output_tokens": self.config.analysis_max_tokens,
                     "temperature": 0.3,

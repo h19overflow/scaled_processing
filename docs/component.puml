@@ -3,11 +3,11 @@
 title Scaled Document Processing System - Component Architecture
 left to right direction
 skinparam linetype ortho
-skinparam ranksep 120
-skinparam nodesep 100
+skinparam ranksep 200
+skinparam nodesep 200
 skinparam classAttributeIconSize 0
-skinparam minClassWidth 160
-skinparam arrowThickness 2
+skinparam minClassWidth 200
+skinparam arrowThickness 3
 skinparam dpi 150
 ' === User Interface Layer ===
 package "User Interface / API" #E3F2FD {

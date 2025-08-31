@@ -97,9 +97,12 @@ async def test_vision_integration():
             logger.info(f"✅ Testing document processing with sample: {sample_doc.name}")
             
             try:
-                # Test processing without vision first (faster)
+                # Test processing without vision first (faster) - use async version
                 logger.info("   Processing without vision...")
-                result_no_vision = processor_without_vision.process_document(str(sample_doc))
+                result_no_vision = await processor_without_vision.process_document_with_vision(
+                    str(sample_doc), 
+                    "test_doc_no_vision"
+                )
                 logger.info(f"   ✅ No vision: {len(result_no_vision.content)} chars, {result_no_vision.page_count} pages")
                 
                 # Test processing with vision (slower, but shows full pipeline)
