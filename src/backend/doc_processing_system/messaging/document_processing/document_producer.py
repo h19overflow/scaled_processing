@@ -38,10 +38,10 @@ class DocumentProducer(BaseKafkaProducer):
             # Convert to dict for Kafka
             event_data = event.dict()
             
-            # Create message key for partitioning
+            # Create message key for partitioning using filename as document_id
             message_key = create_message_key(
-                file_path=file_data["file_path"],
-                filename=file_data["filename"]
+                document_id=file_data["filename"],
+                user_id="file_watcher"
             )
             
             # Publish event
