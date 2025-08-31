@@ -1,49 +1,61 @@
 """
-Core data model interfaces from the class diagram.
+Basic model interfaces for the document processing system.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from datetime import datetime
 
 
 class IDocument(ABC):
-    """Interface for document objects."""
+    """Interface for document models."""
     
+    @property
     @abstractmethod
-    def get_id(self) -> str:
+    def document_id(self) -> str:
         """Get document ID."""
         pass
-        
+    
+    @property 
     @abstractmethod
-    def get_content(self) -> str:
+    def content(self) -> str:
         """Get document content."""
         pass
-        
+    
+    @property
     @abstractmethod
-    def get_metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> Dict[str, Any]:
         """Get document metadata."""
-        pass
-        
-    @abstractmethod
-    def validate(self) -> bool:
-        """Validate document structure and content."""
         pass
 
 
 class IChunk(ABC):
-    """Interface for document chunk objects."""
+    """Interface for document chunks."""
     
+    @property
     @abstractmethod
-    def get_text(self) -> str:
-        """Get chunk text content."""
+    def chunk_id(self) -> str:
+        """Get chunk ID."""
         pass
-        
+    
+    @property
     @abstractmethod
-    def get_embedding(self) -> List[float]:
-        """Get chunk embedding vector."""
+    def content(self) -> str:
+        """Get chunk content."""
         pass
-        
+
+
+class IExtraction(ABC):
+    """Interface for extraction results."""
+    
+    @property
     @abstractmethod
-    def get_document_id(self) -> str:
-        """Get parent document ID."""
+    def extraction_id(self) -> str:
+        """Get extraction ID."""
+        pass
+    
+    @property
+    @abstractmethod
+    def extracted_data(self) -> Dict[str, Any]:
+        """Get extracted data."""
         pass

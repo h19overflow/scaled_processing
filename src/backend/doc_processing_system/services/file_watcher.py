@@ -108,7 +108,10 @@ class FileWatcherService:
         self.settings = get_settings()
         
         # Default to raw documents directory
-        self.watch_directory = Path(watch_directory) if watch_directory else Path(self.settings.data_dir) / "documents" / "raw"
+        if watch_directory:
+            self.watch_directory = Path(watch_directory)
+        else:
+            self.watch_directory = Path("data") / "documents" / "raw"
         self.watch_directory.mkdir(parents=True, exist_ok=True)
         
         # Initialize components

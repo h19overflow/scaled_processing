@@ -14,7 +14,8 @@
       "WebFetch(domain:ai.google.dev)",
       "Bash(uv run:*)",
       "Bash(..venvScriptspython.exe test_vision_integration.py)",
-      "Bash(timeout 30 python:*)"
+      "Bash(timeout 30 python:*)",
+      "Bash(timeout 10 python -m src.backend.doc_processing_system.services.document_processing_orchestrator:*)"
     ],
     "deny": [],
     "ask": []
