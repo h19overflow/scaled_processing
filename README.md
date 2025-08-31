@@ -45,24 +45,24 @@ The Scaled Processing System is a **production-ready, enterprise-grade platform*
 ```mermaid
 graph TB
     subgraph "Document Upload"
-        A[📄 Multi-Format Documents] --> B[�️ Vision-Enhanced Parser (Docling)]
-        B --> C[� Content Validator]
-        C --> D[🎯 Parallel Workflow Trigger]
+        A[Multi-Format Documents] --> B[Vision-Enhanced Parser]
+        B --> C[Content Validator]
+        C --> D[Parallel Workflow Trigger]
     end
     
     subgraph "Parallel Processing"
-        D --> E[🔤 RAG Pipeline]
-        D --> F[📋 Structured Extraction]
+        D --> E[RAG Pipeline]
+        D --> F[Structured Extraction]
     end
     
     subgraph "Query System"
-        E --> G[🤖 Semantic Search]
-        F --> H[🎯 Field-Based Query]
-        G --> I[🔀 Hybrid Query Engine]
+        E --> G[Semantic Search]
+        F --> H[Field-Based Query]
+        G --> I[Hybrid Query Engine]
         H --> I
     end
     
-    I --> J[✨ Intelligent Responses]
+    I --> J[Intelligent Responses]
     
     style A fill:#e1f5fe
     style D fill:#fff3e0
