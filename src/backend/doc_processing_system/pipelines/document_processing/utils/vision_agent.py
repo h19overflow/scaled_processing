@@ -1,21 +1,24 @@
 """
 Vision Agent - Simple AI image description using Google Gemini.
+Enhanced with async support for better performance.
 """
 
 import logging
-from typing import Dict, Any, Optional
 from PIL import Image
-from google import genai
+import google.generativeai as genai
+
+from .vision_config import VisionConfig
 
 
 class VisionAgent:
     """Simple vision agent using Google Gemini for image descriptions."""
     
-    def __init__(self):
-        """Initialize with Gemini client."""
+    def __init__(self, config: VisionConfig = None):
+        """Initialize with Gemini client and configuration."""
+        self.config = config or VisionConfig()
         self.logger = logging.getLogger(__name__)
         self.client = genai.Client()
-        self.model = "gemini-2.5-flash-image-preview"
+        self.model = self.config.model_name
         self.logger.info("VisionAgent initialized")
     
     def describe_image(self, image: Image.Image, context: str = "") -> str:
@@ -53,3 +56,31 @@ class VisionAgent:
             parts.append(f"\n\n**Caption**: *{original_caption}*")
         
         return "".join(parts)
+    
+    async def describe_image_async(self, image: Image.Image, context: str = "") -> str:
+        """Generate description for PIL image asynchronously."""
+        try:
+            prompt = self.config.analysis_prompt.format(context=context)
+            
+            response = await self.client.models.generate_content(
+                model=self.model,
+                contents=[image, prompt],
+                generation_config={
+                    "max_output_tokens": self.config.analysis_max_tokens,
+                    "temperature": 0.3,
+                }
+            )
+            
+            return response.text
+            
+        except Exception as e:
+            self.logger.error(f"Vision analysis failed: {e}")
+            return f"Failed to analyze image: {e}"
+    
+    async def describe_from_path_async(self, image_path: str, context: str = "") -> str:
+        """Generate description for image file asynchronously."""
+        try:
+            image = Image.open(image_path)
+            return await self.describe_image_async(image, context)
+        except Exception as e:
+            return f"Failed to open image: {e}"

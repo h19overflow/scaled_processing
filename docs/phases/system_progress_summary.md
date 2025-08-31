@@ -1011,3 +1011,84 @@ The file system watcher and event-driven document processing is now **production
 5. **🔍 Complete Observability** - Full logging and monitoring capabilities
 
 **Next Steps:** Users can now simply drop documents into `data/documents/raw/` and the system will automatically detect, validate, process, and store them with full duplicate detection and downstream event publishing.
+
+___
+Current problems
+(scaled_processing) PS C:\Users\User\Projects\scaled_processing> python test_vision_integration.py
+2025-08-31 09:15:47,092 - __main__ - INFO - 🚀 Starting vision processing test...
+2025-08-31 09:15:47,094 - __main__ - INFO - ============================================================
+2025-08-31 09:15:47,094 - __main__ - INFO - VISION PROCESSING INTEGRATION TEST
+2025-08-31 09:15:47,094 - __main__ - INFO - ============================================================
+2025-08-31 09:15:47,094 - __main__ - INFO - 🔄 Starting test suite...
+2025-08-31 09:15:47,094 - __main__ - INFO - 📋 Phase 1: Testing individual components...
+2025-08-31 09:15:47,094 - asyncio - DEBUG - Using proactor: IocpProactor
+2025-08-31 09:15:47,094 - __main__ - INFO - 🔧 Testing Individual Components
+2025-08-31 09:15:47,094 - __main__ - INFO - 🔍 Starting safe import process...
+2025-08-31 09:15:47,094 - __main__ - INFO - 📦 Importing DoclingProcessor...
+2025-08-31 09:15:59,310 - __main__ - INFO - ✅ DoclingProcessor imported successfully
+2025-08-31 09:15:59,310 - __main__ - INFO - 📦 Importing VisionConfig...
+2025-08-31 09:15:59,310 - __main__ - INFO - ✅ VisionConfig imported successfully
+2025-08-31 09:15:59,311 - __main__ - INFO - ✅ Testing VisionConfig...
+2025-08-31 09:15:59,311 - __main__ - INFO -    Model: gemini-2.5-flash-image-preview
+2025-08-31 09:15:59,311 - __main__ - INFO -    Classification concurrency: 10
+2025-08-31 09:15:59,311 - __main__ - INFO -    Analysis concurrency: 3
+2025-08-31 09:15:59,311 - __main__ - INFO -    Environment config loaded: vision_enabled=True
+2025-08-31 09:15:59,311 - __main__ - INFO - ✅ Testing MarkdownEnhancer...
+2025-08-31 09:15:59,311 - src.backend.doc_processing_system.pipelines.document_processing.utils.markdown_enhancer - INFO - Enhanced 1 images in markdown
+2025-08-31 09:15:59,312 - __main__ - INFO -    Original: 51 chars
+2025-08-31 09:15:59,312 - __main__ - INFO -    Enhanced: 144 chars
+2025-08-31 09:15:59,312 - __main__ - INFO -    Enhancement: 93 chars added
+2025-08-31 09:15:59,312 - __main__ - INFO - 🎉 Component tests completed!
+
+2025-08-31 09:15:59,312 - __main__ - INFO - 📋 Phase 2: Testing full integration...
+2025-08-31 09:15:59,312 - asyncio - DEBUG - Using proactor: IocpProactor
+2025-08-31 09:15:59,313 - __main__ - INFO - 🚀 Testing Vision Processing Integration
+2025-08-31 09:15:59,313 - __main__ - INFO - 🔍 Starting safe import process...
+2025-08-31 09:15:59,313 - __main__ - INFO - 📦 Importing DoclingProcessor...
+2025-08-31 09:15:59,313 - __main__ - INFO - ✅ DoclingProcessor imported successfully
+2025-08-31 09:15:59,313 - __main__ - INFO - 📦 Importing VisionConfig...
+2025-08-31 09:15:59,313 - __main__ - INFO - ✅ VisionConfig imported successfully
+2025-08-31 09:15:59,313 - __main__ - INFO - ✅ Testing module imports...
+2025-08-31 09:15:59,313 - __main__ - INFO -    All modules imported successfully
+2025-08-31 09:15:59,313 - __main__ - INFO - ✅ Testing configuration...
+2025-08-31 09:15:59,314 - __main__ - INFO -    Config created: model=gemini-2.5-flash-image-preview, vision_enabled=True 
+2025-08-31 09:15:59,314 - __main__ - INFO - ✅ Testing DoclingProcessor initialization...
+2025-08-31 09:15:59,314 - __main__ - INFO -    Initializing DoclingProcessor without vision...
+2025-08-31 09:15:59,317 - src.backend.doc_processing_system.pipelines.document_processing.docling_processor - INFO - DoclingProcessor initialized successfully with image extraction
+2025-08-31 09:15:59,317 - src.backend.doc_processing_system.pipelines.document_processing.docling_processor - INFO - DoclingProcessor initialized successfully with image extraction
+2025-08-31 09:15:59,317 - src.backend.doc_processing_system.pipelines.document_processing.docling_processor - INFO - Vision processing disabled
+2025-08-31 09:15:59,317 - src.backend.doc_processing_system.pipelines.document_processing.docling_processor - INFO - Vision processing disabled
+2025-08-31 09:15:59,317 - __main__ - INFO -    ✅ DoclingProcessor without vision initialized
+2025-08-31 09:15:59,317 - __main__ - INFO -    Initializing DoclingProcessor with vision...
+2025-08-31 09:15:59,319 - src.backend.doc_processing_system.pipelines.document_processing.docling_processor - INFO - DoclingProcessor initialized successfully with image extraction
+2025-08-31 09:15:59,319 - src.backend.doc_processing_system.pipelines.document_processing.docling_processor - INFO - DoclingProcessor initialized successfully with image extraction
+2025-08-31 09:15:59,320 - src.backend.doc_processing_system.pipelines.document_processing.docling_processor - WARNING - Vision processing disabled due to error: Missing key inputs argument! To use the Google AI API, provide (`api_key`) arguments. To use the Google Cloud API, provide (`vertexai`, `project` & `location`) arguments.
+2025-08-31 09:15:59,320 - src.backend.doc_processing_system.pipelines.document_processing.docling_processor - WARNING - Vision processing disabled due to error: Missing key inputs argument! To use the Google AI API, provide (`api_key`) arguments. To use the Google Cloud API, provide (`vertexai`, `project` & `location`) arguments.
+2025-08-31 09:15:59,320 - __main__ - INFO -    ✅ DoclingProcessor with vision initialized
+2025-08-31 09:15:59,320 - __main__ - INFO - ✅ Testing document processing with sample: gemini-for-google-workspace-prompting-guide-101.pdf
+2025-08-31 09:15:59,320 - __main__ - INFO -    Processing without vision...
+2025-08-31 09:15:59,320 - asyncio - DEBUG - Using proactor: IocpProactor
+2025-08-31 09:15:59,320 - src.backend.doc_processing_system.pipelines.document_processing.docling_processor - ERROR - Failed to process document data\documents\raw\gemini-for-google-workspace-prompting-guide-101.pdf: Cannot run the event loop while another loop is running
+2025-08-31 09:15:59,320 - src.backend.doc_processing_system.pipelines.document_processing.docling_processor - ERROR - Failed to process document data\documents\raw\gemini-for-google-workspace-prompting-guide-101.pdf: Cannot run the event loop while another loop is running
+2025-08-31 09:15:59,321 - __main__ - ERROR -    Document processing failed: Cannot run the event loop while another loop is running
+2025-08-31 09:15:59,321 - __main__ - ERROR -    Traceback: Traceback (most recent call last):
+  File "C:\Users\User\Projects\scaled_processing\test_vision_integration.py", line 102, in test_vision_integration       
+    result_no_vision = processor_without_vision.process_document(str(sample_doc))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\Projects\scaled_processing\src\backend\doc_processing_system\pipelines\document_processing\docling_processor.py", line 160, in process_document
+    return loop.run_until_complete(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Roaming\uv\python\cpython-3.12.11-windows-x86_64-none\Lib\asyncio\base_events.py", line 667, in run_until_complete
+    self._check_running()
+  File "C:\Users\User\AppData\Roaming\uv\python\cpython-3.12.11-windows-x86_64-none\Lib\asyncio\base_events.py", line 628, in _check_running
+    raise RuntimeError(
+RuntimeError: Cannot run the event loop while another loop is running
+
+C:\Users\User\Projects\scaled_processing\test_vision_integration.py:125: RuntimeWarning: coroutine 'DoclingProcessor.process_document_with_vision' was never awaited
+  return False
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+2025-08-31 09:15:59,323 - __main__ - ERROR - ============================================================
+2025-08-31 09:15:59,323 - __main__ - ERROR - ❌ TESTS FAILED
+2025-08-31 09:15:59,323 - __main__ - ERROR - ============================================================
+2025-08-31 09:15:59,323 - __main__ - INFO - 🏁 Test completed with exit code: 1
+(scaled_processing) PS C:\Users\User\Projects\scaled_processing> 
