@@ -2,8 +2,6 @@
 Document Processing Orchestrator - Unified service runner.
 Coordinates FileWatcherService and PrefectFlowConsumer for automated document processing.
 """
-
-import asyncio
 import logging
 import signal
 import sys
@@ -11,11 +9,9 @@ import threading
 import time
 from pathlib import Path
 from typing import Optional
-
 from .file_watcher import FileWatcherService
 from .prefect_flow_consumer import PrefectFlowConsumer
 from ...config.settings import get_settings
-
 
 class DocumentProcessingOrchestrator:
     """
@@ -298,7 +294,7 @@ def main():
     # Initialize orchestrator with scaling example (2 consumers)
     orchestrator = DocumentProcessingOrchestrator(
         watch_directory="data/documents/raw",
-        num_prefect_consumers=2,
+        num_prefect_consumers=3,
         consumer_group_id="scaled_document_processors"
     )
     

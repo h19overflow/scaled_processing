@@ -1,0 +1,14 @@
+{
+  "document_id": "doc_20250831_191209_79e34c8c",
+  "user_id": "file_watcher_user",
+  "processing_timestamp": "2025-08-31T19:12:19.372517",
+  "filename": "Covering Letter - AHMED HAMZA KHALED MAHMOUD .pdf",
+  "page_count": 1,
+  "content_length": 898,
+  "file_type": "pdf",
+  "file_size": 85634,
+  "vision_processing": true,
+  "document_directory": "data\\documents\\processed\\doc_20250831_191209_79e34c8c",
+  "processed_file": "doc_20250831_191209_79e34c8c_processed.md",
+  "status": "completed"
+}
