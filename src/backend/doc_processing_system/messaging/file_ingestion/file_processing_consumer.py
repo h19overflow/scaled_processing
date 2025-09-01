@@ -8,13 +8,11 @@ import logging
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 from datetime import datetime
-
 from ..base.base_consumer import BaseKafkaConsumer
 from ..document_processing.document_producer import DocumentProducer
 from ...data_models.events import FileDetectedEvent
 from ...core_deps.database import ConnectionManager, DocumentCRUD
 from ...data_models.document import Document, ProcessingStatus, FileType
-
 
 class FileProcessingConsumer(BaseKafkaConsumer):
     """
@@ -158,7 +156,7 @@ class FileProcessingConsumer(BaseKafkaConsumer):
             )
             
             # STEP 3: Publish event for downstream processing
-            self.document_producer.send_document_received({
+            self.document_producer.send_document_available({
                 "document_id": document_id,
                 "file_path": str(file_path),
                 "processed_content": processed_result,

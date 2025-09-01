@@ -60,10 +60,10 @@ class DocumentProducer(BaseKafkaProducer):
             self.logger.error(f"Failed to send file detected event: {e}")
             return False
     
-    def send_document_received(self, document_data: dict) -> bool:
+    def send_document_available(self, document_data: dict) -> bool:
         """
-        Send document received event.
-        
+        Send document available event.
+
         Args:
             document_data: Document data dictionary
             

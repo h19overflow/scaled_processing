@@ -21,40 +21,35 @@ class RAGProducer(BaseKafkaProducer):
         """Default topic for RAG events."""
         return "chunking-complete"
     
-    def send_chunking_complete(self, document_id: str, chunks: List[TextChunk]) -> bool:
+    def send_chunking_complete(self, event_data: dict) -> bool:
         """
         Send chunking complete event.
         
         Args:
-            document_id: Document identifier
-            chunks: List of text chunks created
+            event_data: Dict containing chunking completion data
             
         Returns:
             bool: True if event sent successfully
         """
         try:
-            # Create event using existing data model
-            event = ChunkingCompleteEvent(
-                document_id=document_id,
-                chunks=chunks,
-                chunk_count=len(chunks)
-            )
-            
-            # Convert to dict for Kafka
-            event_data = event.dict()
+            document_id = event_data.get("document_id", "unknown")
             
             # Create message key
             message_key = create_message_key(document_id)
             
+            # Add timestamp
+            event_data["timestamp"] = datetime.now().isoformat()
+            
             # Publish event
             success = self.publish_event(
-                topic=event.topic,
+                topic="chunking-complete",
                 event_data=event_data,
                 key=message_key
             )
             
             if success:
-                self.logger.info(f"Chunking complete event sent: {document_id} ({len(chunks)} chunks)")
+                chunk_count = event_data.get("chunk_count", 0)
+                self.logger.info(f"Chunking complete event sent: {document_id} ({chunk_count} chunks)")
             
             return success
             
@@ -62,39 +57,35 @@ class RAGProducer(BaseKafkaProducer):
             self.logger.error(f"Failed to send chunking complete event: {e}")
             return False
     
-    def send_embedding_ready(self, document_id: str, validated_embedding: ValidatedEmbedding) -> bool:
+    def send_embedding_ready(self, event_data: dict) -> bool:
         """
         Send embedding ready event.
         
         Args:
-            document_id: Document identifier
-            validated_embedding: Validated embedding data
+            event_data: Dict containing embedding completion data
             
         Returns:
             bool: True if event sent successfully
         """
         try:
-            # Create event using existing data model
-            event = EmbeddingReadyEvent(
-                document_id=document_id,
-                validated_embedding=validated_embedding
-            )
-            
-            # Convert to dict for Kafka
-            event_data = event.dict()
+            document_id = event_data.get("document_id", "unknown")
             
             # Create message key
             message_key = create_message_key(document_id)
             
+            # Add timestamp
+            event_data["timestamp"] = datetime.now().isoformat()
+            
             # Publish event
             success = self.publish_event(
-                topic=event.topic,
+                topic="embedding-ready",
                 event_data=event_data,
                 key=message_key
             )
             
             if success:
-                self.logger.info(f"Embedding ready event sent: {document_id}")
+                embeddings_count = event_data.get("embeddings_count", 0)
+                self.logger.info(f"Embedding ready event sent: {document_id} ({embeddings_count} embeddings)")
             
             return success
             
@@ -102,49 +93,35 @@ class RAGProducer(BaseKafkaProducer):
             self.logger.error(f"Failed to send embedding ready event: {e}")
             return False
     
-    def send_ingestion_complete(
-        self, 
-        document_id: str, 
-        vector_count: int, 
-        collection_name: str
-    ) -> bool:
+    def send_ingestion_complete(self, event_data: dict) -> bool:
         """
         Send ingestion complete event.
         
         Args:
-            document_id: Document identifier
-            vector_count: Number of vectors stored
-            collection_name: ChromaDB collection name
+            event_data: Dict containing ingestion completion data
             
         Returns:
             bool: True if event sent successfully
         """
         try:
-            # Create event using existing data model
-            event = IngestionCompleteEvent(
-                document_id=document_id,
-                vector_count=vector_count,
-                collection_name=collection_name
-            )
-            
-            # Convert to dict for Kafka
-            event_data = event.dict()
+            document_id = event_data.get("document_id", "unknown")
             
             # Create message key
             message_key = create_message_key(document_id)
             
+            # Add timestamp
+            event_data["timestamp"] = datetime.now().isoformat()
+            
             # Publish event
             success = self.publish_event(
-                topic=event.topic,
+                topic="ingestion-complete",
                 event_data=event_data,
                 key=message_key
             )
             
             if success:
-                self.logger.info(
-                    f"Ingestion complete event sent: {document_id} "
-                    f"({vector_count} vectors in {collection_name})"
-                )
+                collection_name = event_data.get("collection_name", "unknown")
+                self.logger.info(f"Ingestion complete event sent: {document_id} (collection: {collection_name})")
             
             return success
             

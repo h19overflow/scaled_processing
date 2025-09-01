@@ -17,12 +17,11 @@ Structure:
 # Import key components for easy access
 from .base import BaseKafkaConsumer, BaseKafkaProducer
 from .file_ingestion import FileProcessingConsumer
-from .document_processing import DocumentProducer, DocumentConsumer
 from .rag_pipeline import RAGProducer
 from .extraction_pipeline import ExtractionProducer
 from .query_processing import QueryProducer
-from .orchestration import EventBus, EventType, KafkaTopicManager
-
+from .orchestration.event_bus import  EventType
+from .orchestration.kafka_topics_setup import KafkaTopicManager
 __all__ = [
     # Base classes
     "BaseKafkaConsumer",
@@ -33,7 +32,6 @@ __all__ = [
     
     # Document processing
     "DocumentProducer",
-    "DocumentConsumer",
     
     # Pipeline producers
     "RAGProducer",
@@ -41,7 +39,6 @@ __all__ = [
     "QueryProducer",
     
     # Orchestration
-    "EventBus",
     "EventType",
     "KafkaTopicManager"
 ]

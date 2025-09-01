@@ -1,10 +1,16 @@
 """
 RAG pipeline messaging components.
-Handles chunking, embedding, and ingestion events.
+Independent consumers and producers for scalable RAG processing.
 """
 
 from .rag_producer import RAGProducer
+from .chunking_consumer import ChunkingConsumer
+from .embedding_consumer import EmbeddingConsumer
+from .storage_consumer import StorageConsumer
 
 __all__ = [
-    "RAGProducer"
+    "RAGProducer",
+    "ChunkingConsumer", 
+    "EmbeddingConsumer",
+    "StorageConsumer"
 ]

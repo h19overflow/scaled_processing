@@ -11,7 +11,7 @@ from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileCreatedEvent, FileModifiedEvent
 
-from ...messaging.document_processing.document_producer import DocumentProducer
+from ..document_processing.document_producer import DocumentProducer
 from ...config.settings import get_settings
 
 

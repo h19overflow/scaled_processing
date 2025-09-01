@@ -12,7 +12,6 @@ import logging
 import time
 from typing import List, Dict, Any
 from pathlib import Path
-from sentence_transformers import SentenceTransformer
 
 try:
     from langchain_experimental.text_splitter import SemanticChunker as LangChainSemanticChunker
@@ -34,9 +33,11 @@ class SentenceTransformerEmbeddings(Embeddings):
             model_name: Name of the SentenceTransformer model to use
         """
         try:
+            from sentence_transformers import SentenceTransformer
             self.model = SentenceTransformer(model_name, trust_remote_code=True)
         except Exception:
             # Fallback to a more standard model
+            from sentence_transformers import SentenceTransformer
             self.model = SentenceTransformer('BAAI/bge-large-en-v1.5')
     
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

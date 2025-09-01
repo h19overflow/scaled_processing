@@ -9,8 +9,8 @@ import threading
 import time
 from pathlib import Path
 from typing import Optional
-from .file_watcher import FileWatcherService
-from .prefect_flow_consumer import PrefectFlowConsumer
+from ...messaging.file_ingestion.file_watcher import FileWatcherService
+from ...messaging.document_processing.prefect_flow_consumer import PrefectFlowConsumer
 from ...config.settings import get_settings
 
 class DocumentProcessingOrchestrator:
@@ -277,20 +277,6 @@ def setup_signal_handlers(orchestrator: DocumentProcessingOrchestrator) -> None:
 
 def main():
     """Main function for standalone execution."""
-    print("🎛️ Document Processing Orchestrator")
-    print("=" * 50)
-    print("🚀 Starting automated document processing pipeline...")
-    print("📂 Monitors: data/documents/raw/")
-    print("📁 Outputs: data/documents/processed/")
-    print("🔄 Pipeline: File Detection → Prefect → Vision AI → Storage → Kafka")
-    print("=" * 50)
-    print("📖 Usage examples:")
-    print("   • Single consumer:  orchestrator = DocumentProcessingOrchestrator()")
-    print("   • Scaled consumers: orchestrator = DocumentProcessingOrchestrator(num_prefect_consumers=3)")
-    print("=" * 50)
-    print("Press Ctrl+C to stop")
-    print()
-    
     # Initialize orchestrator with scaling example (2 consumers)
     orchestrator = DocumentProcessingOrchestrator(
         watch_directory="data/documents/raw",

@@ -20,7 +20,10 @@
       "Bash(uv pip:*)",
       "Bash(uv add:*)",
       "Bash(dir:*)",
-      "Bash(del \"C:\\Users\\User\\Projects\\scaled_processing\\test_chunk_saving.py\")"
+      "Bash(del \"C:\\Users\\User\\Projects\\scaled_processing\\test_chunk_saving.py\")",
+      "Bash(nvidia-smi:*)",
+      "Bash(move:*)",
+      "Bash(del \"src\\backend\\doc_processing_system\\pipelines\\rag_processing\\flows\\consumers\\__init__.py\")"
     ],
     "deny": [],
     "ask": []

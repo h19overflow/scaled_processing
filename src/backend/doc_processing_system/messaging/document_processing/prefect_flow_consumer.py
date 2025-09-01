@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from ...messaging.base.base_consumer import BaseKafkaConsumer
-from ...messaging.document_processing.document_producer import DocumentProducer
+from ..base.base_consumer import BaseKafkaConsumer
+from .document_producer import DocumentProducer
 from ...pipelines.document_processing.flows.document_processing_flow import document_processing_flow
 
 
@@ -185,7 +185,7 @@ class PrefectFlowConsumer(BaseKafkaConsumer):
             # Publish event for downstream processing (RAG & Extraction pipelines)
             kafka_message = flow_result.get("kafka_message")
             if kafka_message:
-                success = self.document_producer.send_document_received(kafka_message)
+                success = self.document_producer.send_document_available(kafka_message)
                 if success:
                     self.logger.info(f"📨 document-available event published successfully for: {document_id}")
                 else:
