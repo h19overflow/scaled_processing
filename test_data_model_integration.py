@@ -18,7 +18,7 @@ from doc_processing_system.pipelines.rag_processing.components.embeddings_genera
 async def test_data_model_integration():
     """Test that both components produce correct data model outputs."""
     
-    # Test document
+    # Create test document file
     test_text = """
     This is a test document for verifying data model integration.
     
@@ -36,11 +36,18 @@ async def test_data_model_integration():
     
     document_id = "test_doc_001"
     
-    print("🧪 Testing Data Model Integration")
+    # Create test file with markdown content (as provided by upstream processor)
+    test_file_path = f"data/documents/processed/test_{document_id}.md"
+    Path(test_file_path).parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(test_file_path, 'w', encoding='utf-8') as f:
+        f.write(test_text)
+    
+    print("🧪 Testing Data Model Integration with Markdown File Input")
     print("=" * 50)
     
     # Test 1: Two-Stage Chunker Output
-    print("\n1️⃣ Testing TwoStageChunker TextChunk output...")
+    print(f"\n1️⃣ Testing TwoStageChunker with markdown file: {test_file_path}")
     
     chunker = TwoStageChunker(
         chunk_size=200,  # Small chunks for testing
@@ -49,9 +56,10 @@ async def test_data_model_integration():
     )
     
     try:
-        result = await chunker.process_document(test_text, document_id)
+        result = await chunker.process_document(test_file_path, document_id)
         
         print(f"✅ Chunking complete: {result['chunk_count']} chunks")
+        print(f"📁 Source file: {result['source_file_path']}")
         print(f"📄 Chunks file: {result['chunks_file_path']}")
         
         # Verify TextChunk structure

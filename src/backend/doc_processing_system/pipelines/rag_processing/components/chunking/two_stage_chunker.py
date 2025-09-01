@@ -8,8 +8,9 @@ Stage 1: Semantic chunking for initial context-aware splits
 Stage 2: Agentic boundary review with merge/keep decisions
 Output: Chunks saved to data/rag/chunks/ with metadata for Kafka messaging
 
+Input: File path to processed markdown document (from upstream document processor)
 Dependencies: All component modules (semantic_chunker, boundary_agent)
-Integration: Main interface for RAG pipeline chunking
+Integration: Main interface for RAG pipeline chunking via Kafka messaging
 """
 
 import json
@@ -73,18 +74,26 @@ class TwoStageChunker:
         
         self.logger.info(f"🚀 2-Stage Chunker initialized (chunk_size={chunk_size}, threshold={semantic_threshold}, concurrent_agents={concurrent_agents}, model={model_name})")
     
-    async def process_document(self, text: str, document_id: str) -> Dict[str, Any]:
+    async def process_document(self, file_path: str, document_id: str) -> Dict[str, Any]:
         """Process document through complete 2-stage chunking pipeline.
         
         Args:
-            text: Document text content
+            file_path: Path to the document file to process
             document_id: Unique document identifier
             
         Returns:
             Dict containing chunk metadata for Kafka messaging
         """
         start_time = time.time()
-        self.logger.info(f"🔄 Starting 2-stage chunking for {document_id}")
+        self.logger.info(f"🔄 Starting 2-stage chunking for {document_id} from {file_path}")
+        
+        # Read document content from file
+        try:
+            text = self._read_document_file(file_path)
+            self.logger.info(f"📖 Document loaded: {len(text)} characters from {file_path}")
+        except Exception as e:
+            self.logger.error(f"❌ Failed to read document {file_path}: {e}")
+            raise ValueError(f"Cannot read document file: {file_path}")
         
         # Stage 1: Semantic Chunking
         stage1_result = self._cached_semantic_chunker.chunk_text(text, document_id)
@@ -125,12 +134,110 @@ class TwoStageChunker:
         
         return {
             "document_id": document_id,
+            "source_file_path": file_path,
             "chunk_count": len(text_chunks),
             "chunks_file_path": str(chunks_path),
             "text_chunks": text_chunks,  # Return TextChunk dictionaries for direct use
             "processing_time_seconds": round(total_processing_time, 3),
             "original_length": len(text),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "stage1_result": stage1_result,
+            "stage2_result": stage2_result
+        }
+    
+    def _read_document_file(self, file_path: str) -> str:
+        """Read markdown document content from file.
+        
+        Args:
+            file_path: Path to the markdown document file
+            
+        Returns:
+            Document text content
+            
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ValueError: If file cannot be read
+        """
+        file_path_obj = Path(file_path)
+        
+        if not file_path_obj.exists():
+            raise FileNotFoundError(f"Document file not found: {file_path}")
+        
+        try:
+            # Read markdown content (set by upstream document processor)
+            with open(file_path_obj, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            if not content.strip():
+                raise ValueError(f"Document file is empty: {file_path}")
+            
+            self.logger.debug(f"📖 Read {len(content)} characters from {file_path}")
+            return content
+                
+        except Exception as e:
+            raise ValueError(f"Error reading markdown file {file_path}: {e}")
+    
+    async def process_document_text(self, text: str, document_id: str) -> Dict[str, Any]:
+        """Process document from raw text (for backward compatibility and testing).
+        
+        Args:
+            text: Document text content
+            document_id: Unique document identifier
+            
+        Returns:
+            Dict containing chunk metadata for Kafka messaging
+        """
+        start_time = time.time()
+        self.logger.info(f"🔄 Starting 2-stage chunking for {document_id} from raw text")
+        
+        # Stage 1: Semantic Chunking
+        stage1_result = self._cached_semantic_chunker.chunk_text(text, document_id)
+        initial_chunks = stage1_result["chunks"]
+        
+        self.logger.info(f"✅ Stage 1 complete: {len(initial_chunks)} semantic chunks")
+        
+        # Stage 2: Boundary Review and Refinement
+        if len(initial_chunks) <= 1:
+            # No boundaries to review
+            final_chunks = initial_chunks
+            stage2_result = {
+                "boundary_decisions": [],
+                "total_boundaries": 0,
+                "merge_decisions": 0,
+                "keep_decisions": 0,
+                "error_decisions": 0,
+                "processing_time_seconds": 0.0,
+                "avg_confidence": 0.0
+            }
+        else:
+            # Review boundaries and apply refinements with concurrent agents
+            stage2_result = await self._cached_boundary_agent.review_all_boundaries(
+                initial_chunks, max_concurrent=self.concurrent_agents
+            )
+            final_chunks = self._apply_boundary_decisions(initial_chunks, stage2_result["boundary_decisions"])
+        
+        total_processing_time = time.time() - start_time
+        
+        self.logger.info(f"✅ Stage 2 complete: {len(final_chunks)} refined chunks")
+        self.logger.info(f"🎯 2-stage chunking complete: {len(initial_chunks)} → {len(final_chunks)} chunks in {total_processing_time:.3f}s")
+        
+        # Convert chunks to TextChunk models
+        text_chunks = self._create_text_chunks(final_chunks, document_id)
+        
+        # Save chunks using TextChunk models
+        chunks_path = self._save_text_chunks(text_chunks, document_id)
+        
+        return {
+            "document_id": document_id,
+            "source_file_path": None,  # No file path for raw text input
+            "chunk_count": len(text_chunks),
+            "chunks_file_path": str(chunks_path),
+            "text_chunks": text_chunks,  # Return TextChunk dictionaries for direct use
+            "processing_time_seconds": round(total_processing_time, 3),
+            "original_length": len(text),
+            "timestamp": datetime.now().isoformat(),
+            "stage1_result": stage1_result,
+            "stage2_result": stage2_result
         }
     
     def _create_text_chunks(self, chunks: List[str], document_id: str) -> List[Dict[str, Any]]:
