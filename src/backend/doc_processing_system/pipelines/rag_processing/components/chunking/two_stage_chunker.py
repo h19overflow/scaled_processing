@@ -23,7 +23,6 @@ from datetime import datetime
 
 from .semantic_chunker import SemanticChunker
 from .boundary_agent import BoundaryReviewAgent
-from ...data_models.chunk import TextChunk
 
 
 class TwoStageChunker:
@@ -128,11 +127,98 @@ class TwoStageChunker:
             "document_id": document_id,
             "chunk_count": len(text_chunks),
             "chunks_file_path": str(chunks_path),
-            "text_chunks": text_chunks,  # Return TextChunk models for direct use
+            "text_chunks": text_chunks,  # Return TextChunk dictionaries for direct use
             "processing_time_seconds": round(total_processing_time, 3),
             "original_length": len(text),
             "timestamp": datetime.now().isoformat()
         }
+    
+    def _create_text_chunks(self, chunks: List[str], document_id: str) -> List[Dict[str, Any]]:
+        """Convert string chunks to TextChunk model dictionaries.
+        
+        Args:
+            chunks: List of chunk strings
+            document_id: Document identifier
+            
+        Returns:
+            List of TextChunk dictionaries
+        """
+        text_chunks = []
+        
+        for i, chunk_content in enumerate(chunks):
+            # Generate deterministic chunk ID
+            chunk_id = self._generate_chunk_id(document_id, i)
+            
+            # Create TextChunk dictionary matching the model
+            text_chunk = {
+                "chunk_id": chunk_id,
+                "document_id": document_id,
+                "content": chunk_content,
+                "page_number": 0,  # Placeholder until page mapping is implemented
+                "chunk_index": i,
+                "metadata": {
+                    "chunk_length": len(chunk_content),
+                    "word_count": len(chunk_content.split()),
+                    "created_at": datetime.now().isoformat(),
+                    "chunking_strategy": "two_stage_semantic"
+                }
+            }
+            
+            text_chunks.append(text_chunk)
+        
+        return text_chunks
+    
+    def _generate_chunk_id(self, document_id: str, chunk_index: int) -> str:
+        """Generate deterministic chunk ID.
+        
+        Args:
+            document_id: Document identifier
+            chunk_index: Index of chunk within document
+            
+        Returns:
+            Unique chunk identifier
+        """
+        id_string = f"{document_id}_{chunk_index}"
+        return hashlib.md5(id_string.encode()).hexdigest()[:16]
+    
+    def _save_text_chunks(self, text_chunks: List[Dict[str, Any]], document_id: str) -> Path:
+        """Save TextChunk dictionaries to JSON file.
+        
+        Args:
+            text_chunks: List of TextChunk dictionaries
+            document_id: Document identifier
+            
+        Returns:
+            Path to saved chunks file
+        """
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"chunks_{document_id}_{timestamp}.json"
+        chunks_path = self.chunks_directory / filename
+        
+        try:
+            chunks_data = {
+                "document_id": document_id,
+                "timestamp": datetime.now().isoformat(),
+                "chunk_count": len(text_chunks),
+                "chunks": text_chunks,  # List of TextChunk dictionaries
+                "statistics": {
+                    "total_characters": sum(chunk["metadata"]["chunk_length"] for chunk in text_chunks),
+                    "total_words": sum(chunk["metadata"]["word_count"] for chunk in text_chunks),
+                    "avg_chunk_length": round(sum(chunk["metadata"]["chunk_length"] for chunk in text_chunks) / len(text_chunks), 1) if text_chunks else 0,
+                    "min_chunk_length": min(chunk["metadata"]["chunk_length"] for chunk in text_chunks) if text_chunks else 0,
+                    "max_chunk_length": max(chunk["metadata"]["chunk_length"] for chunk in text_chunks) if text_chunks else 0
+                }
+            }
+            
+            with open(chunks_path, 'w', encoding='utf-8') as f:
+                json.dump(chunks_data, f, indent=2, ensure_ascii=False)
+            
+            self.logger.info(f"📄 TextChunk models saved: {chunks_path}")
+            return chunks_path
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to save TextChunk models: {e}")
+            return chunks_path
     
     def _apply_boundary_decisions(self, chunks: List[str], decisions: List[Dict[str, Any]]) -> List[str]:
         """Apply boundary decisions to merge chunks where specified.

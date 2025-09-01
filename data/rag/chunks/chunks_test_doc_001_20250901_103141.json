@@ -1,0 +1,40 @@
+{
+  "document_id": "test_doc_001",
+  "timestamp": "2025-09-01T10:31:41.659655",
+  "chunk_count": 2,
+  "chunks": [
+    {
+      "chunk_id": "0a307f1fde183109",
+      "document_id": "test_doc_001",
+      "content": "\n    This is a test document for verifying data model integration. The first paragraph discusses the importance of proper data structures. It ensures that our chunking system outputs TextChunk models correctly. The second paragraph focuses on embeddings generation. We need ValidatedEmbedding models for ChromaDB integration. This allows for seamless vector storage and retrieval. The third paragraph examines metadata consistency. All chunk IDs must be deterministic and traceable. Page numbers are placeholders until document parsing is enhanced.",
+      "page_number": 0,
+      "chunk_index": 0,
+      "metadata": {
+        "chunk_length": 548,
+        "word_count": 75,
+        "created_at": "2025-09-01T10:31:41.659655",
+        "chunking_strategy": "two_stage_semantic"
+      }
+    },
+    {
+      "chunk_id": "889735186f4428bd",
+      "document_id": "test_doc_001",
+      "content": "",
+      "page_number": 0,
+      "chunk_index": 1,
+      "metadata": {
+        "chunk_length": 0,
+        "word_count": 0,
+        "created_at": "2025-09-01T10:31:41.659655",
+        "chunking_strategy": "two_stage_semantic"
+      }
+    }
+  ],
+  "statistics": {
+    "total_characters": 548,
+    "total_words": 75,
+    "avg_chunk_length": 274.0,
+    "min_chunk_length": 0,
+    "max_chunk_length": 548
+  }
+}

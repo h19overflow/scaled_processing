@@ -2,7 +2,7 @@
 Embeddings Generator - Convert chunks to vectors for ChromaDB storage
 
 Reads chunk files from data/rag/chunks/ and generates embeddings with metadata.
-Outputs ChromaDB-ready format with IDs, vectors, and source metadata.
+Outputs ChromaDB-ready format with IDs, vectors, and source metadata using ValidatedEmbedding models.
 
 Dependencies: sentence-transformers, json, pathlib
 Integration: Processes TwoStageChunker output for vector storage
@@ -113,45 +113,46 @@ class EmbeddingsGenerator:
             self.logger.warning(f"⚠️ No valid chunks with content in {chunks_path.name}")
             return self._empty_result(document_id)
         
-        self.logger.info(f"📊 Processing {len(valid_chunks)} valid chunks")
+        self.logger.info(f"📊 Processing {len(valid_chunks)} valid TextChunk models")
         
-        # Generate embeddings
-        embeddings_result = self._generate_embeddings(valid_chunks, document_id)
+        # Generate ValidatedEmbedding models
+        validated_embeddings = self._generate_validated_embeddings(valid_chunks, document_id)
+        
+        # Create ChromaDB-ready format from ValidatedEmbedding models
+        chromadb_data = self._create_chromadb_format(validated_embeddings)
         
         # Save embeddings to file
-        embeddings_path = self._save_embeddings(embeddings_result, document_id)
+        embeddings_path = self._save_embeddings(chromadb_data, validated_embeddings, document_id)
         
         processing_time = time.time() - start_time
         
-        self.logger.info(f"✅ Embeddings generated: {len(embeddings_result['ids'])} vectors in {processing_time:.3f}s")
+        self.logger.info(f"✅ Embeddings generated: {len(validated_embeddings)} vectors in {processing_time:.3f}s")
         
         return {
             "document_id": document_id,
-            "embeddings_count": len(embeddings_result['ids']),
+            "embeddings_count": len(validated_embeddings),
             "embeddings_file_path": str(embeddings_path),
             "processing_time_seconds": round(processing_time, 3),
             "model_used": self.model_name,
             "timestamp": datetime.now().isoformat(),
-            "chromadb_ready": embeddings_result
+            "validated_embeddings": validated_embeddings,  # List of ValidatedEmbedding dicts
+            "chromadb_ready": chromadb_data
         }
     
-    def _generate_embeddings(self, chunks: List[Dict], document_id: str) -> Dict[str, Any]:
-        """Generate embeddings for chunks in batches.
+    def _generate_validated_embeddings(self, chunks: List[Dict], document_id: str) -> List[Dict[str, Any]]:
+        """Generate ValidatedEmbedding dictionaries for chunks in batches.
         
         Args:
-            chunks: List of chunk dictionaries
+            chunks: List of TextChunk dictionaries
             document_id: Source document identifier
             
         Returns:
-            ChromaDB-ready format with IDs, embeddings, metadatas, documents
+            List of ValidatedEmbedding dictionaries
         """
         if not self._cached_embedding_model:
             raise RuntimeError("Embedding model not available")
         
-        ids = []
-        embeddings = []
-        metadatas = []
-        documents = []
+        validated_embeddings = []
         
         # Process chunks in batches
         for i in range(0, len(chunks), self.batch_size):
@@ -166,54 +167,60 @@ class EmbeddingsGenerator:
                 
                 # Process each chunk in batch
                 for j, chunk in enumerate(batch):
-                    # Generate unique ID
-                    chunk_id = self._generate_chunk_id(document_id, chunk["index"])
-                    
-                    # Create metadata
-                    metadata = {
-                        "document_id": document_id,
-                        "chunk_index": chunk["index"],
-                        "chunk_length": chunk["length"],
-                        "word_count": chunk["word_count"],
-                        "model_used": self.model_name,
-                        "timestamp": datetime.now().isoformat()
+                    # Create ValidatedEmbedding dictionary
+                    validated_embedding = {
+                        "chunk_id": chunk["chunk_id"],
+                        "document_id": chunk["document_id"], 
+                        "embedding_vector": batch_embeddings[j].tolist(),
+                        "embedding_model": self.model_name,
+                        "chunk_metadata": {
+                            "document_id": chunk["document_id"],
+                            "chunk_index": chunk["chunk_index"],
+                            "chunk_length": len(chunk["content"]),
+                            "word_count": len(chunk["content"].split()),
+                            "page_number": chunk["page_number"],
+                            "model_used": self.model_name,
+                            "timestamp": datetime.now().isoformat()
+                        },
+                        "chunk_content": chunk["content"]  # Store content for ChromaDB documents field
                     }
                     
-                    ids.append(chunk_id)
-                    embeddings.append(batch_embeddings[j].tolist())
-                    metadatas.append(metadata)
-                    documents.append(chunk["content"])
+                    validated_embeddings.append(validated_embedding)
                     
             except Exception as e:
                 self.logger.error(f"❌ Failed to generate embeddings for batch: {e}")
                 continue
         
-        return {
-            "ids": ids,
-            "embeddings": embeddings,
-            "metadatas": metadatas,
-            "documents": documents
-        }
+        return validated_embeddings
     
-    def _generate_chunk_id(self, document_id: str, chunk_index: int) -> str:
-        """Generate unique ID for chunk.
+    def _create_chromadb_format(self, validated_embeddings: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Create ChromaDB-ready format from ValidatedEmbedding dictionaries.
         
         Args:
-            document_id: Source document identifier
-            chunk_index: Index of chunk within document
+            validated_embeddings: List of ValidatedEmbedding dictionaries
             
         Returns:
-            Unique chunk identifier
+            ChromaDB-ready format with ids, embeddings, metadatas, documents
         """
-        # Create deterministic ID based on document and chunk index
-        id_string = f"{document_id}_{chunk_index}"
-        return hashlib.md5(id_string.encode()).hexdigest()[:16]
-    
-    def _save_embeddings(self, embeddings_data: Dict[str, Any], document_id: str) -> Path:
+        # Extract chunk content from the original chunks for documents field
+        documents = []
+        for embedding in validated_embeddings:
+            # Get the actual chunk content for ChromaDB documents field
+            chunk_content = embedding.get("chunk_content", f"Content for chunk {embedding['chunk_id']}")
+            documents.append(chunk_content)
+        
+        return {
+            "ids": [embedding["chunk_id"] for embedding in validated_embeddings],
+            "embeddings": [embedding["embedding_vector"] for embedding in validated_embeddings],
+            "metadatas": [embedding["chunk_metadata"] for embedding in validated_embeddings],
+            "documents": documents
+        }
+    def _save_embeddings(self, chromadb_data: Dict[str, Any], validated_embeddings: List[Dict[str, Any]], document_id: str) -> Path:
         """Save embeddings data to JSON file.
         
         Args:
-            embeddings_data: ChromaDB-ready embeddings data
+            chromadb_data: ChromaDB-ready embeddings data
+            validated_embeddings: List of ValidatedEmbedding dictionaries
             document_id: Document identifier
             
         Returns:
@@ -224,14 +231,29 @@ class EmbeddingsGenerator:
         embeddings_path = self.embeddings_directory / filename
         
         try:
-            with open(embeddings_path, 'w', encoding='utf-8') as f:
-                json.dump(embeddings_data, f, indent=2, ensure_ascii=False)
+            # Create complete embeddings file with both formats
+            embeddings_file_data = {
+                "document_id": document_id,
+                "model_used": self.model_name,
+                "timestamp": datetime.now().isoformat(),
+                "embeddings_count": len(validated_embeddings),
+                "validated_embeddings": validated_embeddings,  # List of ValidatedEmbedding dicts
+                "chromadb_ready": chromadb_data,  # ChromaDB format
+                "statistics": {
+                    "embedding_dimensions": len(validated_embeddings[0]["embedding_vector"]) if validated_embeddings else 0,
+                    "total_chunks": len(validated_embeddings),
+                    "avg_chunk_length": round(sum(emb["chunk_metadata"]["chunk_length"] for emb in validated_embeddings) / len(validated_embeddings), 1) if validated_embeddings else 0
+                }
+            }
             
-            self.logger.info(f"💾 Embeddings saved: {embeddings_path}")
+            with open(embeddings_path, 'w', encoding='utf-8') as f:
+                json.dump(embeddings_file_data, f, indent=2, ensure_ascii=False)
+            
+            self.logger.info(f"💾 ValidatedEmbeddings saved: {embeddings_path}")
             return embeddings_path
             
         except Exception as e:
-            self.logger.error(f"❌ Failed to save embeddings: {e}")
+            self.logger.error(f"❌ Failed to save ValidatedEmbeddings: {e}")
             return embeddings_path
     
     def _empty_result(self, document_id: str) -> Dict[str, Any]:
@@ -250,6 +272,7 @@ class EmbeddingsGenerator:
             "processing_time_seconds": 0.0,
             "model_used": self.model_name,
             "timestamp": datetime.now().isoformat(),
+            "validated_embeddings": [],  # Empty list of ValidatedEmbedding dicts
             "chromadb_ready": {
                 "ids": [],
                 "embeddings": [],
