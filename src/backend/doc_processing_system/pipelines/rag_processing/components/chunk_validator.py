@@ -1,1 +1,0 @@
-# ChunkValidator - Quality assurance for chunks

@@ -1,1 +1,0 @@
-# ChromaRepository - Vector storage operations

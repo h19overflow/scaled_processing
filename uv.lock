@@ -2558,6 +2558,19 @@ wheels = [
 ]
 
 [[package]]
+name = "langchain-experimental"
+version = "0.3.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langchain-community" },
+    { name = "langchain-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/27/56/a8acbb08a03383c28875b3b151e4cefea5612266917fbd6fc3c14c21e172/langchain_experimental-0.3.4.tar.gz", hash = "sha256:937c4259ee4a639c618d19acf0e2c5c2898ef127050346edc5655259aa281a21", size = 140532, upload-time = "2024-12-20T15:16:09.42Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b2/27/fe8caa4884611286b1f7d6c5cfd76e1fef188faaa946db4fde6daa1cd2cd/langchain_experimental-0.3.4-py3-none-any.whl", hash = "sha256:2e587306aea36b60fa5e5fc05dc7281bee9f60a806f0bf9d30916e0ee096af80", size = 209154, upload-time = "2024-12-20T15:16:07.006Z" },
+]
+
+[[package]]
 name = "langchain-openai"
 version = "0.3.32"
 source = { registry = "https://pypi.org/simple" }
@@ -5616,11 +5629,13 @@ dependencies = [
     { name = "httpx" },
     { name = "jsonschema" },
     { name = "kafka-python" },
+    { name = "langchain-experimental" },
     { name = "langgraph" },
     { name = "langsmith" },
     { name = "marshmallow" },
     { name = "mlflow" },
     { name = "nltk" },
+    { name = "numpy" },
     { name = "openai" },
     { name = "passlib", extra = ["bcrypt"] },
     { name = "pdf2image" },
@@ -5702,6 +5717,7 @@ requires-dist = [
     { name = "isort", marker = "extra == 'dev'", specifier = ">=5.12.0" },
     { name = "jsonschema", specifier = ">=4.20.0" },
     { name = "kafka-python", specifier = ">=2.0.2" },
+    { name = "langchain-experimental", specifier = ">=0.3.0" },
     { name = "langgraph", specifier = ">=0.0.55" },
     { name = "langsmith", specifier = ">=0.0.69" },
     { name = "marshmallow", specifier = ">=3.20.0" },
@@ -5711,6 +5727,7 @@ requires-dist = [
     { name = "mlflow", specifier = ">=2.8.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.7.0" },
     { name = "nltk", specifier = ">=3.8.1" },
+    { name = "numpy", specifier = ">=2.3.2" },
     { name = "openai", specifier = ">=1.6.0" },
     { name = "passlib", extras = ["bcrypt"], specifier = ">=1.7.4" },
     { name = "pdf2image", specifier = ">=1.16.3" },

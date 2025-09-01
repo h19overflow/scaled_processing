@@ -1,1 +1,0 @@
-# SemanticChunker - Intelligent text splitting
