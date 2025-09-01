@@ -85,7 +85,7 @@ async def rag_processing_flow(
     try:
         # Stage 1: Semantic Chunking
         logger.info("📝 Stage 1: Semantic Chunking")
-        stage1_result = await semantic_chunking_task(
+        stage1_result = semantic_chunking_task(
             file_path=file_path,
             document_id=document_id,
             chunk_size=chunk_size,

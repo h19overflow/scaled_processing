@@ -21,7 +21,7 @@ from .config import MAX_RETRIES, RETRY_DELAY, STORAGE_TIMEOUT
     timeout_seconds=STORAGE_TIMEOUT,
     tags=["storage", "chromadb", "vectors"]
 )
-def store_vectors_task(
+async def store_vectors_task(
     embeddings_file_path: str,
     collection_name: str = "rag_documents"
 ) -> Dict[str, Any]:

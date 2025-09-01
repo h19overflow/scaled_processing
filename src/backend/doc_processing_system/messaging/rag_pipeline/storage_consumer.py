@@ -80,13 +80,12 @@ class StorageConsumer(BaseKafkaConsumer):
             self.processing_documents.add(document_id)
             
             try:
-                # Execute vector storage
+                # Execute vector storage asynchronously
                 self.logger.info(f"🚀 Storing vectors: {document_id}")
                 
-                storage_result = store_vectors_task(
-                    embeddings_file_path=embeddings_file_path,
-                    collection_name="rag_documents"
-                )
+                storage_result = asyncio.run(self._execute_storage_task(
+                    embeddings_file_path, document_id
+                ))
                 
                 # Publish ingestion-complete event
                 self._publish_ingestion_complete(document_id, storage_result)
@@ -100,6 +99,14 @@ class StorageConsumer(BaseKafkaConsumer):
         except Exception as e:
             self.logger.error(f"❌ Error in storage stage: {e}")
             return False
+    
+    async def _execute_storage_task(self, embeddings_file_path: str, document_id: str) -> Dict[str, Any]:
+        """Execute the async vector storage task."""
+        storage_result = await store_vectors_task(
+            embeddings_file_path=embeddings_file_path,
+            collection_name="rag_documents"
+        )
+        return storage_result
     
     def _publish_ingestion_complete(self, document_id: str, storage_result: Dict[str, Any]):
         """Publish ingestion-complete event to Kafka."""

@@ -24,7 +24,7 @@ from .config import MAX_RETRIES, RETRY_DELAY
     timeout_seconds=60,  # Quick formatting task
     tags=["chunking", "formatting", "textchunk", "models"]
 )
-def chunk_formatting_task(
+async def chunk_formatting_task(
     stage2_result: Dict[str, Any]
 ) -> Dict[str, Any]:
     """Format refined chunks into TextChunk models and save to file.

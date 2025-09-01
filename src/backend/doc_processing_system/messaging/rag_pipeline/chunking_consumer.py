@@ -6,6 +6,7 @@ Executes: Semantic chunking + boundary refinement + formatting
 Publishes: chunking-complete
 """
 
+import asyncio
 import logging
 from typing import Dict, Any, Optional
 from pathlib import Path
@@ -103,29 +104,13 @@ class ChunkingConsumer(BaseKafkaConsumer):
             self.processing_documents.add(document_id)
             
             try:
-                # Execute chunking pipeline stages
+                # Execute chunking pipeline stages asynchronously
                 self.logger.info(f"🚀 Executing chunking pipeline: {document_id}")
                 
-                # Stage 1: Semantic Chunking
-                stage1_result = semantic_chunking_task(
-                    file_path=processed_file_path,
-                    document_id=document_id,
-                    chunk_size=700,
-                    semantic_threshold=0.75
-                )
-                
-                # Stage 2: Boundary Refinement  
-                stage2_result = boundary_refinement_task(
-                    stage1_result=stage1_result,
-                    concurrent_agents=10,
-                    model_name="gemini-2.0-flash",
-                    boundary_context=200
-                )
-                
-                # Stage 3: Chunk Formatting
-                chunking_result = chunk_formatting_task(
-                    stage2_result=stage2_result
-                )
+                # Run the async pipeline in event loop
+                chunking_result = asyncio.run(self._execute_chunking_pipeline(
+                    processed_file_path, document_id
+                ))
                 
                 # Publish chunking-complete event
                 self._publish_chunking_complete(document_id, chunking_result)
@@ -139,6 +124,31 @@ class ChunkingConsumer(BaseKafkaConsumer):
         except Exception as e:
             self.logger.error(f"❌ Error in chunking stage: {e}")
             return False
+    
+    async def _execute_chunking_pipeline(self, processed_file_path: str, document_id: str) -> Dict[str, Any]:
+        """Execute the async chunking pipeline stages."""
+        # Stage 1: Semantic Chunking (sync task)
+        stage1_result = semantic_chunking_task(
+            file_path=processed_file_path,
+            document_id=document_id,
+            chunk_size=700,
+            semantic_threshold=0.75
+        )
+        
+        # Stage 2: Boundary Refinement (async task)
+        stage2_result = await boundary_refinement_task(
+            stage1_result=stage1_result,
+            concurrent_agents=10,
+            model_name="gemini-2.0-flash",
+            boundary_context=200
+        )
+        
+        # Stage 3: Chunk Formatting (async task)
+        chunking_result = await chunk_formatting_task(
+            stage2_result=stage2_result
+        )
+        
+        return chunking_result
     
     def _publish_chunking_complete(self, document_id: str, chunking_result: Dict[str, Any]):
         """Publish chunking-complete event to Kafka."""

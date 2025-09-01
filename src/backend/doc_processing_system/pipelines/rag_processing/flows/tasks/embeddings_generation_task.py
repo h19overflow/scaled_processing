@@ -21,7 +21,7 @@ from .config import MAX_RETRIES, RETRY_DELAY, EMBEDDING_TIMEOUT
     timeout_seconds=EMBEDDING_TIMEOUT,
     tags=["embeddings", "vectors", "chromadb"]
 )
-def generate_embeddings_task(
+async def generate_embeddings_task(
     chunks_file_path: str,
     model_name: str = "BAAI/bge-large-en-v1.5",
     batch_size: int = 32

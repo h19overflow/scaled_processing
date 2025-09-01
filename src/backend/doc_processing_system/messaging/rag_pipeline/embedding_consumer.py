@@ -78,14 +78,12 @@ class EmbeddingConsumer(BaseKafkaConsumer):
             self.processing_documents.add(document_id)
             
             try:
-                # Execute embeddings generation
+                # Execute embeddings generation asynchronously
                 self.logger.info(f"🚀 Generating embeddings: {document_id}")
                 
-                embeddings_result = generate_embeddings_task(
-                    chunks_file_path=chunks_file_path,
-                    model_name="BAAI/bge-large-en-v1.5",
-                    batch_size=32
-                )
+                embeddings_result = asyncio.run(self._execute_embeddings_task(
+                    chunks_file_path, document_id
+                ))
                 
                 # Publish embedding-ready event
                 self._publish_embedding_ready(document_id, embeddings_result)
@@ -99,6 +97,15 @@ class EmbeddingConsumer(BaseKafkaConsumer):
         except Exception as e:
             self.logger.error(f"❌ Error in embedding stage: {e}")
             return False
+    
+    async def _execute_embeddings_task(self, chunks_file_path: str, document_id: str) -> Dict[str, Any]:
+        """Execute the async embeddings generation task."""
+        embeddings_result = await generate_embeddings_task(
+            chunks_file_path=chunks_file_path,
+            model_name="BAAI/bge-large-en-v1.5",
+            batch_size=32
+        )
+        return embeddings_result
     
     def _publish_embedding_ready(self, document_id: str, embeddings_result: Dict[str, Any]):
         """Publish embedding-ready event to Kafka."""
