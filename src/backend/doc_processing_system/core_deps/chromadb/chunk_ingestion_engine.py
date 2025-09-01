@@ -354,7 +354,7 @@ class ChunkIngestionEngine:
             self.logger.debug("🔄 Calling collection.add()...")
             self.logger.debug(f"🔍 Data preview - IDs: {chromadb_data['ids'][:2]}, Embeddings: {chromadb_data['embeddings'][:1]}, Metadatas: {chromadb_data['metadatas'][:1]}, Documents: {chromadb_data['documents'][:1]}"
                             )
-            self.logger.info('Collection information before add: ' + collection.count)
+            self.logger.info('Collection information before add: ' + str(collection.count))
             collection.add(
                 ids=chromadb_data["ids"],
                 embeddings=chromadb_data["embeddings"],
