@@ -60,10 +60,14 @@ class ChromaManager:
     def _initialize_chroma(self) -> None:
         """Initialize ChromaDB client with persistence."""
         try:
+            self.logger.info(f"🔧 Initializing ChromaDB with persist_directory: {self.persist_directory}")
+            
             # Ensure persist directory exists
             Path(self.persist_directory).mkdir(parents=True, exist_ok=True)
+            self.logger.debug(f"📁 Created/verified persist directory: {self.persist_directory}")
             
             # Create client with persistent storage
+            self.logger.debug("🔌 Creating PersistentClient...")
             self._cached_client = chromadb.PersistentClient(
                 path=self.persist_directory,
                 settings=Settings(
@@ -72,10 +76,14 @@ class ChromaManager:
                 )
             )
             
-            self.logger.info(f"ChromaDB initialized with persistence: {self.persist_directory}")
+            self.logger.info(f"✅ ChromaDB initialized with persistence: {self.persist_directory}")
             
         except Exception as e:
-            self.logger.error(f"Failed to initialize ChromaDB: {e}")
+            self.logger.error(f"❌ Failed to initialize ChromaDB: {e}")
+            self.logger.error(f"🔍 Error type: {type(e).__name__}")
+            self.logger.error(f"📍 Persist directory: {self.persist_directory}")
+            import traceback
+            self.logger.error(f"📋 Full traceback: {traceback.format_exc()}")
             self._cached_client = None
     
     def get_client(self) -> Optional[chromadb.PersistentClient]:
@@ -99,35 +107,50 @@ class ChromaManager:
         Returns:
             Collection object or None if unavailable
         """
-        if not CHROMADB_AVAILABLE or self._cached_client is None:
+        if not CHROMADB_AVAILABLE:
+            self.logger.error("❌ ChromaDB not available - missing dependency")
+            return None
+            
+        if self._cached_client is None:
+            self.logger.error("❌ ChromaDB client is None - initialization failed")
             return None
             
         name = collection_name or self.collection_name
+        self.logger.debug(f"🔍 Getting collection: {name}")
         
         # Return cached collection if available
         if name in self._cached_collections:
+            self.logger.debug(f"📦 Using cached collection: {name}")
             return self._cached_collections[name]
         
         try:
             # Try to get existing collection
+            self.logger.debug(f"🔍 Attempting to get existing collection: {name}")
             collection = self._cached_client.get_collection(name=name)
-            self.logger.info(f"Retrieved existing collection: {name}")
+            self.logger.info(f"✅ Retrieved existing collection: {name}")
             
-        except Exception:
+        except Exception as get_error:
+            self.logger.debug(f"🔍 Collection '{name}' not found, creating new one. Error: {get_error}")
             # Create new collection if it doesn't exist
             try:
+                self.logger.info(f"🆕 Creating new collection: {name}")
                 collection = self._cached_client.create_collection(
                     name=name,
                     metadata={"created_at": datetime.now().isoformat()}
                 )
-                self.logger.info(f"Created new collection: {name}")
+                self.logger.info(f"✅ Created new collection: {name}")
                 
-            except Exception as e:
-                self.logger.error(f"Failed to create collection {name}: {e}")
+            except Exception as create_error:
+                self.logger.error(f"❌ Failed to create collection {name}")
+                self.logger.error(f"🔍 Create error type: {type(create_error).__name__}")
+                self.logger.error(f"🔍 Create error message: {create_error}")
+                import traceback
+                self.logger.error(f"📋 Create error traceback: {traceback.format_exc()}")
                 return None
         
         # Cache the collection for future use
         self._cached_collections[name] = collection
+        self.logger.debug(f"📦 Cached collection: {name}")
         return collection
     
     def list_collections(self) -> List[str]:

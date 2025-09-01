@@ -41,15 +41,33 @@ async def store_vectors_task(
     logger = get_run_logger()
     start_time = time.time()
     
-    logger.info(f"🔄 Starting vector storage task")
+    logger.info("✨" + "="*80 + "✨")
+    logger.info(f"🚀 VECTOR STORAGE TASK STARTED")
+    logger.info("✨" + "="*80 + "✨")
     logger.info(f"💾 Embeddings file: {embeddings_file_path}")
-    logger.info(f"🗄️ Collection: {collection_name}")
+    logger.info(f"🗄️ Target collection: {collection_name}")
+    logger.info(f"🕰️ Start time: {datetime.now().isoformat()}")
     
     try:
+        # Verify file exists before processing
+        import os
+        if not os.path.exists(embeddings_file_path):
+            raise FileNotFoundError(f"Embeddings file not found: {embeddings_file_path}")
+        
+        file_size = os.path.getsize(embeddings_file_path)
+        logger.info(f"📊 File size: {file_size:,} bytes ({file_size/1024/1024:.2f} MB)")
+        
         # Get chunk ingestion engine instance
+        logger.info("🔧 Initializing chunk ingestion engine...")
         ingestion_engine = get_chunk_ingestion_engine()
         
+        if not ingestion_engine:
+            raise Exception("Failed to get chunk ingestion engine instance")
+        
+        logger.info("✅ Chunk ingestion engine ready")
+        
         # Use chunk ingestion engine to store in ChromaDB
+        logger.info("🚀 Starting ChromaDB ingestion process...")
         success = ingestion_engine.ingest_from_chromadb_ready_file(
             embeddings_file_path=embeddings_file_path,
             collection_name=collection_name
@@ -58,7 +76,10 @@ async def store_vectors_task(
         processing_time = time.time() - start_time
         
         if success:
+            logger.info("✅ ChromaDB ingestion completed successfully!")
+            
             # Get ingestion stats for confirmation
+            logger.info("📊 Retrieving ingestion statistics...")
             stats = ingestion_engine.get_ingestion_stats(collection_name)
             
             result = {
@@ -72,11 +93,17 @@ async def store_vectors_task(
                 "task_completed_at": datetime.now().isoformat()
             }
             
-            logger.info(f"✅ Vector storage completed successfully in {processing_time:.2f}s")
+            logger.info("✨" + "="*80 + "✨")
+            logger.info(f"✅ VECTOR STORAGE TASK COMPLETED SUCCESSFULLY")
+            logger.info(f"⏱️ Processing time: {processing_time:.2f}s")
             if stats.get("document_count"):
                 logger.info(f"📊 Total documents in collection: {stats['document_count']}")
+            logger.info(f"💾 File processed: {embeddings_file_path}")
+            logger.info("✨" + "="*80 + "✨")
         else:
-            logger.error(f"❌ ChromaDB storage failed")
+            logger.error("❌" + "="*80 + "❌")
+            logger.error(f"❌ CHROMADB STORAGE FAILED")
+            logger.error("❌" + "="*80 + "❌")
             result = {
                 "storage_status": "failed",
                 "collection_name": collection_name,
@@ -92,5 +119,17 @@ async def store_vectors_task(
         
     except Exception as e:
         processing_time = time.time() - start_time
-        logger.error(f"❌ Storage task failed after {processing_time:.2f}s: {e}")
+        logger.error("❌" + "="*80 + "❌")
+        logger.error(f"❌ VECTOR STORAGE TASK FAILED")
+        logger.error("❌" + "="*80 + "❌")
+        logger.error(f"⏱️ Processing time: {processing_time:.2f}s")
+        logger.error(f"🔍 Error type: {type(e).__name__}")
+        logger.error(f"🔍 Error message: {e}")
+        logger.error(f"💾 File: {embeddings_file_path}")
+        logger.error(f"🗄️ Collection: {collection_name}")
+        
+        import traceback
+        logger.error(f"📋 Full traceback: {traceback.format_exc()}")
+        
+        logger.error("❌" + "="*80 + "❌")
         raise

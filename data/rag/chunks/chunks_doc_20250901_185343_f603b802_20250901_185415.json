@@ -1,0 +1,235 @@
+{
+  "document_id": "doc_20250901_185343_f603b802",
+  "timestamp": "2025-09-01T18:54:15.066509",
+  "chunk_count": 13,
+  "chunks": [
+    {
+      "chunk_id": "6e431a91e15a7d08",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "# Processed Document: Hamza_CV.pdf\n\n**Document ID**: doc_20250901_185343_f603b802\n**Pages**: 3\n**Processing Date**: 2025-09-01 18:53:54\n**Content Length**: 9,541 characters\n\n---\n\n## Document Content with AI Vision Enhancement\n\n## Hamza Khaled Mahmoud Ahmed\n\nMachine Learning Engineer - Data Scientist - AI Engineer hamzakhaledlklk@gmail.com\n\ngithub.com/h19overflow - Hamza Khaled Linkedin\n\nCyberjaya, Malaysia - +60 122938594\n\n## Summary\n\nHighly motivated Computer Science student (expected graduation May 2026 ) specializing in Data Science , Machine Learning , and Artificial Intelligence , with 1.5+ years of hands-on project experience in predictive analytics , deep learning , computer vision , natural language processing , and AI automation systems . Possesses a robust foundation in statistics , advanced mathematics , data analysis , algorithm development , and predictive modeling .",
+      "page_number": 1,
+      "chunk_index": 0,
+      "metadata": {
+        "chunk_length": 892,
+        "word_count": 120,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "start"
+      }
+    },
+    {
+      "chunk_id": "d66df5a182ccde9e",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "Proven ability to manage the end-to-end machine learning lifecycle :\n\n- Data engineering , preprocessing, feature engineering , and data pipeline development\n- Exploratory data analysis (EDA), statistical inference , and hypothesis testing\n- Model development (classical ML, deep learning, neural networks, LLMs, RAG, AI agents), training , and hyperparameter optimization\n- Model evaluation , performance tuning , cross-validation , and deployment strategies\n\nPassionate about applying AI/ML to build intelligent, high-impact solutions.",
+      "page_number": 1,
+      "chunk_index": 1,
+      "metadata": {
+        "chunk_length": 537,
+        "word_count": 72,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "8451a868714c203e",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "Demonstrated project success in Advanced RAG Systems , Full-Stack AI Development , Computer Vision (95% accuracy), Natural Language Processing , Fraud Detection (95.67% accuracy), and AI Automation . Seeking an entry-level Machine Learning Engineer , AI Engineer , or Data Scientist position to contribute to data-driven projects in FinTech , Healthcare , or AI/Tech . ## Education\n\nBSc in Computer Science (Specialization in Data Science)\n\nMarch 2023 - Present\n\nMultimedia University, Malaysia\n\nExpected Graduation:\n\nMay 2026\n\nCGPA:\n\n3.63 / 4.0\n\nAchievements: 4-time Dean's List Award Winner\n\nRelevant Coursework: Statistics, Calculus, Discrete Mathematics, Machine Learning Algorithms , Data Analysis, Deep Learning , Object-Oriented Pro- gramming, Object-Oriented Analysis &amp; Design, Database Management, Artificial Intelligence .",
+      "page_number": 2,
+      "chunk_index": 2,
+      "metadata": {
+        "chunk_length": 836,
+        "word_count": 113,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "b87f4c98343a287a",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "## Selected Projects\n\n## Graph-Powered Agentic RAG System - Advanced AI Research &amp; Development\n\nTechnologies: Python, LightRAG, LangGraph, Google Gemini API (Vision Pro &amp; Flash), PostgreSQL, Pydantic, MinerU\n\n- Architected and built an end-to-end Retrieval-Augmented Generation (LightRAG) system to solve the 'fragmented context' problem inherent in traditional vector search-based RAG. - Engineered a multi-stage, multi-modal ETL pipeline that intelligently processes complex PDFs, using a Vision Language Model (VLM) to analyze images and diagrams, and prepares the data for ingestion into a knowledge graph.",
+      "page_number": 2,
+      "chunk_index": 3,
+      "metadata": {
+        "chunk_length": 618,
+        "word_count": 83,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "1c8cb3c3aba8f16d",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "- Implemented a sophisticated multi-agent system using LangGraph , where specialized AI agents collaborate to analyze user queries, determine optimal hybrid retrieval strategies (vector + graph), and synthesize fragmented answers into coherent, actionable narratives. - Demonstrated a significant leap in AI reasoning capabilities by enabling the system to understand and traverse the relationships between concepts, moving beyond simple keyword matching to structured, human-like understanding. ## LangGraph Agentic Auditing System - AI-Powered Financial Automation\n\nTechnologies: LangGraph, Python, LLMs, Pandas, Multi-Agent Systems\n\n- Designed a multi-agent auditing system using LangGraph to automate complex financial workflows, including End-of-Service (EOS) calculations and interactive payroll analysis.\n\n- Architected stateful, graph-based workflows to manage data flow and control, enabling both fully automated processing and complex human-in-the-loop (HITL) interactions. - Deployed specialized AI agents for tasks such as data classification and dynamic transformation based on natural language instructions , functioning as an auditor's 'co-pilot'. - Implemented parallel execution within the graph to concurrently run independent calculations, significantly improving the efficiency of the final EOS benefit calculation.",
+      "page_number": 3,
+      "chunk_index": 4,
+      "metadata": {
+        "chunk_length": 1335,
+        "word_count": 169,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "13454857d1c0e0fd",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "## Agentic Workbench - Full-Stack AI Document Processing &amp; Analytics Platform\n\nTechnologies: LangGraph, LangChain, FastAPI, Google Gemini (LLM), Google Vision (OCR), SQLite, React, TypeScript, Docker, Python\n\n- Engineered a full-stack, AI-powered workbench to automate structured data extraction from documents and enable natural language-based analytics and visualizations. - Orchestrated complex, multi-agent workflows using LangGraph for an end-to-end document processing pipeline, incorporating OCR, LLM-based extraction, and a human-in-the-loop (HITL) review stage.",
+      "page_number": 3,
+      "chunk_index": 5,
+      "metadata": {
+        "chunk_length": 574,
+        "word_count": 69,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "6c3b76bed6987024",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "- Developed a robust backend using FastAPI to serve RESTful APIs and WebSockets for real-time status updates, interfacing with Google Gemini for data structuring and Google Vision for OCR. - Implemented a data persistence layer using SQLite and designed an agentic querying system that translates natural language questions into executable SQL queries for data analysis. ## Intelligent Customer Service Assistant with Hybrid ML/LLM Architecture\n\nTechnologies: Python, LangChain (LangGraph), Scikit-learn (Random Forest), ONNX, MongoDB Atlas, Redis\n\n- Engineered a cost-effective hybrid architecture by developing a custom Random Forest intent classifier ( 99% accuracy ), optimized with ONNX Runtime for sub-millisecond inference, reducing reliance on expensive LLM calls.",
+      "page_number": 4,
+      "chunk_index": 6,
+      "metadata": {
+        "chunk_length": 772,
+        "word_count": 106,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "e00dacc9e4b9a917",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "- Architected an advanced agentic system using LangGraph , featuring custom subgraphs for reliable structured output and a novel 'pre-hook context fetching' mechanism to minimize token consumption. - Implemented an autonomous memory management system using MongoDB Atlas to store and retrieve user history, enabling the agent to personalize conversations and adapt its communication style. - Optimized system latency by integrating Redis as a high-speed caching layer for user memory and vector embeddings, ensuring rapid data retrieval for real-time interactions in a production-ready environment.",
+      "page_number": 4,
+      "chunk_index": 7,
+      "metadata": {
+        "chunk_length": 598,
+        "word_count": 83,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "58f1f8b487f5a9ca",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "## Pneumonia Detection using Hypertuned ResNet50V2 and Simulated Federated Learning\n\nTechnologies: TensorFlow, Keras (ResNet50V2), Flower (flwr), Deep Learning\n\n- Engineered a deep learning model for pneumonia detection from X-ray images, leveraging a fine-tuned ResNet50V2 network to achieve 95% accuracy and 0.90 F1-score . - Optimized model performance through comprehensive hyperparameter tuning and robust data augmentation strategies for improved generalization . - Designed a simulated Federated Learning environment using the Flower framework, demonstrating privacypreserving model training principles.",
+      "page_number": 5,
+      "chunk_index": 8,
+      "metadata": {
+        "chunk_length": 610,
+        "word_count": 76,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "9dcf489ea5d15c8a",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "## AI-Powered Flashcard Generator with RAG and Web Interface\n\nTechnologies: Google Gemini API, RAG, Flask, React, FAISS, LangChain, Python, Pandas, NumPy, Vector Databases\n\n- Built an automated content generation system to create study materials from PDF documents, enhancing learning efficiency through automated document understanding . - Implemented a robust Retrieval-Augmented Generation (RAG) architecture leveraging Google's Gemini LLM and a FAISS vector database for intelligent semantic search and accurate content generation.",
+      "page_number": 5,
+      "chunk_index": 9,
+      "metadata": {
+        "chunk_length": 535,
+        "word_count": 70,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "a72a93122559073c",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "- Designed a full-stack web application using Flask for the backend API and React for the frontend to facilitate seamless PDF uploads and interactive content review. ## Fraud Detection Model (Blockchain Transactions) - Machine Learning Classification\n\nTechnologies: XGBoost, Random Forest, Scikit-learn, Pandas, SMOTE, Ensemble Methods\n\n- Developed and evaluated multiple models for detecting fraudulent blockchain transactions, achieving 95.67% test accuracy with an optimized Random Forest model. - Implemented SMOTE to effectively address significant class imbalance , enhancing model robustness for anomaly detection .",
+      "page_number": 6,
+      "chunk_index": 10,
+      "metadata": {
+        "chunk_length": 622,
+        "word_count": 83,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "561863358108afbc",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "## Skills\n\n- Programming Languages: Python (Expert), SQL (Proficient, PostgreSQL, MySQL, SQLite ), Java (Intermediate), Kotlin (Intermediate), TypeScript (Intermediate), R (Basic)\n- ML Deep Learning Frameworks: TensorFlow , Keras , PyTorch , Scikit-learn , XGBoost , Hugging Face Transformers , Flower ( Federated Learning ), LangChain , LangGraph , LightRAG , CrewAI, ONNX\n- Data Analysis &amp; Visualization: Pandas , NumPy , SciPy , Matplotlib , Seaborn , Tableau, EDA\n- Cloud Platforms &amp; MLOps: Google Cloud Platform (GCP), Vertex AI (Gemini Models), Docker , Git , GitHub , Jupyter Notebooks, CI/CD (conceptual)\n- Databases Data Management: SQL (PostgreSQL, MySQL), NoSQL ( MongoDB Atlas ), Vector Databases (FAISS), Knowledge Graphs , Redis , Data Modeling, Data Warehousing (Conceptual)\n- AI/ML Domains &amp; Techniques:\n- Computer Vision: OpenCV, YOLO , MediaPipe, Object Detection, Image Classification, OCR\n- Natural Language Processing: LLMs (Gemini), Advanced RAG (LightRAG), Knowledge Graphs , Structured Data Extraction , Sentiment Analysis, Text Classification, Text Embeddings , Prompt Engineering , AI Agent Systems\n- Core ML: Regression, Classification , Clustering, Ensemble Methods , Feature Engineering , Hyperparameter Optimization , Model Evaluation , Anomaly Detection, Predictive Analytics\n- Web Development (AI Integration): React , TypeScript , Flask , FastAPI , RESTful APIs\n- Statistical &amp; Mathematical Foundations: Statistical Modeling , Hypothesis Testing , A/B Testing , Linear Algebra, Calculus, Probability &amp; Statistics, Optimization\n\nSoft Skills: Analytical Problem-Solving , Critical Thinking , Data-driven Decision Making , Technical Communication, Team Collaboration, Project Leadership, Adaptability, Continuous Learner.",
+      "page_number": 6,
+      "chunk_index": 11,
+      "metadata": {
+        "chunk_length": 1771,
+        "word_count": 244,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "be281e598c149bd1",
+      "document_id": "doc_20250901_185343_f603b802",
+      "content": "## Languages\n\nEnglish: Fluent\n\nArabic:\n\nNative",
+      "page_number": 7,
+      "chunk_index": 12,
+      "metadata": {
+        "chunk_length": 46,
+        "word_count": 6,
+        "created_at": "2025-09-01T18:54:15.066509",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250901_185343_f603b802\\doc_20250901_185343_f603b802_processed.md",
+        "original_filename": "doc_20250901_185343_f603b802_processed",
+        "document_type": "other",
+        "chunk_position": "end"
+      }
+    }
+  ],
+  "statistics": {
+    "total_characters": 9746,
+    "total_words": 1294,
+    "avg_chunk_length": 749.7,
+    "min_chunk_length": 46,
+    "max_chunk_length": 1771
+  }
+}

@@ -46,7 +46,8 @@ dependencies = [
     "spacy>=3.7.2",
     "nltk>=3.8.1",
     "transformers>=4.36.0",
-    "torch>=2.1.0",
+    "torch==2.7.1+cu128",
+    "torchvision==0.22.1+cu128",
     # Semantic Chunking
     "semantic-text-splitter>=0.8.0",
     "tiktoken>=0.5.2",

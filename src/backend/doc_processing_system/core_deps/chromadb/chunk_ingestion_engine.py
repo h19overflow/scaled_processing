@@ -105,26 +105,55 @@ class ChunkIngestionEngine:
             bool: True if ingestion successful
         """
         try:
+            self.logger.info(f"🚀 Starting ingestion from ChromaDB-ready file: {embeddings_file_path}")
+            self.logger.info(f"🗄️ Target collection: {collection_name or 'default'}")
+            
+            # Load JSON file
+            self.logger.info(f"📁 Loading embeddings file...")
             embeddings_data = self._load_json_file(embeddings_file_path)
             if not embeddings_data:
+                self.logger.error(f"❌ Failed to load embeddings file: {embeddings_file_path}")
                 return False
+            
+            self.logger.info(f"✅ Loaded embeddings file successfully")
+            self.logger.debug(f"🔍 File keys: {list(embeddings_data.keys())}")
             
             # Extract ChromaDB-ready format
+            self.logger.info("🔍 Extracting chromadb_ready format...")
             chromadb_data = embeddings_data.get("chromadb_ready")
             if not chromadb_data:
-                self.logger.error(f"No chromadb_ready format found in: {embeddings_file_path}")
+                self.logger.error(f"❌ No chromadb_ready format found in: {embeddings_file_path}")
+                self.logger.error(f"🔍 Available keys in file: {list(embeddings_data.keys())}")
                 return False
+            
+            self.logger.info("✅ Found chromadb_ready format")
+            self.logger.debug(f"🔍 ChromaDB data keys: {list(chromadb_data.keys())}")
             
             # Validate format
+            self.logger.info("🔍 Validating ChromaDB format...")
             if not self._validate_chromadb_format(chromadb_data):
-                self.logger.error(f"Invalid ChromaDB format in: {embeddings_file_path}")
+                self.logger.error(f"❌ Invalid ChromaDB format in: {embeddings_file_path}")
                 return False
             
+            self.logger.info("✅ ChromaDB format validation passed")
+            
             # Store in ChromaDB
-            return self._store_in_chromadb(chromadb_data, collection_name)
+            self.logger.info("🚀 Proceeding to store in ChromaDB...")
+            result = self._store_in_chromadb(chromadb_data, collection_name)
+            
+            if result:
+                self.logger.info(f"✅ Successfully ingested from ChromaDB-ready file")
+            else:
+                self.logger.error(f"❌ Failed to store data in ChromaDB")
+                
+            return result
             
         except Exception as e:
-            self.logger.error(f"Failed to ingest from ChromaDB-ready file: {e}")
+            self.logger.error(f"❌ Failed to ingest from ChromaDB-ready file: {embeddings_file_path}")
+            self.logger.error(f"🔍 Error type: {type(e).__name__}")
+            self.logger.error(f"🔍 Error message: {e}")
+            import traceback
+            self.logger.error(f"📋 Full traceback: {traceback.format_exc()}")
             return False
     
     def _load_latest_chunks(self, document_id: str) -> Optional[Dict[str, Any]]:
@@ -280,36 +309,85 @@ class ChunkIngestionEngine:
     def _store_in_chromadb(self, chromadb_data: Dict[str, List], collection_name: str = None) -> bool:
         """Store data in ChromaDB collection."""
         try:
+            self.logger.info(f"🚀 Starting ChromaDB storage process")
+            
             # Validate ChromaManager is available
             if not self._cached_chroma_manager:
-                self.logger.error("ChromaDB manager not available")
+                self.logger.error("❌ ChromaDB manager not available")
                 return False
             
+            self.logger.info(f"🔗 Getting ChromaDB collection: {collection_name or 'default'}")
             collection = self._cached_chroma_manager.get_collection(collection_name)
             if not collection:
-                self.logger.error("Failed to get ChromaDB collection")
+                self.logger.error(f"❌ Failed to get ChromaDB collection: {collection_name or 'default'}")
                 return False
+            
+            self.logger.info(f"✅ Successfully retrieved collection: {collection.name}")
             
             # Validate format before storing
+            self.logger.info("🔍 Validating ChromaDB format...")
             if not self._validate_chromadb_format(chromadb_data):
-                self.logger.error("Invalid ChromaDB format")
+                self.logger.error("❌ Invalid ChromaDB format")
                 return False
             
+            self.logger.info("✅ ChromaDB format validation passed")
+            
+            # Log detailed data stats before storing
+            ids_count = len(chromadb_data['ids'])
+            embeddings_count = len(chromadb_data['embeddings'])
+            metadatas_count = len(chromadb_data['metadatas'])
+            documents_count = len(chromadb_data['documents'])
+            
+            self.logger.info(f"📊 Data counts - IDs: {ids_count}, Embeddings: {embeddings_count}, Metadata: {metadatas_count}, Documents: {documents_count}")
+            
+            # Sample first few IDs for debugging
+            sample_ids = chromadb_data['ids'][:3] if chromadb_data['ids'] else []
+            self.logger.debug(f"🔍 Sample IDs: {sample_ids}")
+            
+            # Check embedding dimensions
+            if chromadb_data['embeddings']:
+                first_embedding_dim = len(chromadb_data['embeddings'][0]) if chromadb_data['embeddings'][0] else 0
+                self.logger.info(f"📐 Embedding dimension: {first_embedding_dim}")
+            
             # Store in ChromaDB
-            self.logger.info(f"📝 Adding {len(chromadb_data['ids'])} items to ChromaDB collection")
+            self.logger.info(f"📝 Adding {ids_count} items to ChromaDB collection: {collection.name}")
+            self.logger.debug("🔄 Calling collection.add()...")
+            self.logger.debug(f"🔍 Data preview - IDs: {chromadb_data['ids'][:2]}, Embeddings: {chromadb_data['embeddings'][:1]}, Metadatas: {chromadb_data['metadatas'][:1]}, Documents: {chromadb_data['documents'][:1]}"
+                            )
+            self.logger.info('Collection information before add: ' + collection.count)
             collection.add(
                 ids=chromadb_data["ids"],
                 embeddings=chromadb_data["embeddings"],
                 metadatas=chromadb_data["metadatas"],
                 documents=chromadb_data["documents"]
             )
-            self.logger.info(f"✅ Successfully added items to ChromaDB collection")
             
-            self.logger.info(f"✅ Stored {len(chromadb_data['ids'])} chunks in ChromaDB")
+            self.logger.info(f"✅ Successfully added {ids_count} items to ChromaDB collection")
+            
+            # Verify storage by checking collection count
+            try:
+                total_count = collection.count()
+                self.logger.info(f"📊 Total items in collection after storage: {total_count}")
+            except Exception as count_error:
+                self.logger.warning(f"⚠️ Could not verify collection count: {count_error}")
+            
+            self.logger.info(f"✅ ChromaDB storage completed successfully")
             return True
             
         except Exception as e:
-            self.logger.error(f"ChromaDB storage failed: {e}")
+            self.logger.error(f"❌ ChromaDB storage failed")
+            self.logger.error(f"🔍 Error type: {type(e).__name__}")
+            self.logger.error(f"🔍 Error message: {e}")
+            
+            # Log additional context for debugging
+            if chromadb_data:
+                self.logger.error(f"🔍 Data keys available: {list(chromadb_data.keys())}")
+                for key in ['ids', 'embeddings', 'metadatas', 'documents']:
+                    if key in chromadb_data:
+                        self.logger.error(f"🔍 {key} length: {len(chromadb_data[key])}")
+                        
+            import traceback
+            self.logger.error(f"📋 Full traceback: {traceback.format_exc()}")
             return False
     
     def get_ingestion_stats(self, collection_name: str = None) -> Dict[str, Any]:
