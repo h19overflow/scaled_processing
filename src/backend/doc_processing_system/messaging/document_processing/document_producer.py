@@ -19,7 +19,7 @@ class DocumentProducer(BaseKafkaProducer):
     
     def get_default_topic(self) -> str:
         """Default topic for document events."""
-        return "document-received"
+        return "document-available"
     
     def send_file_detected(self, file_data: dict) -> bool:
         """
@@ -60,42 +60,43 @@ class DocumentProducer(BaseKafkaProducer):
             self.logger.error(f"Failed to send file detected event: {e}")
             return False
     
-    def send_document_received(self, parsed_document: ParsedDocument) -> bool:
+    def send_document_received(self, document_data: dict) -> bool:
         """
         Send document received event.
         
         Args:
-            parsed_document: Parsed document data
+            document_data: Document data dictionary
             
         Returns:
             bool: True if event sent successfully
         """
         try:
-            # Create event using existing data model
-            event = DocumentReceivedEvent(
-                document_id=parsed_document.document_id,
-                parsed_document=parsed_document,
-                timestamp=datetime.now()
-            )
-            
-            # Convert to dict for Kafka
-            event_data = event.dict()
+            # Extract required fields from dictionary
+            document_id = document_data.get("document_id")
+            user_id = document_data.get("user_id", "default")
             
             # Create message key for partitioning
             message_key = create_message_key(
-                document_id=parsed_document.document_id,
-                user_id=parsed_document.metadata.user_id
+                document_id=document_id,
+                user_id=user_id
             )
             
-            # Publish event
+            # Use the document data directly as event data
+            event_data = {
+                **document_data,
+                "timestamp": datetime.now().isoformat(),
+                "event_type": "document_available"
+            }
+            
+            # Publish event to document-available topic
             success = self.publish_event(
-                topic=event.topic,
+                topic="document-available",
                 event_data=event_data,
                 key=message_key
             )
             
             if success:
-                self.logger.info(f"Document received event sent: {parsed_document.document_id}")
+                self.logger.info(f"Document available event sent: {document_id}")
             
             return success
             

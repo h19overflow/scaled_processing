@@ -172,6 +172,7 @@ class PrefectFlowConsumer(BaseKafkaConsumer):
         """
         status = flow_result.get("status")
         document_id = flow_result.get("document_id")
+        print("DEBUGGGGG flow_result:", flow_result)
         
         self.logger.info(f"📋 Flow completed with status: {status}")
         
@@ -186,9 +187,9 @@ class PrefectFlowConsumer(BaseKafkaConsumer):
             if kafka_message:
                 success = self.document_producer.send_document_received(kafka_message)
                 if success:
-                    self.logger.info(f"📨 document-received event published successfully for: {document_id}")
+                    self.logger.info(f"📨 document-available event published successfully for: {document_id}")
                 else:
-                    self.logger.error(f"❌ Failed to publish document-received event for: {document_id}")
+                    self.logger.error(f"❌ Failed to publish document-available event for: {document_id}")
             else:
                 self.logger.error(f"❌ No Kafka message prepared for downstream processing: {document_id}")
                 

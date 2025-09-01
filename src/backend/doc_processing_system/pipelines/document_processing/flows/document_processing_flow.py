@@ -155,7 +155,7 @@ def document_saving_task(
             document_id, parsed_document.content, metadata, user_id
         )
         
-        if save_result["status"] == "success":
+        if save_result["status"] == "saved":
             logger.info(f"✅ Document saved successfully: {save_result['processed_file_path']}")
         else:
             logger.error(f"❌ Failed to save document: {save_result.get('error')}")
@@ -163,6 +163,7 @@ def document_saving_task(
         return {
             **vision_result,
             "save_result": save_result,
+            "status": "completed" if save_result["status"] == "saved" else "error",
             "processed_file_path": save_result.get("processed_file_path"),
             "document_directory": save_result.get("document_directory")
         }
@@ -194,7 +195,7 @@ def kafka_message_preparation_task(
     """
     logger = get_run_logger()
     
-    if save_result["status"] != "completed" or save_result.get("save_result", {}).get("status") != "success":
+    if save_result.get("save_result", {}).get("status") != "saved":
         logger.error(f"❌ Cannot prepare Kafka message due to previous failures")
         return save_result
     
@@ -224,7 +225,7 @@ def kafka_message_preparation_task(
             document_id, processed_file_path, metadata, user_id
         )
         
-        if message_result.get("status") == "success":
+        if message_result.get("status") == "processed":
             logger.info(f"✅ Kafka message prepared successfully for: {document_id}")
             logger.info(f"📨 Message ready for topics: rag, extraction")
         else:
@@ -310,8 +311,8 @@ async def document_processing_flow(
         # Step 3: Document saving
         logger.info(f"🔄 Step 3: Saving processed document: {document_id}")
         save_result = document_saving_task(vision_result, raw_file_path, user_id)
-        
-        if save_result["status"] != "completed" or save_result.get("save_result", {}).get("status") != "success":
+
+        if save_result.get("save_result", {}).get("status") != "saved":
             logger.error(f"❌ Document saving failed, aborting flow")
             return save_result
         
@@ -320,7 +321,7 @@ async def document_processing_flow(
         final_result = kafka_message_preparation_task(save_result, user_id)
         
         # Final status check
-        if final_result["status"] == "completed" and final_result.get("kafka_message"):
+        if  final_result.get("kafka_message").get("status") == "processed":
             logger.info(f"✅ Document processing flow completed successfully!")
             logger.info(f"📄 Document ID: {final_result['document_id']}")
             logger.info(f"📁 Processed file: {final_result['processed_file_path']}")

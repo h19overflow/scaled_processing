@@ -18,7 +18,7 @@ from ..query_processing.query_producer import QueryProducer
 class EventType(str, Enum):
     """Types of events in the system."""
     FILE_DETECTED = "file-detected"
-    DOCUMENT_RECEIVED = "document-received"
+    DOCUMENT_AVAILABLE = "document-available"
     WORKFLOW_INITIALIZED = "workflow-initialized"
     CHUNKING_COMPLETE = "chunking-complete"
     EMBEDDING_READY = "embedding-ready"
@@ -75,7 +75,7 @@ class EventBus:
         """Create mapping of event types to producer types."""
         return {
             EventType.FILE_DETECTED: "document",
-            EventType.DOCUMENT_RECEIVED: "document",
+            EventType.DOCUMENT_AVAILABLE: "document",
             EventType.WORKFLOW_INITIALIZED: "document",
             EventType.CHUNKING_COMPLETE: "rag",
             EventType.EMBEDDING_READY: "rag", 

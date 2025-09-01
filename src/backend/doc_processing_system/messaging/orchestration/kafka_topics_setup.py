@@ -84,7 +84,7 @@ class KafkaTopicManager:
             },
             
             # Document lifecycle topics (high throughput)
-            EventType.DOCUMENT_RECEIVED.value: {
+            EventType.DOCUMENT_AVAILABLE.value: {
                 **base_config,
                 'partitions': 6,
                 'replication_factor': 1,

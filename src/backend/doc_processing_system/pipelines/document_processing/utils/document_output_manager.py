@@ -228,7 +228,7 @@ class DocumentOutputManager:
             self.logger.info(f"Kafka message prepared for document: {document_id}")
             
             return {
-                "status": "message_prepared",
+                "status": "processed",
                 "kafka_message": kafka_message,
                 "ready_for_producer": True,
                 "message": f"Message ready for DocumentProducer: {document_id}"
