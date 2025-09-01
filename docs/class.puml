@@ -1,14 +1,14 @@
 @startuml
-' Improved Class Diagram - Better Readability
-title Architectural Blueprint - Class Diagram (Clean Layout)
+' Updated Class Diagram - RAG Processing Pipeline Architecture
+title RAG Processing Pipeline - Class Diagram (Current Implementation)
 
 ' Clean layout configuration with better spacing
 left to right direction
 skinparam linetype ortho
-skinparam ranksep 100
-skinparam nodesep 100
+skinparam ranksep 120
+skinparam nodesep 120
 skinparam classAttributeIconSize 0
-skinparam minClassWidth 100
+skinparam minClassWidth 120
 skinparam arrowThickness 3
 skinparam dpi 150
 
@@ -39,97 +39,83 @@ skinparam note {
 package "Configuration" as config #E3F2FD {
     class Settings <<Singleton>> #BBDEFB {
         +GEMINI_API_KEY: str
-        +POSTGRES_DSN: str  
+        +OPENAI_API_KEY: str
         +KAFKA_BOOTSTRAP_SERVERS: list
-        +CHROMA_HOST: str
+        +CHROMA_PERSIST_DIRECTORY: str
         --
         +get_config(): dict
+    }
+    
+    class TaskConfig #BBDEFB {
+        +MAX_RETRIES: int
+        +RETRY_DELAY: int
+        +CHUNKING_TIMEOUT: int
+        +EMBEDDING_TIMEOUT: int
+        +STORAGE_TIMEOUT: int
+        --
+        +get_task_config(): dict
     }
 }
 
 ' === Data Models (Green Theme) ===
 package "Data Models" as models #E8F5E8 {
-    interface IDocument #A5D6A7 {
-        +get_id(): str
-        +get_content(): str
-        +get_metadata(): dict
-        +validate(): bool
-    }
-    
-    interface IChunk #A5D6A7 {
-        +get_text(): str
-        +get_embedding(): vector
-        +get_document_id(): str
-    }
-    
-    class Document #C8E6C9 {
-        -id: str
-        -content: str
-        -metadata: dict
-        -created_at: datetime
+    class TextChunk #C8E6C9 {
+        +chunk_id: str
+        +document_id: str
+        +content: str
+        +chunk_index: int
+        +page_number: int
+        +metadata: dict
         --
-        +get_id(): str
-        +get_content(): str
-        +get_metadata(): dict
-        +validate(): bool
-        +update_metadata(): bool
-    }
-    
-    class Chunk #C8E6C9 {
-        -id: str
-        -text: str
-        -embedding: vector
-        -document_id: str
-        --
-        +get_text(): str
-        +get_embedding(): vector
-        +get_document_id(): str
         +to_dict(): dict
+        +from_dict(): TextChunk
     }
     
-    class ExtractionSchema #C8E6C9 {
-        -fields: list
-        -validation_rules: dict
-        -created_by: str
+    class ParsedDocument #C8E6C9 {
+        +document_id: str
+        +original_filename: str
+        +content: str
+        +images_dict: dict
+        +page_mapping: dict
         --
-        +get_fields(): list
-        +add_field(): bool
-        +validate_data(): bool
-        +to_json(): str
+        +get_content(): str
+        +get_metadata(): dict
     }
     
-    class ExtractionResult #C8E6C9 {
-        -document_id: str
-        -extracted_data: dict
-        -confidence: float
-        -timestamp: datetime
+    class BoundaryDecision #C8E6C9 {
+        +decision: str
+        +confidence: float
         --
-        +get_data(): dict
-        +get_confidence(): float
-        +is_valid(): bool
-        +merge_with(): ExtractionResult
+        +is_merge(): bool
+    }
+    
+    class BoundaryReviewDeps #C8E6C9 {
+        +boundary_text: str
+        +chunk_index: int
+        --
+        +validate(): bool
+    }
+    
+    class EmbeddingResult #C8E6C9 {
+        +chunk_id: str
+        +embedding_vector: List[float]
+        +chunk_metadata: dict
+        +embedding_model: str
+        --
+        +to_chromadb_format(): dict
     }
 }
 
 ' === Infrastructure Layer (Orange Theme) ===
 package "Infrastructure" as infra #FFF3E0 {
-    interface IAPIController #FFCC80 {
-        +handle_request(): Response
-        +validate_input(): bool
-    }
-    
-    interface IWorkflowOrchestrator #FFCC80 {
-        +start_workflow(): Task
-        +monitor(): Status
-    }
-    
-    class DocumentIngestionAPI #FFCC80 {
-        -file_validator: FileValidator
-        -event_publisher: IEventPublisher
+    class UnifiedOrchestrator #FFCC80 {
+        -document_orchestrator: DocumentProcessingOrchestrator
+        -rag_orchestrator: RAGOrchestrator
         --
-        +upload_document(): Response
-        +get_status(): Status
-        +list_documents(): List
+        +start(): None
+        +stop(): None
+        +is_running(): bool
+        +get_status(): dict
     }
     
     class DocumentProcessingOrchestrator #FFCC80 {
@@ -141,6 +127,16 @@ package "Infrastructure" as infra #FFF3E0 {
         +stop(): None
         +is_running(): bool
         +get_status(): dict
+    }
+    
+    class RAGOrchestrator #FFCC80 {
+        -chunking_consumers: List[ChunkingConsumer]
+        -embedding_consumers: List[EmbeddingConsumer]
+        -storage_consumers: List[StorageConsumer]
+        --
+        +start(): None
+        +stop(): None
+        +get_consumer_status(): dict
     }
     
     class FileWatcherService #FFCC80 {
@@ -187,6 +183,41 @@ package "Messaging" as messaging #F3E5F5 {
         +send_processing_complete(): bool
     }
     
+    class RAGProducer #CE93D8 {
+        -connection_manager: ConnectionManager
+        --
+        +send_chunking_complete(): bool
+        +send_embedding_ready(): bool
+        +send_ingestion_complete(): bool
+    }
+    
+    class ChunkingConsumer #CE93D8 {
+        -rag_producer: RAGProducer
+        -processing_documents: set
+        --
+        +process_message(): bool
+        +_execute_chunking_pipeline(): Dict
+        +_publish_chunking_complete(): None
+    }
+    
+    class EmbeddingConsumer #CE93D8 {
+        -rag_producer: RAGProducer
+        -processing_documents: set
+        --
+        +process_message(): bool
+        +_execute_embeddings_task(): Dict
+        +_publish_embedding_ready(): None
+    }
+    
+    class StorageConsumer #CE93D8 {
+        -rag_producer: RAGProducer
+        -processing_documents: set
+        --
+        +process_message(): bool
+        +_execute_storage_task(): Dict
+        +_publish_ingestion_complete(): None
+    }
+    
     class BaseKafkaConsumer #CE93D8 {
         -consumer: KafkaConsumer
         -stop_event: Event
@@ -195,14 +226,6 @@ package "Messaging" as messaging #F3E5F5 {
         +subscribe_to_topic(): bool
         +start_consuming(): None
         +stop_consuming(): None
-    }
-    
-    class EventBus #CE93D8 {
-        -topic_router: TopicRouter
-        --
-        +publish(): bool
-        +subscribe(): bool
-        +get_topics(): List
     }
 }
 
@@ -260,37 +283,61 @@ package "Document Processing" as docprocessing #E1F5FE {
     }
 }
 
-' === Core Services (Yellow Theme) ===
-package "Core Services" as core #FFFDE7 {
+' === RAG Processing Core (Yellow Theme) ===
+package "RAG Processing Core" as core #FFFDE7 {
     
-    interface IChunker #FFF59D {
-        +chunk(): List[IChunk]
-        +create_embeddings(): bool
-    }
-    
-    interface IPersistenceRepository #FFF59D {
-        +save(): bool
-        +retrieve(): any
-        +update(): bool
-        +delete(): bool
+    class TwoStageChunker #FFF176 {
+        -_cached_semantic_chunker: SemanticChunker
+        -_cached_boundary_agent: BoundaryReviewAgent
+        --
+        +process_document(): Dict
+        +_apply_boundary_decisions(): List[str]
+        +_create_text_chunks(): List[TextChunk]
+        +_save_text_chunks(): Path
     }
     
     class SemanticChunker #FFF176 {
-        -embedding_service: EmbeddingService
+        -semantic_chunker: LangChainSemanticChunker
+        -page_mapper: PageMappingUtils
+        -file_processor: FileProcessingUtils
         --
-        +chunk(): List[IChunk]
-        +create_embeddings(): bool
-        +optimize_chunks(): List[IChunk]
+        +chunk_text(): List[str]
+        +_fallback_chunker(): List[str]
     }
     
-    class PersistenceManager #FFF176 {
-        -document_repo: IPersistenceRepository
-        -chunk_repo: IPersistenceRepository
-        -result_repo: IPersistenceRepository
+    class BoundaryReviewAgent #FFF176 {
+        -agent: Agent
+        -context_window: int
+        -model_name: str
         --
-        +save_document(): bool
-        +save_chunks(): bool
-        +retrieve_data(): dict
+        +review_boundary(): Dict
+        +review_all_boundaries(): Dict
+        +create_boundary_text(): str
+    }
+    
+    class EmbeddingsGenerator #FFF176 {
+        -_cached_model: SentenceTransformer
+        --
+        +process_chunks(): Dict
+        +_generate_batch_embeddings(): List
+        +_create_chromadb_format(): Dict
+    }
+    
+    class ChromaManager #FFF176 {
+        -_cached_client: PersistentClient
+        -_cached_collections: Dict
+        --
+        +get_collection(): Collection
+        +get_collection_info(): Dict
+        +delete_collection(): bool
+    }
+    
+    class ChunkIngestionEngine #FFF176 {
+        -_cached_chroma_manager: ChromaManager
+        --
+        +ingest_from_chromadb_ready_file(): bool
+        +_store_in_chromadb(): bool
+        +_prepare_chromadb_format(): Dict
     }
 }
 
@@ -321,6 +368,16 @@ package "Prefect Workflows" as prefect #F8BBD9 {
     class DocumentProcessingFlow #F48FB1 {
         +document_processing_flow(): Dict
         +process_document_with_flow(): Dict
+    }
+    
+    class RAGProcessingFlow #F48FB1 {
+        +rag_processing_flow(): Dict
+        --
+        +semantic_chunking_task(): Dict
+        +boundary_refinement_task(): Dict
+        +chunk_formatting_task(): Dict
+        +generate_embeddings_task(): Dict
+        +store_vectors_task(): Dict
     }
     
     class DuplicateDetectionTask #F48FB1 {
@@ -359,74 +416,79 @@ package "Query & Evaluation" as query #E0F2F1 {
 ' === Updated Relationships ===
 
 ' Interface implementations
-Document ..|> IDocument
-Chunk ..|> IChunk
 DoclingProcessor ..|> IDocumentProcessor
-SemanticChunker ..|> IChunker
-DocumentIngestionAPI ..|> IAPIController
-DocumentProcessingOrchestrator ..|> IWorkflowOrchestrator
 DocumentProducer ..|> IEventPublisher
-PrefectFlowConsumer ..|> IEventConsumer
+RAGProducer ..|> IEventPublisher
+ChunkingConsumer ..|> IEventConsumer
+EmbeddingConsumer ..|> IEventConsumer
+StorageConsumer ..|> IEventConsumer
 BaseKafkaConsumer ..|> IEventConsumer
 
-' Configuration dependencies (Dependency Injection)
-Settings ..> DocumentIngestionAPI : injects config
-Settings ..> DocumentProcessingOrchestrator : injects config
-Settings ..> PersistenceManager : injects config
+' Orchestration Hierarchy
+UnifiedOrchestrator --> DocumentProcessingOrchestrator : manages
+UnifiedOrchestrator --> RAGOrchestrator : manages
+DocumentProcessingOrchestrator --> FileWatcherService : manages
+DocumentProcessingOrchestrator --> PrefectFlowConsumer : manages
+RAGOrchestrator --> ChunkingConsumer : manages
+RAGOrchestrator --> EmbeddingConsumer : manages
+RAGOrchestrator --> StorageConsumer : manages
+
+' Configuration dependencies
+Settings ..> UnifiedOrchestrator : injects config
+TaskConfig ..> RAGProcessingFlow : provides task config
 
 ' File System Monitoring Flow
-FileWatcherService --> DocumentProducer : uses for file-detected events
-DocumentProducer --> EventBus : sends to topics
+FileWatcherService --> DocumentProducer : publishes file events
 
-' Event-Driven Processing Flow
-EventBus --> PrefectFlowConsumer : delivers file-detected events
-PrefectFlowConsumer --> DocumentProcessingOrchestrator : coordinates services
-
-' Prefect Workflow Flow
+' Document Processing Flow
 PrefectFlowConsumer --> DocumentProcessingFlow : triggers flow
 DocumentProcessingFlow --> DuplicateDetectionTask : step 1
-DuplicateDetectionTask --> VisionProcessingTask : step 2 (if new)
+DuplicateDetectionTask --> VisionProcessingTask : step 2
 VisionProcessingTask --> DocumentSavingTask : step 3
 DocumentSavingTask --> KafkaMessagePrepTask : step 4
 
-' Document Processing Flow (Enhanced)
+' Enhanced Document Processing
 VisionProcessingTask --> DoclingProcessor : processes document
-DoclingProcessor --> DocumentOutputManager : manages workflow
+DoclingProcessor --> DocumentOutputManager : manages output
 DoclingProcessor --> VisionProcessor : enhances with AI
 VisionProcessor --> VisionAgent : describes images
 VisionProcessor --> ImageClassifier : classifies images
 VisionProcessor --> MarkdownEnhancer : enhances content
 
-' Document Output Management
-DocumentOutputManager --> PersistenceManager : saves to database
-DocumentOutputManager --> DocumentProducer : prepares messages
+' RAG Processing Pipeline Flow
+ChunkingConsumer --> RAGProcessingFlow : triggers chunking
+RAGProcessingFlow --> TwoStageChunker : semantic chunking
+TwoStageChunker --> SemanticChunker : stage 1
+TwoStageChunker --> BoundaryReviewAgent : stage 2
+EmbeddingConsumer --> EmbeddingsGenerator : generates embeddings
+StorageConsumer --> ChunkIngestionEngine : stores in ChromaDB
 
-' Orchestration Relationships
-DocumentProcessingOrchestrator --> FileWatcherService : manages
-DocumentProcessingOrchestrator --> PrefectFlowConsumer : manages
+' Core Dependencies
+TwoStageChunker --> TextChunk : creates
+BoundaryReviewAgent --> BoundaryDecision : produces
+EmbeddingsGenerator --> EmbeddingResult : creates
+ChunkIngestionEngine --> ChromaManager : uses for storage
 
-' Structured Extraction Flow
+' Data Model Relationships
+ParsedDocument --> TextChunk : chunked into
+TextChunk --> EmbeddingResult : embedded as
+BoundaryReviewDeps --> BoundaryDecision : analyzed to
+
+' Producer-Consumer Message Flow
+DocumentProducer --> ChunkingConsumer : document-available topic
+ChunkingConsumer --> RAGProducer : chunking-complete
+RAGProducer --> EmbeddingConsumer : chunking-complete topic
+EmbeddingConsumer --> RAGProducer : embedding-ready
+RAGProducer --> StorageConsumer : embedding-ready topic
+StorageConsumer --> RAGProducer : ingestion-complete
+
+' Agent Relationships
 OrchestratorAgent --> FieldDiscoveryAgent : collaborates
-OrchestratorAgent ..> ExtractionSchema : creates
-ExtractionSchema --> ExtractionAgent : provides schema
-ExtractionAgent ..> ExtractionResult : creates
+OrchestratorAgent --> ExtractionAgent : deploys
+BoundaryReviewAgent --> BoundaryDecision : produces decisions
 
-' RAG Processing Flow (Consumes Document Processing Output)
-SemanticChunker --> IDocument : processes validated documents
-SemanticChunker ..> IChunk : creates
-
-' Repository Pattern
-PersistenceManager --> IPersistenceRepository : uses
-IPersistenceRepository --> IDocument : persists
-IPersistenceRepository --> IChunk : persists
-IPersistenceRepository --> ExtractionResult : persists
-
-' Query operations
-RAGQueryEngine --> PersistenceManager : queries through
-RagasEvaluator --> RAGQueryEngine : evaluates
-
-' Data relationships
-IDocument ||--o{ IChunk : contains
-ExtractionSchema ||--o{ ExtractionResult : validates
+' Query Flow
+RAGQueryEngine --> ChromaManager : queries vectors
+RAGQueryEngine --> RagasEvaluator : evaluated by
 
 @enduml

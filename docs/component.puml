@@ -1,6 +1,6 @@
 @startuml
 
-title Scaled Document Processing System - Component Architecture (Updated)
+title RAG Processing Pipeline System - Component Architecture (Current Implementation)
 left to right direction
 skinparam linetype ortho
 skinparam ranksep 100
@@ -32,14 +32,26 @@ package "Event-Driven Messaging" #F3E5F5 {
   [Topic Router] as Router
 }
 
-' === Workflow Orchestration Layer ===
-package "Prefect Workflow Orchestration" #FFF3E0 {
-  [Document Processing Orchestrator] as Orchestrator
-  [Document Processing Flow] as PrefectFlow
+' === Unified Orchestration Layer ===
+package "Unified Orchestration" #FFF3E0 {
+  [Unified Orchestrator] as UnifiedOrch
+  [Document Processing Orchestrator] as DocumentOrch
+  [RAG Orchestrator] as RAGOrch
+}
+
+' === Prefect Workflow Layer ===
+package "Prefect Workflows" #F8BBD9 {
+  [Document Processing Flow] as DocumentFlow
+  [RAG Processing Flow] as RAGFlow
   [Duplicate Detection Task] as DupTask
   [Vision Processing Task] as VisionTask
   [Document Saving Task] as SaveTask
   [Kafka Message Prep Task] as KafkaTask
+  [Semantic Chunking Task] as ChunkTask
+  [Boundary Refinement Task] as BoundaryTask
+  [Chunk Formatting Task] as FormatTask
+  [Generate Embeddings Task] as EmbedTask
+  [Store Vectors Task] as StoreTask
 }
 
 ' === Document Processing Pipeline ===
@@ -52,17 +64,29 @@ package "Document Processing Pipeline" #E1F5FE {
   [Markdown Enhancer] as MarkdownEnhancer
 }
 
-' === Parallel Processing Flows ===
+' === RAG Processing Components ===
+package "RAG Processing Core" #FFFDE7 {
+  [Two Stage Chunker] as TwoStageChunker
+  [Semantic Chunker] as SemanticChunker
+  [Boundary Review Agent] as BoundaryAgent
+  [Embeddings Generator] as EmbeddingsGen
+  [ChromaDB Manager] as ChromaManager
+  [Chunk Ingestion Engine] as ChunkIngestion
+}
+
+' === RAG Consumer Layer ===
+package "RAG Consumers" #E8F5E8 {
+  [Chunking Consumer] as ChunkConsumer
+  [Embedding Consumer] as EmbedConsumer
+  [Storage Consumer] as StorageConsumer
+  [RAG Producer] as RAGProducer
+}
+
+' === Structured Extraction (Future) ===
 package "Structured Extraction Flow" #FFEBEE {
   [Orchestrator Agent] as OrchestratorAgent
   [Field Discovery Agent] as FieldAgent
   [Extraction Agent Swarm] as ExtractionSwarm
-}
-
-package "RAG Processing Flow" #FFFDE7 {
-  [Semantic Chunker] as Chunker
-  [Embedding Service] as EmbeddingService
-  [Vector Storage] as VectorStorage
 }
 
 ' === Data Management ===
@@ -76,7 +100,8 @@ package "Data Persistence" #E8F5E8 {
 package "Data Stores" #F5F5F5 {
   database "PostgreSQL\n(Metadata)" as Postgres
   database "ChromaDB\n(Vector Store)" as Chroma
-  database "Document Store\n(Files)" as FileStore
+  folder "Document Store\n(File System)" as FileStore
+  folder "RAG Data\n(Chunks/Embeddings)" as RAGData
 }
 
 ' === Query & Evaluation Layer ===
@@ -100,25 +125,30 @@ package "Configuration" #F3E5F5 {
 
 ' === UPDATED FLOW RELATIONSHIPS ===
 
-' 1. File System Monitoring Flow
+' 1. Unified Orchestration
+UnifiedOrch --> DocumentOrch : manages document processing
+UnifiedOrch --> RAGOrch : manages RAG processing
+DocumentOrch --> FileWatcher : monitors files
+RAGOrch --> ChunkConsumer : scales chunking consumers
+RAGOrch --> EmbedConsumer : scales embedding consumers
+RAGOrch --> StorageConsumer : scales storage consumers
+
+' 2. File System Monitoring Flow
 User --> RawDocs : drops file
 RawDocs --> FileWatcher : monitors directory
 FileWatcher --> FileHandler : detects file events
 FileHandler --> DocProducer : publishes file-detected event
 
-' 2. Event-Driven Processing Flow
+' 3. Document Processing Flow
 DocProducer --> Kafka : sends file-detected to topic
 Kafka --> FlowConsumer : delivers event
-FlowConsumer --> Orchestrator : coordinates services
-Orchestrator --> PrefectFlow : triggers document processing
-
-' 3. Prefect Workflow Orchestration
-PrefectFlow --> DupTask : 1. Check duplicates
+FlowConsumer --> DocumentFlow : triggers processing
+DocumentFlow --> DupTask : 1. Check duplicates
 DupTask --> VisionTask : 2. Process with AI (if new)
 VisionTask --> SaveTask : 3. Save processed doc
 SaveTask --> KafkaTask : 4. Prepare downstream messages
 
-' 4. Document Processing Pipeline
+' 4. Enhanced Document Processing Pipeline
 VisionTask --> DoclingProcessor : processes document
 DoclingProcessor --> OutputManager : manages workflow
 DoclingProcessor --> VisionProcessor : enhances with AI
@@ -126,58 +156,68 @@ VisionProcessor --> VisionAgent : describes images
 VisionProcessor --> ImageClassifier : classifies images
 VisionProcessor --> MarkdownEnhancer : enhances content
 
-' 5. Document Output Management
-OutputManager --> PersistMgr : saves to database
-OutputManager --> DocProducer : prepares Kafka messages
-KafkaTask --> DocProducer : publishes document-received event
+' 5. Document Output to RAG Pipeline
+OutputManager --> DocProducer : prepares messages
+DocProducer --> Kafka : publishes document-available event
+Kafka --> ChunkConsumer : triggers RAG processing
 
-' 6. Downstream Pipeline Triggers
-DocProducer --> Kafka : sends to document-received topic
-Kafka --> OrchestratorAgent : triggers extraction pipeline
-Kafka --> Chunker : triggers RAG pipeline
+' 6. RAG Processing Pipeline Flow (Event-Driven)
+ChunkConsumer --> RAGFlow : executes chunking pipeline
+RAGFlow --> ChunkTask : semantic chunking
+ChunkTask --> TwoStageChunker : processes document
+TwoStageChunker --> SemanticChunker : stage 1: semantic chunks
+TwoStageChunker --> BoundaryAgent : stage 2: boundary refinement
+ChunkConsumer --> RAGProducer : publishes chunking-complete
 
-' 7. Parallel Processing (After Document Processing Complete)
-OrchestratorAgent --> FieldAgent : collaborates on discovery
-OrchestratorAgent --> ExtractionSwarm : deploys for parallel extraction
-Chunker --> EmbeddingService : creates embeddings from chunks
-EmbeddingService --> VectorStorage : stores vectors
+' 7. Embedding Processing Flow
+RAGProducer --> Kafka : chunking-complete event
+Kafka --> EmbedConsumer : triggers embeddings
+EmbedConsumer --> RAGFlow : executes embedding pipeline
+RAGFlow --> EmbedTask : generate embeddings
+EmbedTask --> EmbeddingsGen : creates embeddings
+EmbedConsumer --> RAGProducer : publishes embedding-ready
 
-' 8. Data Persistence (All flows converge)
-ExtractionSwarm --> PersistMgr : structured results
-VectorStorage --> PersistMgr : vector data
-Chunker --> PersistMgr : chunks & metadata
-OrchestratorAgent --> PersistMgr : schemas
+' 8. Vector Storage Flow
+RAGProducer --> Kafka : embedding-ready event
+Kafka --> StorageConsumer : triggers storage
+StorageConsumer --> RAGFlow : executes storage pipeline
+RAGFlow --> StoreTask : store vectors
+StoreTask --> ChunkIngestion : ingests to ChromaDB
+ChunkIngestion --> ChromaManager : manages collections
+StorageConsumer --> RAGProducer : publishes ingestion-complete
 
-' Repository Pattern
-PersistMgr --> DocRepo : document operations
-PersistMgr --> ChunkRepo : chunk operations  
-PersistMgr --> ResultRepo : result operations
+' 9. Data Storage Flows
+TwoStageChunker --> RAGData : saves chunks to file system
+EmbeddingsGen --> RAGData : saves embeddings to file system
+ChunkIngestion --> Chroma : stores vectors in ChromaDB
+OutputManager --> FileStore : saves processed documents
+OutputManager --> Postgres : saves document metadata
 
-' Data Store Connections
-DocRepo --> Postgres : metadata
-DocRepo --> FileStore : files
-ChunkRepo --> Chroma : vectors
-ChunkRepo --> Postgres : chunk metadata
-ResultRepo --> Postgres : extraction results
+' 10. Query & Retrieval Flow
+User --> RAG : asks questions
+RAG --> Retriever : retrieves context
+Retriever --> ChromaManager : queries vector store
+ChromaManager --> Chroma : executes vector search
+RAG --> User : returns synthesized answer
 
-' 8. Query Flow
-User --> RAG : 9. Ask question
-RAG --> Retriever : gets context
-Retriever --> ChunkRepo : 10a. Retrieve chunks
-Retriever --> DocRepo : 10b. Get metadata
-RAG --> User : 11. Synthesized answer
-
-' 9. Evaluation & Monitoring
+' 11. Evaluation & Monitoring
 Evaluator --> RAG : evaluates performance
-Metrics --> ExtractionSwarm : tracks extraction metrics
-Metrics --> RAG : tracks query metrics
+Metrics --> ChunkConsumer : tracks chunking metrics
+Metrics --> EmbedConsumer : tracks embedding metrics
+Metrics --> StorageConsumer : tracks storage metrics
 Perf --> WandB : sends performance data
-Metrics --> WandB : sends agent decisions
+
+' 12. Future Extraction Pipeline
+DocProducer --> Kafka : document-available event
+Kafka --> OrchestratorAgent : triggers extraction
+OrchestratorAgent --> FieldAgent : collaborates on discovery
+OrchestratorAgent --> ExtractionSwarm : deploys for extraction
+ExtractionSwarm --> PersistMgr : stores structured results
 
 ' Configuration Dependencies
-Config ..> API : provides settings
-Config ..> Prefect : provides settings
-Config ..> PersistMgr : provides settings
+Config ..> UnifiedOrch : provides settings
+Config ..> DocumentOrch : provides settings  
+Config ..> RAGOrch : provides settings
 Config ..> Kafka : provides connection settings
 
 @enduml
