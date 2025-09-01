@@ -23,7 +23,7 @@ class ChunkIngestionEngine:
         Initialize chunk ingestion engine.
         
         Args:
-            chroma_manager: ChromaDB manager instance (uses global if not provided)
+            chroma_manager: ChromaDB manager instance (creates new if not provided)
         """
         # Setup logging
         self.logger = logging.getLogger(__name__)
@@ -33,8 +33,14 @@ class ChunkIngestionEngine:
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
         
-        # Use provided or global chroma manager
-        self._cached_chroma_manager = chroma_manager or chroma_manager
+        # Use provided chroma manager or create new instance
+        if chroma_manager:
+            self._cached_chroma_manager = chroma_manager
+        else:
+            # Create a fresh ChromaManager instance
+            from .chroma_manager import ChromaManager
+            self._cached_chroma_manager = ChromaManager()
+            self.logger.info("Created new ChromaManager instance")
         
         # Data paths
         self.chunks_dir = Path("data/rag/chunks")
@@ -222,13 +228,37 @@ class ChunkIngestionEngine:
                 embeddings.append(emb_data["embedding_vector"])
                 documents.append(chunk["content"])
                 
-                # Combine metadata from chunk and embedding
-                metadata = {
+                # Combine metadata from chunk and embedding with enhanced filtering fields
+                base_metadata = {
                     **chunk.get("metadata", {}),
                     **emb_data.get("chunk_metadata", {}),
+                }
+                
+                # Create enhanced metadata for ChromaDB filtering
+                metadata = {
+                    **base_metadata,
+                    # Core identifiers
                     "document_id": chunk["document_id"],
+                    "chunk_id": chunk_id,
                     "chunk_index": chunk["chunk_index"],
                     "page_number": chunk["page_number"],
+                    
+                    # Source information for filtering
+                    "source_file": base_metadata.get("source_file_path", "unknown"),
+                    "original_filename": base_metadata.get("original_filename", chunk["document_id"]),
+                    "document_type": base_metadata.get("document_type", "unknown"),
+                    
+                    # Content characteristics for filtering
+                    "chunk_length": len(chunk["content"]),
+                    "word_count": len(chunk["content"].split()),
+                    "chunk_position": base_metadata.get("chunk_position", "unknown"),
+                    
+                    # Processing metadata
+                    "chunking_strategy": base_metadata.get("chunking_strategy", "unknown"),
+                    "embedding_model": emb_data.get("embedding_model", "unknown"),
+                    
+                    # Timestamps
+                    "chunk_created_at": base_metadata.get("created_at", datetime.now().isoformat()),
                     "ingested_at": datetime.now().isoformat()
                 }
                 metadatas.append(metadata)
@@ -250,6 +280,11 @@ class ChunkIngestionEngine:
     def _store_in_chromadb(self, chromadb_data: Dict[str, List], collection_name: str = None) -> bool:
         """Store data in ChromaDB collection."""
         try:
+            # Validate ChromaManager is available
+            if not self._cached_chroma_manager:
+                self.logger.error("ChromaDB manager not available")
+                return False
+            
             collection = self._cached_chroma_manager.get_collection(collection_name)
             if not collection:
                 self.logger.error("Failed to get ChromaDB collection")
@@ -261,12 +296,14 @@ class ChunkIngestionEngine:
                 return False
             
             # Store in ChromaDB
+            self.logger.info(f"📝 Adding {len(chromadb_data['ids'])} items to ChromaDB collection")
             collection.add(
                 ids=chromadb_data["ids"],
                 embeddings=chromadb_data["embeddings"],
                 metadatas=chromadb_data["metadatas"],
                 documents=chromadb_data["documents"]
             )
+            self.logger.info(f"✅ Successfully added items to ChromaDB collection")
             
             self.logger.info(f"✅ Stored {len(chromadb_data['ids'])} chunks in ChromaDB")
             return True
@@ -312,4 +349,12 @@ class ChunkIngestionEngine:
 
 
 # Global instance for easy import and sharing  
-chunk_ingestion_engine = ChunkIngestionEngine()
+# Initialize lazily to avoid circular import issues
+chunk_ingestion_engine = None
+
+def get_chunk_ingestion_engine():
+    """Get or create global chunk ingestion engine instance."""
+    global chunk_ingestion_engine
+    if chunk_ingestion_engine is None:
+        chunk_ingestion_engine = ChunkIngestionEngine()
+    return chunk_ingestion_engine

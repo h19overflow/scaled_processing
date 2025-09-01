@@ -8,15 +8,10 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime
-
-try:
-    import chromadb
-    from chromadb.api.models.Collection import Collection
-    from chromadb.config import Settings
-    CHROMADB_AVAILABLE = True
-except ImportError:
-    CHROMADB_AVAILABLE = False
-    Collection = None
+import chromadb
+from chromadb.api.models.Collection import Collection
+from chromadb.config import Settings
+CHROMADB_AVAILABLE = True
 
 
 class ChromaManager:
@@ -246,3 +241,14 @@ class ChromaManager:
 
 # Global instance for easy import and sharing
 chroma_manager = ChromaManager()
+if __name__ == "__main__":
+    # Simple test
+    manager = ChromaManager()
+    client = manager.get_client()
+    # manager.reset_database()
+    if client:
+        print("ChromaDB client initialized.")
+        collections = manager.list_collections()
+        print(f"Available collections: {collections}")
+    else:
+        print("Failed to initialize ChromaDB client.")

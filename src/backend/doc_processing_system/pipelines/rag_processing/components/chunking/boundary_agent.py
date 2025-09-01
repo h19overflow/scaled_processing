@@ -130,10 +130,13 @@ Be concise and decisive. Focus on semantic continuity across the boundary."""
                 chunk_index=chunk_index
             )
             
-            # Get agent decision
-            result = await self.agent.run(
-                "Review this boundary and decide whether to merge or keep the chunks.",
-                deps=deps
+            # Get agent decision with timeout to prevent hanging
+            result = await asyncio.wait_for(
+                self.agent.run(
+                    "Review this boundary and decide whether to merge or keep the chunks.",
+                    deps=deps
+                ),
+                timeout=10.0  # 10 second timeout per boundary
             )
             
             decision_data = result.data
@@ -151,6 +154,20 @@ Be concise and decisive. Focus on semantic continuity across the boundary."""
             
             self.logger.debug(f"🔍 Boundary {chunk_index}: {decision_data.decision} (conf={decision_data.confidence:.2f})")
             return review_result
+            
+        except asyncio.TimeoutError:
+            processing_time = time.time() - start_time
+            self.logger.error(f"❌ Boundary review timeout for index {chunk_index}")
+            
+            return {
+                "decision": "KEEP",  # Conservative default on timeout
+                "confidence": 0.0,
+                "chunk_index": chunk_index,
+                "processing_time_seconds": round(processing_time, 3),
+                "model_name": self.model_name,
+                "status": "error",
+                "error": "Request timeout (10s)"
+            }
             
         except Exception as e:
             processing_time = time.time() - start_time
@@ -210,8 +227,13 @@ Be concise and decisive. Focus on semantic continuity across the boundary."""
         
         self.logger.info(f"🚀 Starting {len(tasks)} boundary reviews with {max_concurrent} concurrent agents")
         
-        # Execute all boundary reviews concurrently
-        boundary_decisions = await asyncio.gather(*tasks, return_exceptions=True)
+        # Execute all boundary reviews concurrently with proper exception handling
+        try:
+            boundary_decisions = await asyncio.gather(*tasks, return_exceptions=True)
+        except Exception as e:
+            self.logger.error(f"❌ Async gather failed: {e}")
+            # Create fallback results
+            boundary_decisions = [Exception(f"Gather failed: {e}") for _ in range(len(tasks))]
         
         # Handle any exceptions and ensure all results are dicts
         processed_decisions = []
@@ -254,4 +276,5 @@ Be concise and decisive. Focus on semantic continuity across the boundary."""
         
         self.logger.info(f"🤖 Reviewed {len(processed_decisions)} boundaries: {merge_count} merge, {keep_count} keep, {error_count} errors")
         self.logger.info(f"⚡ Concurrent processing: {max_concurrent} agents, {total_time:.3f}s total")
+        
         return result

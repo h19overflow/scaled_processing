@@ -77,8 +77,29 @@ Successfully implemented and tested a high-performance 2-stage chunking system f
 ### ChromaDB-Ready Format
 - **Output Structure**: `ids`, `embeddings`, `metadatas`, `documents` arrays
 - **Consistency**: All arrays maintain identical length for direct ChromaDB insertion
-- **Metadata**: Complete document tracking with chunk indices, lengths, timestamps
+- **Metadata**: Complete document tracking with chunk indices, lengths, timestamps, **page numbers**
 - **Integration**: Seamless handoff between chunking and embedding components
+- **Enhanced Filtering**: Rich metadata enables advanced document retrieval queries
+
+### ChromaDB Query Capabilities ✅
+With the enhanced metadata pipeline, ChromaDB now supports sophisticated filtering:
+
+```python
+# Filter by document type
+collection.query(where={"document_type": "pdf"})
+
+# Filter by specific document
+collection.query(where={"original_filename": "Monthly-Report-Aug"})
+
+# Filter by page range  
+collection.query(where={"page_number": {"$gte": 1, "$lte": 3}})
+
+# Filter by chunk characteristics
+collection.query(where={"chunk_position": "start", "word_count": {"$gt": 50}})
+
+# Filter by processing metadata
+collection.query(where={"chunking_strategy": "two_stage_semantic"})
+```
 
 ### File Output Structure
 ```json
@@ -90,13 +111,17 @@ Successfully implemented and tested a high-performance 2-stage chunking system f
       "chunk_id": "a1b2c3d4e5f6g7h8",
       "document_id": "test_doc_001", 
       "content": "chunk text content...",
-      "page_number": 0,
+      "page_number": 1,
       "chunk_index": 0,
       "metadata": {
         "chunk_length": 156,
         "word_count": 24,
         "created_at": "2025-09-01T10:31:46",
-        "chunking_strategy": "two_stage_semantic"
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data/documents/processed/doc_001/doc_001_processed.md",
+        "original_filename": "Monthly-Report-Aug",
+        "document_type": "word",
+        "chunk_position": "start"
       }
     }
   ]
@@ -116,7 +141,7 @@ Successfully implemented and tested a high-performance 2-stage chunking system f
         "chunk_index": 0,
         "chunk_length": 156,
         "word_count": 24,
-        "page_number": 0,
+        "page_number": 1,
         "model_used": "BAAI/bge-large-en-v1.5",
         "timestamp": "2025-09-01T10:31:46"
       }
@@ -131,6 +156,52 @@ Successfully implemented and tested a high-performance 2-stage chunking system f
 }
 ```
 
+## Recent Enhancements - COMPLETED ✅
+
+### Enhanced Metadata Pipeline
+- **Location**: `src/backend/doc_processing_system/pipelines/rag_processing/flows/tasks/chunk_formatting_task.py`
+- **Enhancement**: Complete metadata enrichment for ChromaDB filtering and retrieval
+- **Features**: Source file tracking, document type classification, chunk positioning
+
+### Page Numbering Integration
+- **DoclingProcessor Enhancement**: `src/backend/doc_processing_system/pipelines/document_processing/docling_processor.py`
+  - ✅ Added `_export_markdown_with_page_info()` for page mapping extraction
+  - ✅ Page-to-content position mapping from Docling document structure
+  - ✅ Preserved through document processing metadata pipeline
+
+- **Chunk Formatting Enhancement**: `chunk_formatting_task.py`
+  - ✅ Replaced placeholder page numbers with real document page mapping
+  - ✅ Added `_load_document_metadata()` for accessing processed document info
+  - ✅ Added `_estimate_chunk_position()` for accurate chunk-to-page mapping
+  - ✅ Enhanced `_extract_page_number()` with 3-tier resolution logic
+
+### ChromaDB Metadata Enrichment
+- **Location**: `src/backend/doc_processing_system/core_deps/chromadb/chunk_ingestion_engine.py`
+- **Enhancement**: Rich filtering metadata for advanced document retrieval
+- **Features**: 
+  - ✅ Source file information (`source_file`, `original_filename`, `document_type`)
+  - ✅ Content characteristics (`chunk_length`, `word_count`, `chunk_position`)
+  - ✅ Processing metadata (`chunking_strategy`, `embedding_model`)
+  - ✅ Temporal tracking (`chunk_created_at`, `ingested_at`)
+
+### Async Task Pipeline Fixes
+- **Issue Resolved**: Coroutine serialization errors in RAG pipeline consumers
+- **Solution**: Consistent async/await usage across all pipeline tasks and consumers
+- **Components Fixed**: 
+  - ✅ `chunking_consumer.py` - Added asyncio.run() for async task execution
+  - ✅ `embedding_consumer.py` - Fixed coroutine handling 
+  - ✅ `storage_consumer.py` - Properly awaited async storage tasks
+  - ✅ All RAG processing tasks made consistently async
+
+### Vector Storage Integration
+- **Location**: `src/backend/doc_processing_system/pipelines/rag_processing/flows/tasks/vector_storage_task.py`
+- **Enhancement**: Connected chunk ingestion engine to vector storage pipeline
+- **Features**: 
+  - ✅ Replaced placeholder implementation with real ChromaDB storage
+  - ✅ Direct integration with chunk_ingestion_engine
+  - ✅ Comprehensive error handling and ingestion statistics
+  - ✅ ChromaDB-ready format processing
+
 ## Current State
 - ✅ 2-Stage chunking system fully implemented
 - ✅ 10+ concurrent boundary agents operational
@@ -141,13 +212,18 @@ Successfully implemented and tested a high-performance 2-stage chunking system f
 - ✅ **ChromaDB-ready output format implemented**
 - ✅ JSON chunk output and reporting functional
 - ✅ Streamlined output for Kafka integration ready
+- ✅ **Real page numbering from DoclingProcessor implemented**
+- ✅ **Enhanced metadata pipeline for ChromaDB filtering**
+- ✅ **Complete async task pipeline operational**
+- ✅ **End-to-end vector storage integration functional**
 
-## Outstanding Items
-- ⚠️ **Page Mapping**: Need to connect document pages to chunk metadata for accurate source attribution
-  - Add page number tracking during chunking process
-  - Include page ranges in chunk metadata for retrieval context
-  - Essential for citation and source verification in RAG responses
-  - **Current**: Page numbers set to placeholder value 0
+## Outstanding Items - RESOLVED ✅
+- ✅ **Page Mapping**: Successfully implemented document page tracking with accurate source attribution
+  - ✅ DoclingProcessor enhanced with page-to-content mapping extraction
+  - ✅ Real page numbers flow from document processing through chunking pipeline
+  - ✅ Page ranges included in chunk metadata for retrieval context
+  - ✅ Essential for citation and source verification in RAG responses
+  - ✅ **Updated**: Page numbers now reflect actual document structure
 
 ---
 

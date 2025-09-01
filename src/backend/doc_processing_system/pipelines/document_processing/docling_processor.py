@@ -187,8 +187,8 @@ class DoclingProcessor:
             # Extract images first
             extracted_images = self._extract_images_to_dict(result, file_path_obj)
             
-            # Get base content
-            content = result.document.export_to_markdown()
+            # Get base content with page mapping
+            content, page_mapping = self._export_markdown_with_page_info(result)
             page_count = len(result.pages)
             
             # Enhance with vision AI if enabled and images exist
@@ -225,6 +225,9 @@ class DoclingProcessor:
                 page_count=page_count,
                 metadata=metadata
             )
+            
+            # Store page mapping for downstream processing
+            parsed_doc._page_mapping = page_mapping
             
             self.logger.info(f"Successfully processed {file_path_obj.name}: {len(content)} chars, {page_count} pages")
             return parsed_doc
@@ -276,6 +279,74 @@ class DoclingProcessor:
             context += " [Document contains figures/diagrams]"
             
         return context
+    
+    def _export_markdown_with_page_info(self, result) -> tuple[str, dict]:
+        """
+        Export document to markdown while preserving page mapping information.
+        
+        Args:
+            result: Docling conversion result
+            
+        Returns:
+            tuple: (markdown_content, page_mapping_dict)
+        """
+        try:
+            # Get standard markdown
+            content = result.document.export_to_markdown()
+            
+            # Create page mapping by analyzing document structure
+            page_mapping = {}
+            current_page = 1
+            current_position = 0
+            
+            # Iterate through pages and document items to build mapping
+            for page_num, page in enumerate(result.pages, 1):
+                page_items = []
+                
+                # Find items belonging to this page
+                for item, level in result.document.iterate_items():
+                    # Simple heuristic: items with page references or sequential order
+                    if hasattr(item, 'page') and item.page == page_num - 1:  # 0-based indexing
+                        page_items.append(item)
+                
+                # Calculate approximate content positions for this page
+                # This is a simplified approach - in a real implementation you'd need
+                # more sophisticated page-to-content mapping
+                if page_num <= len(result.pages):
+                    content_length = len(content)
+                    page_start_pos = int((page_num - 1) * content_length / len(result.pages))
+                    page_end_pos = int(page_num * content_length / len(result.pages))
+                    
+                    page_mapping[page_num] = {
+                        'start_pos': page_start_pos,
+                        'end_pos': page_end_pos,
+                        'items': len(page_items)
+                    }
+            
+            # If no page mapping was created, create a simple fallback
+            if not page_mapping and len(result.pages) > 0:
+                content_length = len(content)
+                pages_count = len(result.pages)
+                
+                for page_num in range(1, pages_count + 1):
+                    page_start_pos = int((page_num - 1) * content_length / pages_count)
+                    page_end_pos = int(page_num * content_length / pages_count)
+                    
+                    page_mapping[page_num] = {
+                        'start_pos': page_start_pos,
+                        'end_pos': page_end_pos,
+                        'items': 0
+                    }
+            
+            self.logger.debug(f"Created page mapping for {len(page_mapping)} pages")
+            return content, page_mapping
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to create page mapping, using simple export: {e}")
+            # Fallback to simple export
+            content = result.document.export_to_markdown()
+            return content, {}
+    
     # HELPER FUNCTIONS
     def _get_file_type(self, file_path: Path) -> FileType:
         """Determine file type from file extension."""

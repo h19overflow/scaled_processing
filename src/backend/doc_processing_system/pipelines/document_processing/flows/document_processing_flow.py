@@ -147,7 +147,9 @@ def document_saving_task(
             "file_size": parsed_document.metadata.file_size,
             "processed_content": parsed_document.content,
             "vision_processing": True,
-            "processing_timestamp": datetime.now().isoformat()
+            "processing_timestamp": datetime.now().isoformat(),
+            # Include page mapping for downstream processing
+            "page_mapping": getattr(parsed_document, '_page_mapping', {})
         }
         
         # Save processed document

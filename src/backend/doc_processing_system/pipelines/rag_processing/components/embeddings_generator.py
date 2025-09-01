@@ -184,7 +184,9 @@ class EmbeddingsGenerator:
                             "word_count": len(chunk["content"].split()),
                             "page_number": chunk["page_number"],
                             "model_used": self.model_name,
-                            "timestamp": datetime.now().isoformat()
+                            "timestamp": datetime.now().isoformat(),
+                            # Pass through enhanced metadata from chunk formatting
+                            **chunk.get("metadata", {})
                         },
                         "chunk_content": chunk["content"]  # Store content for ChromaDB documents field
                     }
