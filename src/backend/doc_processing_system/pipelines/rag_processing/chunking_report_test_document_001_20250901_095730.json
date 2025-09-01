@@ -1,0 +1,80 @@
+{
+  "document_info": {
+    "document_id": "test_document_001",
+    "original_length": 570,
+    "processing_timestamp": "2025-09-01T09:57:30.835539"
+  },
+  "configuration": {
+    "chunk_size": 200,
+    "semantic_threshold": 0.75,
+    "boundary_context": 200,
+    "concurrent_agents": 2,
+    "model_name": "gemini-2.0-flash"
+  },
+  "stage1_semantic_chunking": {
+    "chunks": [
+      "\n    This is the first paragraph of our test document. It contains some meaningful content that should be processed by the semantic chunker. This is the second paragraph. It has different content and should potentially be in a separate chunk depending on the semantic analysis. This is the third paragraph with more content. The boundary agent will analyze whether these chunks should be merged or kept separate. Finally, this is the fourth paragraph to complete our test document. It provides enough content for proper chunking analysis.",
+      ""
+    ],
+    "chunk_count": 2,
+    "method_used": "semantic",
+    "processing_time_seconds": 0.143,
+    "chunk_statistics": {
+      "min_length": 0,
+      "max_length": 538,
+      "avg_length": 269.0,
+      "total_chars": 538
+    },
+    "configuration": {
+      "chunk_size": 200,
+      "threshold": 0.75
+    },
+    "initial_chunks": [
+      "\n    This is the first paragraph of our test document. It contains some meaningful content that should be processed by the semantic chunker. This is the second paragraph. It has different content and should potentially be in a separate chunk depending on the semantic analysis. This is the third paragraph with more content. The boundary agent will analyze whether these chunks should be merged or kept separate. Finally, this is the fourth paragraph to complete our test document. It provides enough content for proper chunking analysis.",
+      ""
+    ]
+  },
+  "stage2_boundary_review": {
+    "boundary_decisions": [
+      {
+        "decision": "KEEP",
+        "confidence": 0.9,
+        "chunk_index": 0,
+        "processing_time_seconds": 1.709,
+        "boundary_text_length": 212,
+        "model_name": "gemini-2.0-flash",
+        "status": "success"
+      }
+    ],
+    "total_boundaries": 1,
+    "merge_decisions": 0,
+    "keep_decisions": 1,
+    "error_decisions": 0,
+    "processing_time_seconds": 1.709,
+    "avg_confidence": 0.9,
+    "concurrent_agents": 2,
+    "model_name": "gemini-2.0-flash"
+  },
+  "final_results": {
+    "initial_chunk_count": 2,
+    "final_chunk_count": 2,
+    "chunks_merged": 0,
+    "merge_rate": 0.0,
+    "final_chunk_statistics": {
+      "min_length": 0,
+      "max_length": 538,
+      "avg_length": 269.0,
+      "total_chars": 538
+    }
+  },
+  "performance_metrics": {
+    "total_processing_time_seconds": 1.852,
+    "stage1_time_seconds": 0.143,
+    "stage2_time_seconds": 1.709,
+    "chars_per_second": 307.7
+  },
+  "quality_metrics": {
+    "avg_boundary_confidence": 0.9,
+    "boundary_error_rate": 0.0
+  }
+}

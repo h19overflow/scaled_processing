@@ -61,6 +61,13 @@ Successfully implemented and tested a high-performance 2-stage chunking system f
 - ✅ Multi-model performance testing complete
 - ✅ EDA framework for model selection ready
 - ✅ JSON chunk output and reporting functional
+- ✅ Streamlined output for Kafka integration ready
+
+## Outstanding Items
+- ⚠️ **Page Mapping**: Need to connect document pages to chunk metadata for accurate source attribution
+  - Add page number tracking during chunking process
+  - Include page ranges in chunk metadata for retrieval context
+  - Essential for citation and source verification in RAG responses
 
 ---
 
@@ -85,8 +92,9 @@ embeddings_component.py
 ```
 ### Output Format
 - Chunk ID → Vector mapping
-- Metadata preservation (document_id, chunk_index, model_used)
+- Metadata preservation (document_id, chunk_index, model_used, **page_ranges**)
 - Performance metrics (embedding speed, batch size)
+- **Note**: Requires page mapping implementation from Phase 1 outstanding items
 
 ## Phase 3: ChromaDB Integration
 **Target Directory**: `src/backend/doc_processing_system/core_deps/`
@@ -152,9 +160,3 @@ data/documents/processed/
 - **Quality**: >0.85 boundary decision confidence
 - **Scalability**: Handle 100+ concurrent documents
 - **Reliability**: <1% processing failures
-
-## Technical Debt to Address
-- Add OpenAI API key for gpt-4o-mini testing
-- Install seaborn for EDA visualization
-- Implement proper logging configuration
-- Add comprehensive integration tests
