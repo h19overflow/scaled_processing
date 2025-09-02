@@ -1,0 +1,1187 @@
+{
+  "document_id": "L40S-GPU-Stress-Test-Results",
+  "timestamp": "2025-09-02T20:43:52.118129",
+  "chunk_count": 69,
+  "chunks": [
+    {
+      "chunk_id": "9af4f69ae9a858b6",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "# Processed Document: L40S-GPU-Stress-Test-Results.pdf\n\n**Document ID**: L40S-GPU-Stress-Test-Results\n**Pages**: 22\n**Processing Date**: 2025-09-02 20:43:25\n**Content Length**: 45,846 characters\n\n---\n\n## Document Content with AI Vision Enhancement\n\n![Image 6](C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\extracted_images\\L40S-GPU-Stress-Test-Results\\picture-6.png)\n\n**AI Analysis** (confidence: 0.9): Here's a detailed analysis of the provided document image and text:\n\n**Image Analysis**\n\n*   The image shows a graph with an upward trending line, suggesting growth or increase. It's encased in a pink square with rounded corners, likely indicating a button or icon.",
+      "page_number": 1,
+      "chunk_index": 0,
+      "metadata": {
+        "chunk_length": 682,
+        "word_count": 74,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "start"
+      }
+    },
+    {
+      "chunk_id": "02d92f7af3016085",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "The graph depicts an increase, followed by a slight plateau, then another steeper increase. *   Visually, it signifies a positive trend or growth. **Text Analysis**\n\n*   **Overall Context:** This document presents the results of a stress test performed on an L40S GPU. It is likely a report intended to guide hardware deployment decisions for multi-user AI services. *   **Executive Summary:** The L40S GPU is deemed unsuitable for production deployment due to performance limitations. *   **Key Finding:** It fails significantly under multi-user load.",
+      "page_number": 1,
+      "chunk_index": 1,
+      "metadata": {
+        "chunk_length": 552,
+        "word_count": 82,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "e6cf2b12786ca278",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   **Bottom Line:**  A clear statement of the GPU's inadequacy for the intended purpose. *   **Critical Metrics:**\n    *   **80% failure rate:** A very high failure rate with only 32 concurrent users. This is a critical issue. *   **Response Time Degradation:** Response times increased from 3.5 seconds to over 33 seconds. This indicates extreme performance slowdown under load, making the system unusable. *   **VRAM Saturation:** VRAM saturation of 91.3% before any user request is a severe limitation.",
+      "page_number": 2,
+      "chunk_index": 2,
+      "metadata": {
+        "chunk_length": 506,
+        "word_count": 76,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "810a3bcf44319860",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "It indicates insufficient memory capacity. **Relationship between Image and Text**\n\n*   The graph icon likely symbolizes overall performance or some key metric related to the GPU's performance. Given the negative findings in the text, the image's upward trend is ironic, suggesting the opposite of the actual results: poor scalability and high failure rates. It might be used to contrast expectations vs. reality or it is a generic icon used throughout. *   The graph is most likely a placeholder, and the actual data likely exists within the document (mentioned in the text: \"[Document contains tables/charts]\").",
+      "page_number": 2,
+      "chunk_index": 3,
+      "metadata": {
+        "chunk_length": 613,
+        "word_count": 94,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "129e4e39ddee8a87",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "**Technical Details**\n\n*   **L40S GPU:** The specific hardware being tested. *   **Multi-user AI services:** The intended application, implying high performance and scalability needs. *   **Concurrent users:** A key metric for scalability, with 32 users proving too much for the GPU. *   **Response Time:** A crucial measure of user experience, which is drastically degraded. *   **VRAM (Video RAM) Saturation:** This indicates that the GPU's memory is insufficient to handle the workload, leading to performance bottlenecks.",
+      "page_number": 3,
+      "chunk_index": 4,
+      "metadata": {
+        "chunk_length": 525,
+        "word_count": 74,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "f5999c870efeb718",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   **Stress Test:** Simulating high usage to evaluate stability and performance under realistic conditions. **In Summary**\n\nThe document reveals a critical failure of the L40S GPU to meet the performance requirements of a multi-user AI service. The image is a potentially misleading visual element. The metrics presented (failure rate, response time degradation, VRAM saturation) provide concrete evidence for the conclusion that the GPU is unsuitable for the intended application. ## L40S GPU Stress Test Results\n\nTechnical Analysis and Hardware Recommendations\n\n![Image 8](C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\extracted_images\\L40S-GPU-Stress-Test-Results\\picture-8.png)\n\n**AI Analysis** (confidence: 0.9): Here's a detailed analysis of the document image and the provided context:\n\n**Key Information, Data, Insights:**\n\n*   **Subject:** L40S GPU Stress Test Results\n*   **Problem:** The L40S GPU is inadequate for multi-user AI services.",
+      "page_number": 3,
+      "chunk_index": 5,
+      "metadata": {
+        "chunk_length": 964,
+        "word_count": 120,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "a732c1cb3dc0556d",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   **Key Finding:** Current hardware cannot support production deployment. *   **Bottom Line:** The L40S GPU exhibits critical performance limitations. *   **Metrics:**\n    *   High failure rate (80%) with only 32 concurrent users. *   Significant response time degradation (3.5s to 33+s). *   High VRAM saturation (91.3%) even before significant user load. **Readable Text Content:**\n\n*   L40S GPU Stress Test Results\n*   Technical Analysis and Hardware Recommendations\n*   Executive Summary\n*   Current Hardware Cannot Support Production Deployment\n*   Key Finding\n*   Bottom Line\n*   L40S GPU is fundamentally inadequate for multi-user AI services due to critical performance limitations.",
+      "page_number": 4,
+      "chunk_index": 6,
+      "metadata": {
+        "chunk_length": 692,
+        "word_count": 95,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "f9a69460a327cf0d",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   Critical Metrics\n*   80% failure rate at 32 concurrent users. *   Response time degradation from 3.5 seconds to 33+ seconds. *   91.3% VRAM saturation before any user req\n\n**Relationship to Document:**\n\nThe image is likely an icon or visual cue that's used within the document. It's a chat bubble icon with a question mark inside, suggesting the document addresses questions or concerns related to the L40S GPU's performance. The provided text represents the top portion of a report or analysis document focused on the performance of the L40S GPU under stress testing conditions.",
+      "page_number": 4,
+      "chunk_index": 7,
+      "metadata": {
+        "chunk_length": 583,
+        "word_count": 94,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "7206567fb11642f3",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "The document likely includes more detailed data, charts, and potentially alternative hardware recommendations. **Technical Details:**\n\n*   The document implies a performance analysis of the L40S GPU, likely during simulated or real-world usage scenarios involving multiple users. *   The critical metrics suggest the GPU fails to maintain acceptable performance under load, leading to poor user experience (slow response times) and system instability (high failure rate). *   VRAM saturation is identified as a major bottleneck, implying the GPU's memory capacity is insufficient for the intended workload.",
+      "page_number": 5,
+      "chunk_index": 8,
+      "metadata": {
+        "chunk_length": 606,
+        "word_count": 84,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "47e4ea7f7d2ed525",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "**Iconography**\n\nThe icon's shape is of a chat bubble over a question mark and with a pink background. This suggest that the topic is discussion-oriented but also not sure. ## Executive Summary\n\n## Current Hardware Cannot Support Production Deployment\n\n## Key Finding\n\n## Bottom Line\n\nL40S GPU is fundamentally inadequate for multi-user AI services due to critical performance limitations. ## Critical Metrics\n\n- 80% failure rate at 32 concurrent users. - Response time degradation from 3.5 seconds to 33+ seconds.",
+      "page_number": 5,
+      "chunk_index": 9,
+      "metadata": {
+        "chunk_length": 514,
+        "word_count": 80,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "3d453f2a960701b5",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "- 91.3% VRAM saturation before any user requests. The L40S represents a technical deadend for production deployment of concurrent AI services. Immediate hardware upgrade is required. ## Research Methodology\n\n## Formal Hypothesis Testing Approach\n\n## Null Hypothesis (H )\n\n## Alternative Hypothesis (H¡)\n\nIncreasing concurrent inference requests on L40S GPU has no significant negative effect on system failure rate, response latency, or semantic quality of Llama 3.1 8B model outputs. Increasing concurrent requests will cause significant increases in failure rates and response latency, plus measurable degradation in response quality, coherence, and accuracy, resulting in hallucinations and unusable output.",
+      "page_number": 6,
+      "chunk_index": 10,
+      "metadata": {
+        "chunk_length": 710,
+        "word_count": 98,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "4a53c78f515b4f84",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "Test Design: Systematic stress testing was conducted from 1 to 32 concurrent users, meticulously collecting comprehensive performance and quality metrics to validate our hypotheses. This approach allowed us to identify critical bottlenecks and assess system behavior under realistic load conditions. ![Image 12](C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\extracted_images\\L40S-GPU-Stress-Test-Results\\picture-12.png)\n\n**AI Analysis** (confidence: 0.9): Here's an analysis of the provided information:\n\n**Key Information, Data, and Insights:**\n\n*   **L40S GPU Stress Test:** The document focuses on the results of stress testing an L40S GPU.",
+      "page_number": 6,
+      "chunk_index": 11,
+      "metadata": {
+        "chunk_length": 657,
+        "word_count": 75,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "b7c081e120c2d788",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   **Negative Findings:** The main takeaway is that the L40S GPU performs poorly under stress and is unsuitable for multi-user AI services. *   **Critical Metrics:**\n    *   High failure rate (80%) with just 32 concurrent users. *   Significant performance degradation (response time increase from 3.5 to 33+ seconds). *   High VRAM saturation (91.3%) even before reaching user request capacity. **Readable Text Content:**\n\n*   \"L40S GPU Stress Test Results\"\n*   \"Technical Analysis and Hardware Recommendations\"\n*   \"Executive Summary\"\n*   \"Current Hardware Cannot Support Production Deployment\"\n*   \"Key Finding\"\n*   \"Bottom Line\"\n*   \"L40S GPU is fundamentally inadequate for multi-user AI services due to critical performance limitations.\"\n*   \"Critical Metrics\"\n*   \"- 80% failure rate at 32 concurrent users.\"\n*   \"- Response time degradation from 3.5 seconds to 33+ seconds.\"\n*   \"- 91.3% VRAM saturation before any user req\"\n\n**Relationship to Document:**\n\n*   **Title and Purpose:** The beginning elements suggest a technical report or analysis document aimed at assessing the suitability of the L40S GPU for a specific use case (multi-user AI services).",
+      "page_number": 7,
+      "chunk_index": 12,
+      "metadata": {
+        "chunk_length": 1164,
+        "word_count": 170,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "b732ef8dd3fe5fd3",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   **Structure:** The document seems to follow a standard report format: Executive Summary, Key Findings, and Critical Metrics. *   **Recommendation:** The document implies a recommendation to avoid using the L40S GPU in its current configuration for the intended purpose. **Technical Details:**\n\n*   **GPU:** The document refers to an \"L40S GPU\". *   **Workload:** The intended workload is \"multi-user AI services\". *   **Concurrency:** The stress test involved up to 32 concurrent users. *   **Performance Metrics:** The report considers failure rate, response time, and VRAM utilization.",
+      "page_number": 7,
+      "chunk_index": 13,
+      "metadata": {
+        "chunk_length": 591,
+        "word_count": 83,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "89a55d761f89b68b",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "**Image analysis:**\n\nThe image shows a blue circle with a white heart icon. Inside the heart is a white line that resembles a heartbeat/ECG reading, which typically represents health or medical relevance. Given the document's focus on performance testing and hardware recommendations, it's likely used as a visual indicator related to performance or overall system health during the stress test. ## Extreme Failure Rates Make Service Unusable\n\n![Image 13](C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\extracted_images\\L40S-GPU-Stress-Test-Results\\picture-13.png)\n\n**AI Analysis** (confidence: 0.9): Here's an analysis of the image and its context within the provided document:\n\n**Image Analysis:**\n\n*   The image is a circular icon with a dark blue background.",
+      "page_number": 8,
+      "chunk_index": 14,
+      "metadata": {
+        "chunk_length": 775,
+        "word_count": 100,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "f51d39e87d5131ec",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   It contains a white outline of a person icon overlaid with a warning symbol (triangle with an exclamation mark). *   The icon likely represents a user or system alert related to problems. **Document Context and Image Relationship:**\n\nThe document focuses on the results of a stress test for an L40S GPU. *   **Executive Summary:** The document asserts that the current hardware cannot support production deployment. *   **Key Finding/Bottom Line:** The L40S GPU is deemed inadequate for multi-user AI services due to performance issues.",
+      "page_number": 8,
+      "chunk_index": 15,
+      "metadata": {
+        "chunk_length": 540,
+        "word_count": 84,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "a5d5dd0de6a64185",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   **Critical Metrics:** Specific data points highlight the problems:\n    *   High failure rate at a relatively low number of concurrent users (32). *   Significant response time degradation. *   Very high VRAM usage, even before user requests increase. **How the Image Relates to the Document:**\n\nThe image serves as a visual representation of a critical issue or failure. It likely signals a problem related to the GPU's inability to handle concurrent users, as it represents a person icon with a warning symbol.",
+      "page_number": 9,
+      "chunk_index": 16,
+      "metadata": {
+        "chunk_length": 515,
+        "word_count": 81,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "beb7c485f46a3797",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "The image functions as a visual cue to highlight or emphasize the critical performance issues described in the document. **Technical Details Interpreted From Context:**\n\n*   **L40S GPU:** This is the hardware being tested. *   **Multi-user AI Services:** This describes the intended use case for the GPU. *   **Stress Test:**  The document describes a test to determine how the GPU performs under load. *   **Concurrent Users:** A measure of how many users the GPU can handle simultaneously. *   **Response Time:** The time it takes for the GPU to respond to a request.",
+      "page_number": 9,
+      "chunk_index": 17,
+      "metadata": {
+        "chunk_length": 569,
+        "word_count": 91,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "6043745990daa8a9",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   **VRAM Saturation:**  Indicates the GPU's memory is being fully used, which can lead to performance degradation. Under load, the L40S GPU exhibits catastrophic reliability failures , rendering the service functionally useless for multi-user scenarios. This is not a partial degradation but a complete breakdown. - 3 concurrent users: 75% failure rate\n- 32 concurrent users: 80% failure rate\n- 4 out of 5 user queries receive no response at peak load. ## Business Impact\n\n- Cannot deploy a service that fails for the majority of users.",
+      "page_number": 10,
+      "chunk_index": 18,
+      "metadata": {
+        "chunk_length": 538,
+        "word_count": 87,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "810f3e05456b08c6",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "This level of unreliability would immediately destroy user trust and render the application functionally useless. - At high concurrency the llm was able to respond , but in flawed way , exposing internal prompt, changing language , repeating prompt or question. ## Response Times Become Unacceptable Under Load\n\n![Image 14](C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\extracted_images\\L40S-GPU-Stress-Test-Results\\picture-14.png)\n\n**AI Analysis** (confidence: 0.9): Here's an analysis of the provided document image and surrounding text:\n\n**Key Information, Data, Insights:**\n\n*   **Critical Performance Limitations:** The L40S GPU is fundamentally inadequate for multi-user AI services.",
+      "page_number": 10,
+      "chunk_index": 19,
+      "metadata": {
+        "chunk_length": 703,
+        "word_count": 83,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "46eabe6f7a05f270",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   **High Failure Rate:** 80% failure rate at 32 concurrent users. *   **Response Time Degradation:** Response time increases from 3.5 seconds to 33+ seconds under load. *   **VRAM Saturation:** 91.3% VRAM saturation before any user req. *   **1.3M:** The image shows the text \"1.3M\" which indicates either 1.3 Million, 1.3 meters or 1.3 months. There are no further details provided about what the image pertains to. **Readable Text Content:**\n\n*   **Headers:** \"L40S GPU Stress Test Results,\" \"Technical Analysis and Hardware Recommendations,\" \"Executive Summary,\" \"Current Hardware Cannot Support Production Deployment,\" \"Key Finding,\" \"Bottom Line,\" \"Critical Metrics.\"\n*   **Statements:** Key Finding, Bottom Line, Critical Metrics, Executive Summary and other text describing results of the test.",
+      "page_number": 11,
+      "chunk_index": 20,
+      "metadata": {
+        "chunk_length": 803,
+        "word_count": 113,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "6256bd2297398baa",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "**Relationship to Document:**\n\n*   The image is part of a technical analysis document focused on evaluating the performance of the L40S GPU under stress. *   The document aims to provide insights into the GPU's suitability for production deployment, specifically for multi-user AI services. **Technical Details:**\n\n*   **Focus:** The document centers around a stress test performed on the L40S GPU. *   **Metrics:** Key metrics used to evaluate performance include failure rate, response time, and VRAM saturation.",
+      "page_number": 11,
+      "chunk_index": 21,
+      "metadata": {
+        "chunk_length": 514,
+        "word_count": 75,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "075a34628dc058eb",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   **Conclusion:** The document concludes that the L40S GPU is inadequate for the intended use case due to performance limitations. - Single user: 3.5 seconds average response time\n- 32 users: 33+ seconds average response time\n- 10x performance degradation at scale, far beyond acceptable limits for interactive AI. The performance degradation is exponential , not linear. Some users experience reasonable wait times, while others face delays of nearly a minute, leading to an inconsistent and frustrating experience.",
+      "page_number": 12,
+      "chunk_index": 22,
+      "metadata": {
+        "chunk_length": 518,
+        "word_count": 78,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "37696e30cdf8012f",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "## Business Impact\n\n- Slow and unpredictable service leads to user frustration and abandonment. An AI assistant slower than manual work defeats the purpose of automation and provides no tangible value. - When load is too much the model does not answer , in the case of 32 concurrent requests the model gave incoherent answers. ## Finding 3 - Quality Deterioration\n\n## AI Output Becomes Unreliable and Incoherent\n\n![Image 25](C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\extracted_images\\L40S-GPU-Stress-Test-Results\\picture-25.png)\n\n**AI Analysis** (confidence: 0.9): Here's a detailed analysis of the provided document image, combined with the context:\n\n**Key Information, Data, and Insights:**\n\n*   **Subject:** The document centers on a stress test of the L40S GPU, specifically its suitability for multi-user AI services.",
+      "page_number": 12,
+      "chunk_index": 23,
+      "metadata": {
+        "chunk_length": 840,
+        "word_count": 112,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "2e0fb9ba81dc351f",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   **Critical Finding:** The core conclusion is that the L40S GPU is \"fundamentally inadequate\" for the intended use case. *   **Quantitative Data:**  The analysis highlights specific failure rates (80% at 32 concurrent users), response time degradation (3.5 to 33+ seconds), and VRAM saturation (91.3% before any user request). *   **Overall Impression:** The document paints a picture of a GPU that struggles significantly under load, making it unsuitable for production deployment. **Readable Text Content:**\n\nThe document includes clear headings and subheadings, making it easy to navigate:\n\n*   Title: L40S GPU Stress Test Results - Technical Analysis and Hardware Recommendations\n*   Sections: Executive Summary, Current Hardware Cannot Support Production Deployment, Key Finding, Bottom Line, Critical Metrics\n\nThe language is concise and direct, aiming to quickly convey the findings of the stress test.",
+      "page_number": 13,
+      "chunk_index": 24,
+      "metadata": {
+        "chunk_length": 912,
+        "word_count": 130,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "482d4915197ea730",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "**Relationship to Document:**\n\nThe image of the number \"1\" could indicate that the document is part of a series or sequence of reports. It might also serve as a visual element to emphasize the key finding. **Technical Details:**\n\n*   The mention of VRAM saturation before any user request suggests a fundamental issue with the GPU's memory capacity or management. *   The performance degradation and high failure rate indicate that the GPU is likely bottlenecked by processing power, memory bandwidth, or thermal limitations under load.",
+      "page_number": 13,
+      "chunk_index": 25,
+      "metadata": {
+        "chunk_length": 536,
+        "word_count": 84,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "18755e68cc2bfb8a",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "**Overall Assessment:**\n\nThis document is a critical assessment of the L40S GPU, based on a stress test for multi-user AI applications. The document uses specific data to back up its finding that the GPU is not suitable for the intended use. It likely serves as a basis for recommendations on alternative hardware. ## Accuracy Volatility\n\n## Context Loss\n\n![Image 27](C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\extracted_images\\L40S-GPU-Stress-Test-Results\\picture-27.png)\n\n**AI Analysis** (confidence: 0.9): Here's a breakdown of the document image:\n\n**Key Information/Data/Insights:**\n\n*   The document presents stress test results for the L40S GPU.",
+      "page_number": 14,
+      "chunk_index": 26,
+      "metadata": {
+        "chunk_length": 668,
+        "word_count": 84,
+        "created_at": "2025-09-02T20:43:52.117129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "ca4788b1476a0349",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   It's a technical analysis with hardware recommendations. *   A key finding is that current hardware (likely referring to the L40S GPU) cannot support production deployment. *   The GPU is described as fundamentally inadequate for multi-user AI services due to performance limitations. *   Specific metrics highlight the issues:\n    *   High failure rate (80%) at just 32 concurrent users. *   Significant response time degradation (3.5 seconds to 33+ seconds). *   Near-complete VRAM saturation (91.3%) before any user requests.",
+      "page_number": 14,
+      "chunk_index": 27,
+      "metadata": {
+        "chunk_length": 532,
+        "word_count": 77,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "4946b79252aa63e0",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "**Readable Text Content:**\n\n*   **Titles/Headings:** \"L40S GPU Stress Test Results,\" \"Technical Analysis and Hardware Recommendations,\" \"Executive Summary,\" \"Current Hardware Cannot Support Production Deployment,\" \"Key Finding,\" \"Bottom Line,\" \"Critical Metrics\"\n*   **Statements:** \"L40S GPU is fundamentally inadequate for multi-user AI services due to critical performance limitations.\"\n*   **Data points:** \"80% failure rate at 32 concurrent users.\"  \"Response time degradation from 3.5 seconds to 33+ seconds.\" \"91.3% VRAM saturation before any user req\"\n\n**Relationship to Document:**\n\n*   The image is a section from a larger document, likely a formal report or presentation.",
+      "page_number": 15,
+      "chunk_index": 28,
+      "metadata": {
+        "chunk_length": 682,
+        "word_count": 90,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "8007437a3dec5f10",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "*   The \"Executive Summary\" suggests this is a high-level overview. *   The findings likely lead to specific hardware recommendations elsewhere in the document. **Technical Details:**\n\n*   The document focuses on GPU performance under load. *   Metrics like failure rate, response time, and VRAM usage are used to assess performance. *   The mention of \"multi-user AI services\" implies the GPU is being evaluated for applications like AI inference serving or cloud-based AI platforms. Accuracy scores become highly volatile under load, with unpredictable dips and spikes, making outputs unreliable.",
+      "page_number": 15,
+      "chunk_index": 29,
+      "metadata": {
+        "chunk_length": 598,
+        "word_count": 87,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "55f93e7e41c5bddf",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "The model frequently loses the ability to maintain conversational context, leading to disjointed and irrelevant responses. ## Response Incoherence\n\n![Image 30](C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\extracted_images\\L40S-GPU-Stress-Test-Results\\picture-30.png)\n\n**AI Analysis** (confidence: 0.9): Here's a breakdown of the image and its potential relationship to the surrounding document:\n\n**Image Analysis**\n\n*   The image displays the text \"$300K\". The \"K\" most likely stands for thousand, so the amount in the image is $300,000.",
+      "page_number": 16,
+      "chunk_index": 30,
+      "metadata": {
+        "chunk_length": 552,
+        "word_count": 63,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "38098f67eb18cb49",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "**Relationship to Document**\n\nBased on the document text, here's how the image might relate:\n\n*   **Cost/Investment:** $300K could represent the cost of the L40S GPU hardware, the budget allocated for testing, or a potential financial loss due to the GPU's failure to meet performance requirements. *   **Potential Savings/Revenue:** If the document discusses an alternative solution or hardware recommendation, $300K could represent the potential cost savings. **Additional Considerations**\n\nWithout more context, it's hard to know the precise meaning, but the document indicates that the L40S GPU failed in a multi-user AI service environment.",
+      "page_number": 16,
+      "chunk_index": 31,
+      "metadata": {
+        "chunk_length": 645,
+        "word_count": 92,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "e2544de27ec10ef8",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "A systematic breakdown in response coherence is observed, resulting in nonsensical or contradictory outputs. Observable Failure Modes: The model \"forgets\" conversation context mid-response, generates contradictory or nonsensical outputs, and produces factually incorrect information (hallucinations). This is not just a performance issue; it's a fundamental quality collapse . ## Business Impact\n\n- Unreliable AI output is worse than no AI 3 it actively misleads users and requires human verification, eliminating any potential efficiency gains and introducing new risks.",
+      "page_number": 17,
+      "chunk_index": 32,
+      "metadata": {
+        "chunk_length": 571,
+        "word_count": 77,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "11d2749f1483d2f2",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "## AI Responds in Wrong Language Under Load\n\n## 32 Concurrent requests English:\n\n## 16 Concurrent requests History:\n\nThis occurs when the AI responds in a language different from the question's language. - question\\_id: 2\n- Evidence: The question is in English, but the ai\\_reasoning is in Malay: \"Pada notis, terdapat maklumat yang menyatakan bahawa...\"\n- question\\_id: 15\n- Evidence: The question is in English, but the ai\\_answer uses the Malay word for \"Answer\": \"Jawapan: B\"\n- question\\_id: 18\n- Evidence: The question is in English, but the ai\\_reasoning is in Malay: \"Pada soal ini, kita diminta untuk menganalisis keperluan untuk menghadapi soal dan jawapan yang mengandung.\"\n- question\\_id: 19\n- Evidence: The question is in English, but the ai\\_answer and ai\\_reasoning are in Malay.",
+      "page_number": 17,
+      "chunk_index": 33,
+      "metadata": {
+        "chunk_length": 793,
+        "word_count": 125,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "2ec6f5ab00f80da1",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "The AI incorrectly states, \"The context is in Malay, so I will respond entirely in Malay.\"\n- question\\_id: 6 (eval\\_type: Teaching)\n- Evidence: The question is in Malay, but the ai\\_reasoning is in English: \"The correct answer is A because the British introduced the Malayan Union...\"\n- question\\_id: 8 (eval\\_type: Teaching)\n- Evidence: The question is in Malay, but the ai\\_reasoning is in English: \"The correct answer is B because it aligns with the context of the passage.\"\n- question\\_id: 9 (eval\\_type: Teaching)\n- Evidence: The question is in Malay, but the ai\\_reasoning is in English: \"The correct answer is D because the question asks about the leader of the Federation of Malaya in 1948.\"\n- question\\_id: 10 (eval\\_type: Teaching)\n- Evidence: The question is in Malay, but the ai\\_reasoning is a mix of English and Malay: \"The correct answer is B because Parti Komunis Malaya menghakis sokongan...\"\n- question\\_id: 11 (eval\\_type: Teaching)\n- Evidence: The question is in Malay, but the ai\\_reasoning is in English: \"The correct answer is A because Rancangan Briggs successfully weakened the communist movement...\"\n\nTechnical Cause: Severe memory pressure on the L40S GPU forces the model to lose language context awareness, leading to erratic linguistic behavior.",
+      "page_number": 18,
+      "chunk_index": 34,
+      "metadata": {
+        "chunk_length": 1275,
+        "word_count": 201,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "8a252749e44437ae",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "<!-- image -->\n\n## Business Impact\n\n- Highly unprofessional for a corporate tool. Makes the system appear broken and untrustworthy, eroding user confidence immediately and reflecting poorly on the brand. ## AI Provides Wrong Answer While Explaining Correct One\n\n## 32 Concurrent requests English:\n\n## 16 Concurrent requests History:\n\n## question\\_id: 5 (eval\\_type: Teaching)\n\n- Evidence: The AI's chosen answer was A , but the ai\\_reasoning argues for the correct answer, C : \"The correct answer is 6.\n\nC because the article states that...\"\n\n## question\\_id: 8 (eval\\_type: Answer)\n\n- Evidence: The ai\\_answer is C , but the ai\\_reasoning explains why B is correct: \"This shows that he has to work every day... Therefore, option B is the correct answer.\"\n\n## question\\_id: 8 (eval\\_type: Teaching)\n\n- Evidence: The AI's chosen answer was C , but the ai\\_reasoning is a detailed explanation for why B is correct: \"Let9s break down the question and the passage to understand why option B is the correct answer.\"\n\n## question\\_id: 15 (eval\\_type: Teaching)\n\n- Evidence: The AI's chosen answer was B , but the ai\\_reasoning argues for the correct answer, F : \"The correct answer is 33.",
+      "page_number": 18,
+      "chunk_index": 35,
+      "metadata": {
+        "chunk_length": 1182,
+        "word_count": 192,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "b35ffe89d94d38fa",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "F because it accurately reflects the idea that...\"\n\n## question\\_id: 16 (eval\\_type: Teaching)\n\n- Evidence: The AI's chosen answer was A , but the ai\\_reasoning explains why D is correct: \"The correct answer is 34. D because it highlights the potential economic impact...\"\n\n## question\\_id: 0\n\n- Evidence: The AI claims the answer is B (Warfare) but then states in its reasoning that the text provides no evidence for how the territories were conquered: \"...tanpa menyebutkan cara bagaimana wilayah ini ditakluki.\"\n\n## question\\_id: 2 (eval\\_type: Answer)\n\n- Evidence: The ai\\_answer is D.",
+      "page_number": 19,
+      "chunk_index": 36,
+      "metadata": {
+        "chunk_length": 589,
+        "word_count": 92,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "6f5546cf8ec79e6f",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "The reasoning begins by arguing for C (\"...karya tersebut lebih fokus pada mengungkap penderitaan hidup bangsa.\") before illogically concluding that D is the correct answer. ## question\\_id: 2 (eval\\_type: Teaching)\n\n- Evidence: The AI's chosen answer was D, but the entire teaching explanation argues for the correct answer, C: \"Saya senang membantu kamu memahami jawaban yang benar, C.\"\n\n## question\\_id: 6 (eval\\_type: Teaching)\n\n- Evidence: The AI's chosen answer was D, but the teaching explanation argues for A: \"The correct answer is A because...\"\n\n## question\\_id: 7 (eval\\_type: Teaching)\n\n- Evidence: The AI's chosen answer was C, but the teaching explanation argues for D: \"Saya akan menjelaskan mengapa jawaban yang benar adalah D.\"\n\n## Business Impact\n\n- Actively misleading users.",
+      "page_number": 19,
+      "chunk_index": 37,
+      "metadata": {
+        "chunk_length": 794,
+        "word_count": 120,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "478db328cb6134f7",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "Worse than being simply wrong, this behavior is confusing and propagates incorrect information, completely undermining the AI's purpose as a reliable knowledge source. ## Complete System Breakdown in Response Generation\n\n## 32 Concurrent requests English:\n\n## question\\_id: 3\n\n- Evidence: The ai\\_answer is \"English,\" which is not a valid choice. The ai\\_reasoning is an incomplete fragment that begins with a system-like message: \"The final response which ends this conversation will be used by students...\"\n\n## 16 Concurrent requests History:\n\n## question\\_id: 6 (eval\\_type: Answer)\n\n- Evidence: The question requires filling ten blanks, but the ai\\_answer is just \"Answer: B\".",
+      "page_number": 20,
+      "chunk_index": 38,
+      "metadata": {
+        "chunk_length": 680,
+        "word_count": 99,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "2105320455961e16",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "The ai\\_reasoning is a generic system message: \"The final response which ends this conversation\"\n\n## question\\_id: 7\n\n- Evidence: The ai\\_reasoning provides no explanation and is composed entirely of system-like text: \"Answer: The question is in English, so the response will be in English. Here is the detailed response to the question: Answer: The final response which ends this conversation\"\n- question\\_id: 14\n- Evidence: Both the ai\\_answer and ai\\_reasoning are a nonsensical system message: \"The final response which ends this conversation\"\n- question\\_id: 16 (eval\\_type: Answer)\n- Evidence: The ai\\_reasoning is not an explanation but a full copy of the original context provided in the prompt.",
+      "page_number": 20,
+      "chunk_index": 39,
+      "metadata": {
+        "chunk_length": 703,
+        "word_count": 107,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "e342a2ffff42c83b",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "Technical Cause: Severe memory pressure on the L40S GPU forces the model to output fragments of internal programming or default messages, indicating that it cannot process or generate coherent responses. <!-- image -->\n\n## Business Impact\n\n- Total system failure. The model is not even attempting to answer questions, indicating a complete and catastrophic breakdown in the generation process. This renders the AI completely ineffective. ## AI Exposes Internal Instructions to Users\n\n## 32 Concurrent requests English:\n\nThis occurs when the AI \"leaks\" parts of its underlying instructions or system context into the user-facing response. ## question\\_id: 13 (eval\\_type: Answer)\n\n- Evidence: The ai\\_reasoning includes text that is clearly part of its instructions: \"The writer mentions that he was deployed in an educational assessment system.",
+      "page_number": 21,
+      "chunk_index": 40,
+      "metadata": {
+        "chunk_length": 844,
+        "word_count": 125,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "778e5e14164d1e4f",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "Students rely on your accuracy and reasoning quality... LANGUAGE INSTRUCTION: If the question and context are in Malay language, respond entirely in Malay...\"\n\nTechnical Cause: Memory overflow causes the model to confuse internal instructions with response content, leading to a critical security and integrity breach. ## Business Impact\n\n- Critical trust breach. Exposes system inner workings and produces nonsensical, untrustworthy text that fundamentally compromises user confidence and brand reputation.",
+      "page_number": 21,
+      "chunk_index": 41,
+      "metadata": {
+        "chunk_length": 507,
+        "word_count": 69,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "19275428b34e092b",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "- This is an unacceptable failure mode for any production system. - This could lead to leaking sensitive information , or perhaps exposing company secrets in production. ## Root Cause Analysis\n\n## VRAM Saturation\n\nA critical analysis reveals that the L40S GPU experiences severe memory saturation, even before processing any user requests. This underlying issue directly contributes to the previously observed system instabilities and quality failures. ## Critical Memory Statistics\n\n## Technical Implication\n\n## Direct Consequence\n\n- L40S total VRAM: 46,068 MiB\n- Llama 3.1 8B model consumption: 42,055 MiB\n- Memory utilization: 91.3% before any user connects\n- Available working memory: Less than 9% (~3 GB)\n\n## Summary of Findings\n\n## Issue\n\nThe GPU9s memory is almost fully consumed by the AI model before any user interaction.",
+      "page_number": 22,
+      "chunk_index": 42,
+      "metadata": {
+        "chunk_length": 831,
+        "word_count": 128,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "3d9d34c4ae641515",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "The model alone occupies over 90% of available memory, leaving less than 10% free. ## Impact\n\nBecause conversations require additional memory to maintain context, the system is forced to aggressively clear and swap memory. This leads to frequent loss of conversation history. ## Consequence\n\nThe AI is unable to reliably maintain context, which directly results in contradictory, inconsistent, or nonsensical responses. ## Conclusion\n\nThe model is oversized for the available hardware, making stable and reliable operation impractical under current conditions.",
+      "page_number": 22,
+      "chunk_index": 43,
+      "metadata": {
+        "chunk_length": 560,
+        "word_count": 80,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "b4bc4cdf0a71b103",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "Each concurrent user requires KV Cache memory for conversation context. With virtually no free VRAM, the system is forced into aggressive cache swapping and deletion. When the model loses its KV Cache, it loses conversation context. This is the direct technical cause of all observed hallucinations, contradictory logic, and nonsensical outputs. <!-- image -->\n\n## Real-World vs Test Environment\n\n## Actual Production Load Would Be Worse\n\nThe stress test results, while alarming, were conducted under controlled conditions that do not fully replicate the complexities of a real-world production environment.",
+      "page_number": 23,
+      "chunk_index": 44,
+      "metadata": {
+        "chunk_length": 607,
+        "word_count": 89,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "f39b21041c0ea0d3",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "Understanding these differences is crucial for assessing the true potential for system failure. ## Test Environment Characteristics:\n\n## Real-World Environment:\n\n- Structured, sequential testing (e.g., 1 user ³ stop ³ 5 users ³ stop)\n- Predictable \"burst-and-rest\" patterns, allowing for memory recovery\n- Continuous, unpredictable request streams\n- Multiple users with overlapping sessions\n- No graceful rest periods for memory recovery or cache clearing\n- Controlled timing between requests\n\nImplication: The 80% failure rate observed in our controlled stress tests represents a best-case scenario .",
+      "page_number": 23,
+      "chunk_index": 45,
+      "metadata": {
+        "chunk_length": 601,
+        "word_count": 85,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "80a0c34a24bbd833",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "A live production environment would likely experience significantly higher failure rates and more severe quality degradation due to constant memory pressure and lack of recovery periods. ## Underestimated Risk\n\nThe controlled test environment provided a generous operational window for the GPU to recover. In a genuine production scenario, the L40S GPU would face relentless, concurrent demands , exacerbating memory saturation and leading to even more frequent and severe quality failures for end-users.",
+      "page_number": 24,
+      "chunk_index": 46,
+      "metadata": {
+        "chunk_length": 504,
+        "word_count": 72,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "2a7c8004c7840aa3",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "## GPU Performance Analysis\n\n## Hardware Performing Optimally Within Design Limits\n\nA detailed analysis of the L40S GPU during stress testing confirms that the hardware itself is operating within its design limits and performing optimally, ruling out common causes of failure such as overheating or insufficient processing power. <!-- image -->\n\n<!-- image -->\n\n## GPU Health Indicators\n\n- Performance State: Consistent P0 (maximum level)\n- Temperature: Never exceeded 68°C (well within limits)\n- Power Draw: ~280W (below 350W limit)\n- No Thermal Throttling or Hardware Malfunctions\n\n## Critical Insight\n\nSystem failures are NOT caused by:\n\n- GPU overheating\n- Insufficient processing power\n- Hardware defects\n- Software inefficiencies\n\n## Conclusion\n\nThe GPU is running at its full potential, yet this potential is fundamentally insufficient for our requirements.",
+      "page_number": 24,
+      "chunk_index": 47,
+      "metadata": {
+        "chunk_length": 864,
+        "word_count": 128,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "780dad1c21fca4b3",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "The hardware is performing as designed, but its design limits are being exceeded by the demands of the AI model. ## Technical Solution Requirements\n\n## Current Constraint\n\n## Hardware Needs for Production Deployment\n\nThe fundamental limitation identified is that the L40S GPU's VRAM capacity is insufficient to load the AI model and simultaneously support the necessary KV (Key-Value) cache for multiple concurrent user sessions, leading to memory saturation and system instability. ## Sufficient VRAM Capacity\n\nThe new hardware must provide ample VRAM to comfortably accommodate the Llama 3.1 8B model and maintain KV caches for a robust number of concurrent user sessions without aggressive swapping or memory loss.",
+      "page_number": 25,
+      "chunk_index": 48,
+      "metadata": {
+        "chunk_length": 717,
+        "word_count": 108,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "b17ebc7ecca8196f",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "## Enterprise-Grade Reliability &amp; Performance\n\n## Scalability for Concurrent Users\n\nThis includes head-room for future model updates or additional features. The solution requires hardware designed for continuous, high-load operation, ensuring stability, consistent performance, and minimal downtime to meet enterprise service level agreements (SLAs). This includes robust error handling and fault tolerance. The chosen hardware must be inherently scalable, capable of efficiently supporting hundreds of concurrent users, dynamically adjusting to demand spikes, and ensuring a seamless, responsive experience for every user.",
+      "page_number": 25,
+      "chunk_index": 49,
+      "metadata": {
+        "chunk_length": 627,
+        "word_count": 80,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "d8cde72b04b55205",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "This implies not just more VRAM, but also optimized memory management. ## Hardware Requirements &amp; Business Impact\n\n## The Scale of Enterprise LLMs\n\nFine-tuned Large Language Models deliver significant performance gains for specific industries, but demand substantial computational investments and dedicated infrastructure. <!-- image -->\n\n<!-- image -->\n\n<!-- image -->\n\n## GPU Hours\n\n1.3M\n\n$2.67M\n\n## Compute Cost\n\n## 512-560\n\n## Enterprise GPUs\n\n$5M+\n\n## Max Training Cost\n\nRequired for training a leading enterprise model like BloombergGPT.",
+      "page_number": 26,
+      "chunk_index": 50,
+      "metadata": {
+        "chunk_length": 547,
+        "word_count": 78,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "647a0528c0cae9b6",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "For training BloombergGPT, highlighting the significant investment. Typical requirement for finetuning successful domainspecific LLMs. For complex models, delivering millions in annual value. These investments translate into measurable business outcomes, including significant productivity improvements and substantial competitive advantages for organizations. <!-- image -->\n\n## Hardware Requirements &amp; Business Impact\n\n## Case Study: BloombergGPT's Enterprise Scale\n\nBloombergGPT stands as a premier example of a domain-specific Large Language Model, showcasing the substantial computational investment required to achieve industry-leading performance and business value.",
+      "page_number": 26,
+      "chunk_index": 51,
+      "metadata": {
+        "chunk_length": 677,
+        "word_count": 79,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "6dfa788939cb16a4",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "<!-- image -->\n\n<!-- image -->\n\n<!-- image -->\n\n<!-- image -->\n\n## NVIDIA A100 GPUs\n\n512\n\n1.3M\n\n## GPU Hours\n\n$2.67M\n\n## Compute Cost\n\n50B\n\n## Model Parameters\n\nUsed concurrently for training the model. Consumed during the intensive 53-day training period. For GPU compute alone, highlighting the investment scale. Demonstrates the complexity and size of the fine-tuned LLM. This significant expenditure resulted in a model that outperforms larger general-purpose LLMs on financial tasks, directly translating into enhanced Bloomberg Terminal capabilities and a strong competitive advantage.",
+      "page_number": 27,
+      "chunk_index": 52,
+      "metadata": {
+        "chunk_length": 591,
+        "word_count": 86,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "22e2e90401595cda",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "Source:\n\nhttps://arxiv.org/pdf/2303.17564 , https://belitsoft.com/bloomberggpt\n\n<!-- image -->\n\n## Performance Excellence\n\n## Unmatched Financial NLP Performance\n\nBloombergGPT demonstrates superior capabilities across diverse Natural Language Processing tasks, validating its specialized training and broad applicability. ## Financial NLP Benchmarks\n\n## Broader NLP Competence\n\n## Strategic Business Impact\n\n- Achieved state-of-the-art performance in key financial tasks: sentiment analysis, NER, question answering, and headline tagging.",
+      "page_number": 27,
+      "chunk_index": 53,
+      "metadata": {
+        "chunk_length": 538,
+        "word_count": 60,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "a6ac81afda161161",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "- Ranked first in 4 out of 5 external financial tasks, and second in Named Entity Recognition. - Outperformed peer models by 25360 points in internal sentiment tasks (e.g., equity news, transcripts). - Demonstrated superior NER and NER+NED results on multiple internal benchmarks. - Maintains strong performance on general NLP benchmarks. - Often matches or exceeds the capabilities of similarly sized models. - Approaches performance levels of much larger Large Language Models, showcasing efficient design.",
+      "page_number": 28,
+      "chunk_index": 54,
+      "metadata": {
+        "chunk_length": 508,
+        "word_count": 75,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "db292c3a4bc6808a",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "- Domain Optimization: Significantly improves performance on financial tasks by blending domain-specific and general-purpose training data, without compromising versatility. - Competitive Edge: Underpins robust features within Bloomberg9s Terminal, including advanced search, narrative generation, report automation, and analytics, delivering measurable business value. These results confirm that BloombergGPT is not only a leader in specialized financial NLP but also maintains strong general language understanding, providing a dual advantage for enterprise applications.",
+      "page_number": 28,
+      "chunk_index": 55,
+      "metadata": {
+        "chunk_length": 573,
+        "word_count": 69,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "12ac26c602dd8aee",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "Sources:\n\n<!-- image -->\n\n## Hardware Requirements &amp; Business Impact\n\n## Case Study: GatorTronGPT's Medical Breakthrough\n\nThe University of Florida's GatorTronGPT showcases how academic institutions can achieve commercial-grade results in the medical domain through strategic infrastructure investments and comprehensive data utilization. ## Unprecedented Dataset\n\n## Robust Infrastructure\n\nTrained on 277 billion words , including 82 billion words of de-identified clinical text from 126 departments, forming the most comprehensive medical language dataset ever assembled.",
+      "page_number": 29,
+      "chunk_index": 56,
+      "metadata": {
+        "chunk_length": 577,
+        "word_count": 73,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "0a91bd38110e63b5",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "## Physician-Validated Performance\n\n(Source: NCBI)\n\nPhysicians rated synthetic text comparable to human-written clinical notes. Turing test results showed no significant difference in linguistic readability or clinical relevance, establishing its credibility for healthcare applications. Utilized 560 NVIDIA A100 80GB GPUs across 70 DGX nodes in a SuperPOD architecture. The 20-billion parameter model required approximately 20 days of training . (Source: NCBI)\n\n(Source: Nature)\n\nThis infrastructure investment, with estimated training costs ranging from $2-5 million , highlights the financial commitment required for worldclass AI capabilities in specialized domains.",
+      "page_number": 29,
+      "chunk_index": 57,
+      "metadata": {
+        "chunk_length": 670,
+        "word_count": 86,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "1a5ab3ce91377800",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "The model's success in generating high-quality synthetic clinical text addresses healthcare data scarcity and maintains patient privacy, offering value in reduced data acquisition costs and regulatory compliance. Sources:\n\n<!-- image -->\n\n## Unmatched Medical NLP Performance\n\nGatorTronGPT establishes itself as the leading domain-specific Large Language Model for healthcare, leveraging its unprecedented training dataset to achieve credibility and utility in clinical environments. <!-- image -->\n\n1\n\n2\n\n## 3\n\n<!-- image -->\n\n## Physician-Validated Outcomes\n\nSynthetic clinical notes generated by GatorTronGPT were rated by physicians as comparable in readability and clinical relevance to human-written records (Nature).",
+      "page_number": 30,
+      "chunk_index": 58,
+      "metadata": {
+        "chunk_length": 723,
+        "word_count": 95,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "583586479327bdd3",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "- Turing test evaluations revealed no statistically significant difference between model-generated and human-authored text. - Demonstrates reliable use for clinical summarization, documentation assistance, and healthcare communication. ## Comprehensive Training Corpus\n\nTrained on 277 billion words , including:\n\n- 82 billion words of de-identified clinical text from 126 medical departments. - General biomedical literature and public datasets for broader medical knowledge coverage (NCBI). This scale of domain-specific text represents the largest medical dataset ever assembled for language modeling.",
+      "page_number": 30,
+      "chunk_index": 59,
+      "metadata": {
+        "chunk_length": 603,
+        "word_count": 77,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "5b26174be16b76d7",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "## Strategic Business &amp; Healthcare Impact\n\n## Domain Optimization\n\n- Tailored specifically for clinical documentation, summarization, and synthetic data generation, solving bottlenecks in medical recordkeeping and healthcare research. - Addresses data scarcity and privacy barriers in medicine by generating realistic synthetic datasets4reducing regulatory hurdles and costs associated with patient data collection. ## Clinical and Research Value\n\n- Accelerates medical AI research by providing abundant, privacypreserving synthetic data.",
+      "page_number": 31,
+      "chunk_index": 60,
+      "metadata": {
+        "chunk_length": 542,
+        "word_count": 67,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "69f9d235725e7cd2",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "- Enhances healthcare workflows by reducing physician documentation burden, improving efficiency, and ensuring higher-quality records. ## Case Study: Harvey AI's Legal Transformation\n\nHarvey AI showcases the immense potential of domain-specific LLMs, achieving rapid commercial success and significant valuation by expertly combining advanced AI models, targeted data, and robust infrastructure. 1\n\n2\n\n3\n\n## Unprecedented Business Value\n\nAchieved $100 million ARR and a $5 billion valuation, demonstrating the market demand for specialized AI solutions in complex domains.",
+      "page_number": 31,
+      "chunk_index": 61,
+      "metadata": {
+        "chunk_length": 572,
+        "word_count": 76,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "b6a578af9ffab932",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "- 25-50% productivity improvements for lawyers. ## Strategic AI &amp; Data Integration\n\nBuilt on OpenAI GPT-4 with 10 billion tokens of legal training data , integrating comprehensive legal datasets (U.S. case law, SEC filings, regulatory documents). - 97% lawyer preference rate over GPT-4 in side-by-side evaluations. ## Robust Infrastructure &amp; Client Base\n\nLeverages Microsoft Azure with a $150 million committed investment , supporting global deployment across 337 legal clients including AmLaw 100 firms.",
+      "page_number": 32,
+      "chunk_index": 62,
+      "metadata": {
+        "chunk_length": 513,
+        "word_count": 73,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "d221deaaf1678dd8",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "- $130,000-$750,000 annual value per lawyer. - Custom reasoning alignment developed via human-AI feedback loops. - Multi-model strategy incorporates OpenAI, Anthropic, and Google. - Ensures task-specific optimization and risk mitigation. Harvey's success underscores how deep domain expertise, coupled with substantial infrastructure and strategic partnerships, can yield marketleading AI solutions that drive tangible value and justify significant investment. Sources:\n\nhttps://www.allaboutai.com/ai-news/openai-backed-harvey-legal-ai-hits-100m-revenuemilestone/ , https://openai.com/index/harvey/ , https://www.toolsforhumans.ai/ai-tools/harvey-ai\n\n<!-- image -->\n\n## Strategic Infrastructure: Scaling LLM Success\n\nEffective Large Language Model (LLM) deployment hinges on understanding critical hardware specifications and the broader infrastructure ecosystem required to translate computational investment into tangible business value.",
+      "page_number": 32,
+      "chunk_index": 63,
+      "metadata": {
+        "chunk_length": 939,
+        "word_count": 98,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "5e4d9a4257477d37",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "## Hardware &amp; Infrastructure Essentials\n\n## Proven Business Impact\n\nOptimal LLM performance requires specific GPU configurations and robust supporting infrastructure:\n\n- VRAM Guideline: ~16GB VRAM per billion parameters for full finetuning (LoRA can reduce by 80-90%). - GPU Choice: NVIDIA A100s and H100s are industry standards, with H100 offering 2.2-3.3x performance gains. - Cluster Scale: Models &gt;15B parameters often require 512+ GPUs with InfiniBand networking (200-400 Gbps). - Total Cost: Infrastructure (storage, power, cooling) typically costs 5-10x more than GPU compute alone.\n\n- Deployment Strategy: Cloud for flexible training; on-premise for cost-efficient, secure inference. Investments in specialized LLM infrastructure yield significant financial returns and competitive advantages:\n\n<!-- image -->\n\n<!-- image -->\n\n## Bloomberg's Investment\n\n$2.67M\n\n$100M\n\nHarvey AI's ARR\n\nEnabled proprietary capabilities and differentiation within global financial markets. Achieved in two years, demonstrating strong market demand for specialized AI. 25-67%\n\nProductivity Boost\n\nConsistent improvements across industries, translating to millions in annual value.",
+      "page_number": 33,
+      "chunk_index": 64,
+      "metadata": {
+        "chunk_length": 1176,
+        "word_count": 153,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "9f6f62ccdc390a18",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "Successful implementations combine substantial training investments with comprehensive deployment strategies to maximize business impact and workflow optimization. Sources:\n\nhttps://arxiv.org/html/2408.04693v1\n\nhttps://www.runpod.io/blog/llm-fine-tuning-gpu-guide , https://github.com/AI4Finance-Foundation/FinGPT , https://cloud.google.com/blog/topics/healthcare-life-sciences/sharing-google-med-palm-2-medical-large-language-model\n\n## Justifying LLM Infrastructure Investment\n\nSuccessful enterprise LLM fine-tuning represents a strategic investment, demonstrating measurable business outcomes and competitive advantages when paired with robust computational resources and proprietary domain data.",
+      "page_number": 33,
+      "chunk_index": 65,
+      "metadata": {
+        "chunk_length": 698,
+        "word_count": 54,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "2ae9815d943e958d",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "## Investment &amp; Resource Allocation\n\n## Proven Blueprints for Success\n\nAchieving market-leading AI capabilities requires significant, yet justified, financial and hardware commitments:\n\n<!-- image -->\n\n<!-- image -->\n\n## Minimum Investment\n\n$300K\n\n$5M\n\nStarting point for model finetuning projects, ensuring baseline performance and customizability. ## High-Complexity Projects\n\nInvestment for advanced models with stringent performance and complexity requirements. <!-- image -->\n\n## Enterprise GPUs\n\n512+\n\nReal-world examples validate the investment in domain-specific LLMs, showcasing their transformative impact:\n\n## BloombergGPT\n\nEnabled proprietary financial analysis capabilities, providing a unique market edge.",
+      "page_number": 34,
+      "chunk_index": 66,
+      "metadata": {
+        "chunk_length": 723,
+        "word_count": 88,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "f182022fc08a3887",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "## GatorTronGPT\n\nRevolutionized clinical text generation, addressing data scarcity and privacy in healthcare. ## Harvey AI\n\nRequired computational power for large-scale fine-tuning with proprietary datasets. Achieved rapid commercial success in legal services with specialized AI for productivity gains. These cases provide clear blueprints for enterprise AI development, defining the hardware requirements and cost structures necessary for accurate business case development and realizing competitive advantages across industries.",
+      "page_number": 34,
+      "chunk_index": 67,
+      "metadata": {
+        "chunk_length": 531,
+        "word_count": 66,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "middle"
+      }
+    },
+    {
+      "chunk_id": "c4d27e5c69cc1b6f",
+      "document_id": "L40S-GPU-Stress-Test-Results",
+      "content": "Sources:\n\nAI Development Cost Estimation: Pricing Structure, Implementation ROI\n\n<!-- image -->",
+      "page_number": 35,
+      "chunk_index": 68,
+      "metadata": {
+        "chunk_length": 95,
+        "word_count": 12,
+        "created_at": "2025-09-02T20:43:52.118129",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\L40S-GPU-Stress-Test-Results\\L40S-GPU-Stress-Test-Results_processed.md",
+        "original_filename": "L40S-GPU-Stress-Test-Results_processed",
+        "document_type": "other",
+        "chunk_position": "end"
+      }
+    }
+  ],
+  "statistics": {
+    "total_characters": 45844,
+    "total_words": 6352,
+    "avg_chunk_length": 664.4,
+    "min_chunk_length": 95,
+    "max_chunk_length": 1275
+  }
+}

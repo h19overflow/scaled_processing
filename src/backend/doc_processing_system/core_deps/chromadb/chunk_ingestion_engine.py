@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 
-from .chroma_manager import ChromaManager, chroma_manager
+from .chroma_manager import ChromaManager
 
 
 class ChunkIngestionEngine:
@@ -32,15 +32,7 @@ class ChunkIngestionEngine:
             handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
-        
-        # Use provided chroma manager or create new instance
-        if chroma_manager:
-            self._cached_chroma_manager = chroma_manager
-        else:
-            # Create a fresh ChromaManager instance
-            from .chroma_manager import ChromaManager
-            self._cached_chroma_manager = ChromaManager()
-            self.logger.info("Created new ChromaManager instance")
+            self.chrom_manager = ChromaManager() 
         
         # Data paths
         self.chunks_dir = Path("data/rag/chunks")
@@ -306,31 +298,51 @@ class ChunkIngestionEngine:
             self.logger.error(f"Failed to prepare ChromaDB format: {e}")
             return {}
     
-    def _store_in_chromadb(self, chromadb_data: Dict[str, List], collection_name: str = None) -> bool:
+    def _store_in_chromadb(self, chromadb_data: Dict[str, List], collection_name: str = "rag_documents") -> bool:
         """Store data in ChromaDB collection."""
         try:
             self.logger.info(f"🚀 Starting ChromaDB storage process")
-            
-            # Validate ChromaManager is available
-            if not self._cached_chroma_manager:
-                self.logger.error("❌ ChromaDB manager not available")
-                return False
-            
             self.logger.info(f"🔗 Getting ChromaDB collection: {collection_name or 'default'}")
-            collection = self._cached_chroma_manager.get_collection(collection_name)
-            if not collection:
-                self.logger.error(f"❌ Failed to get ChromaDB collection: {collection_name or 'default'}")
-                return False
+            self.logger.info("🔄 About to call chroma_manager.get_collection()...")
             
-            self.logger.info(f"✅ Successfully retrieved collection: {collection.name}")
+            try:
+                collection = self.chrom_manager.get_collection(collection_name)
+                self.logger.info("✅ get_collection() call completed")
+                
+                if not collection:
+                    self.logger.error(f"❌ Failed to get ChromaDB collection: {collection_name or 'default'}")
+                    return False
+                
+                self.logger.info(f"✅ Successfully retrieved collection: {collection.name}")
+                self.logger.info(f"🔍 Collection object type: {type(collection)}")
+                
+            except Exception as collection_error:
+                self.logger.error(f"❌ Error getting collection: {collection_error}")
+                self.logger.error(f"❌ Collection error type: {type(collection_error).__name__}")
+                import traceback
+                self.logger.error(f"❌ Collection traceback: {traceback.format_exc()}")
+                return False
             
             # Validate format before storing
             self.logger.info("🔍 Validating ChromaDB format...")
-            if not self._validate_chromadb_format(chromadb_data):
-                self.logger.error("❌ Invalid ChromaDB format")
-                return False
+            self.logger.info("🔄 About to call _validate_chromadb_format()...")
             
-            self.logger.info("✅ ChromaDB format validation passed")
+            try:
+                format_valid = self._validate_chromadb_format(chromadb_data)
+                self.logger.info(f"✅ _validate_chromadb_format() completed: {format_valid}")
+                
+                if not format_valid:
+                    self.logger.error("❌ Invalid ChromaDB format")
+                    return False
+                
+                self.logger.info("✅ ChromaDB format validation passed")
+                
+            except Exception as validation_error:
+                self.logger.error(f"❌ Error during format validation: {validation_error}")
+                self.logger.error(f"❌ Validation error type: {type(validation_error).__name__}")
+                import traceback
+                self.logger.error(f"❌ Validation traceback: {traceback.format_exc()}")
+                return False
             
             # Log detailed data stats before storing
             ids_count = len(chromadb_data['ids'])
@@ -351,16 +363,67 @@ class ChunkIngestionEngine:
             
             # Store in ChromaDB
             self.logger.info(f"📝 Adding {ids_count} items to ChromaDB collection: {collection.name}")
-            self.logger.debug("🔄 Calling collection.add()...")
-            self.logger.debug(f"🔍 Data preview - IDs: {chromadb_data['ids'][:2]}, Embeddings: {chromadb_data['embeddings'][:1]}, Metadatas: {chromadb_data['metadatas'][:1]}, Documents: {chromadb_data['documents'][:1]}"
-                            )
-            self.logger.info('Collection information before add: ' + str(collection.count))
-            collection.add(
-                ids=chromadb_data["ids"],
-                embeddings=chromadb_data["embeddings"],
-                metadatas=chromadb_data["metadatas"],
-                documents=chromadb_data["documents"]
-            )
+            self.logger.info("🔄 BEFORE collection.add() call - about to execute...")
+            
+            # Log detailed data information for debugging
+            self.logger.info(f"🔍 Data validation before add:")
+            self.logger.info(f"  - IDs type: {type(chromadb_data['ids'])}, length: {len(chromadb_data['ids'])}")
+            self.logger.info(f"  - Embeddings type: {type(chromadb_data['embeddings'])}, length: {len(chromadb_data['embeddings'])}")
+            self.logger.info(f"  - Metadatas type: {type(chromadb_data['metadatas'])}, length: {len(chromadb_data['metadatas'])}")
+            self.logger.info(f"  - Documents type: {type(chromadb_data['documents'])}, length: {len(chromadb_data['documents'])}")
+            
+            # Log sample data
+            if chromadb_data['ids']:
+                self.logger.info(f"  - Sample ID: {chromadb_data['ids'][0]}")
+            if chromadb_data['embeddings']:
+                self.logger.info(f"  - Sample embedding shape: {len(chromadb_data['embeddings'][0]) if chromadb_data['embeddings'][0] else 0}")
+            if chromadb_data['documents']:
+                self.logger.info(f"  - Sample document length: {len(chromadb_data['documents'][0][:100])}...")
+                
+            # Check collection state before adding
+            try:
+                print("Checking collection state...")
+                current_count = collection.count()
+                print(f'after checking collection state: {current_count}')
+                self.logger.info(f"📊 Collection current count: {current_count}")
+            except Exception as count_err:
+                self.logger.warning(f"⚠️ Could not get collection count before add: {count_err}")
+            
+            # Log collection details
+            self.logger.info(f"🔍 Collection details:")
+            self.logger.info(f"  - Collection name: {collection.name}")
+            self.logger.info(f"  - Collection type: {type(collection)}")
+            
+            # Execute the add operation with detailed logging and timeout detection
+            self.logger.info("🚀 EXECUTING collection.add() NOW...")
+            import time
+            start_time = time.time()
+            
+            try:
+                # Log every second during the add operation to detect hangs
+                def log_progress():
+                    elapsed = time.time() - start_time
+                    self.logger.info(f"⏳ collection.add() still running... {elapsed:.1f}s elapsed")
+                
+                # Start the add operation
+                self.logger.info("🔥 Calling collection.add() with parameters...")
+                collection.add(
+                    ids=chromadb_data["ids"],
+                    embeddings=chromadb_data["embeddings"],
+                    metadatas=chromadb_data["metadatas"],
+                    documents=chromadb_data["documents"]
+                )
+                
+                elapsed_time = time.time() - start_time
+                self.logger.info(f"✅ collection.add() completed successfully in {elapsed_time:.2f}s!")
+                
+            except Exception as add_error:
+                elapsed_time = time.time() - start_time
+                self.logger.error(f"❌ collection.add() failed after {elapsed_time:.2f}s with error: {add_error}")
+                self.logger.error(f"❌ Error type: {type(add_error).__name__}")
+                import traceback
+                self.logger.error(f"❌ Add traceback: {traceback.format_exc()}")
+                raise
             
             self.logger.info(f"✅ Successfully added {ids_count} items to ChromaDB collection")
             
@@ -390,7 +453,7 @@ class ChunkIngestionEngine:
             self.logger.error(f"📋 Full traceback: {traceback.format_exc()}")
             return False
     
-    def get_ingestion_stats(self, collection_name: str = None) -> Dict[str, Any]:
+    def get_ingestion_stats(self, collection_name: str = "rag_documents") -> Dict[str, Any]:
         """Get ingestion statistics for a collection."""
         try:
             collection_info = self._cached_chroma_manager.get_collection_info(collection_name)

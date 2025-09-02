@@ -24,7 +24,11 @@
       "Bash(nvidia-smi:*)",
       "Bash(move:*)",
       "Bash(del \"src\\backend\\doc_processing_system\\pipelines\\rag_processing\\flows\\consumers\\__init__.py\")",
-      "Bash(del test_chromadb_ingestion.py)"
+      "Bash(del test_chromadb_ingestion.py)",
+      "Bash(del consolidate_collections.py)",
+      "Bash(copy:*)",
+      "Bash(del:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

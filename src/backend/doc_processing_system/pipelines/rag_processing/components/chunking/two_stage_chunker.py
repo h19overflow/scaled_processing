@@ -298,8 +298,7 @@ class TwoStageChunker:
         Returns:
             Path to saved chunks file
         """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"chunks_{document_id}_{timestamp}.json"
+        filename = f"chunks_{document_id}.json"
         chunks_path = self.chunks_directory / filename
         
         try:
@@ -379,8 +378,7 @@ class TwoStageChunker:
         Returns:
             Path to saved chunks file
         """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"chunks_{document_id}_{timestamp}.json"
+        filename = f"chunks_{document_id}.json"
         chunks_path = self.chunks_directory / filename
         
         try:

@@ -3,6 +3,7 @@ ChromaDB connection manager with collection lifecycle management.
 Handles vector database operations with configuration and caching for performance.
 """
 
+import collections
 import os
 import logging
 from pathlib import Path
@@ -97,7 +98,7 @@ class ChromaManager:
             
         return self._cached_client
     
-    def get_collection(self, collection_name: str = None) -> Optional[Collection]:
+    def get_collection(self, collection_name: str = "rag_documents") -> Optional[Collection]:
         """
         Get or create collection with caching for performance.
         
@@ -107,6 +108,7 @@ class ChromaManager:
         Returns:
             Collection object or None if unavailable
         """
+        print("inside get_collection")
         if not CHROMADB_AVAILABLE:
             self.logger.error("❌ ChromaDB not available - missing dependency")
             return None
@@ -115,7 +117,7 @@ class ChromaManager:
             self.logger.error("❌ ChromaDB client is None - initialization failed")
             return None
             
-        name = collection_name or self.collection_name
+        name = collection_name
         self.logger.debug(f"🔍 Getting collection: {name}")
         
         # Return cached collection if available
@@ -192,7 +194,7 @@ class ChromaManager:
             self.logger.error(f"Failed to delete collection {collection_name}: {e}")
             return False
     
-    def get_collection_info(self, collection_name: str = None) -> Optional[Dict[str, Any]]:
+    def get_collection_info(self, collection_name: str = "rag_documents") -> Optional[Dict[str, Any]]:
         """
         Get collection information including document count and metadata.
         
@@ -271,7 +273,9 @@ if __name__ == "__main__":
     # manager.reset_database()
     if client:
         print("ChromaDB client initialized.")
-        collections = manager.list_collections()
+        colleciton = manager.get_collection('rag_documents')
+        print(colleciton.peek(5))
         print(f"Available collections: {collections}")
     else:
         print("Failed to initialize ChromaDB client.")
+        

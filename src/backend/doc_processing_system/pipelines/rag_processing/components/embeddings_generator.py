@@ -232,8 +232,7 @@ class EmbeddingsGenerator:
         Returns:
             Path to saved embeddings file
         """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"embeddings_{document_id}_{timestamp}.json"
+        filename = f"embeddings_{document_id}.json"
         embeddings_path = self.embeddings_directory / filename
         
         try:

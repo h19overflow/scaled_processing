@@ -35,12 +35,11 @@ services:
     image: postgres:15
     container_name: postgres
     ports:
-      - "5444:5444"
+      - "5444:5432"
     environment:
       POSTGRES_DB: document_processing
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      PGPORT: 5444
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -51,6 +50,29 @@ services:
       - "8000:8000"
     volumes:
       - chromadb_data:/chroma/chroma
+
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.32.4
+    container_name: weaviate
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - '8080'
+      - --scheme
+      - http
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    restart: on-failure:0
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      CLUSTER_HOSTNAME: 'node1'
 
   kafka-setup:
     build:
@@ -85,3 +107,4 @@ services:
 volumes:
   postgres_data:
   chromadb_data:
+  weaviate_data:

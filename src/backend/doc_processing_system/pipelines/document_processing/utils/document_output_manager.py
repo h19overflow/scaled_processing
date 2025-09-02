@@ -287,10 +287,10 @@ class DocumentOutputManager:
     
     # HELPER FUNCTIONS
     def _generate_document_id(self, file_path: Path) -> str:
-        """Generate unique document ID based on file and timestamp."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        file_hash = hashlib.md5(str(file_path).encode()).hexdigest()[:8]
-        return f"doc_{timestamp}_{file_hash}"
+        """Generate document ID using original filename."""
+        # Use the original filename without extension as the document ID
+        file_stem = file_path.stem  # filename without extension
+        return file_stem
     
     def _create_document_directory(self, document_id: str) -> Path:
         """Create directory structure for document."""
