@@ -1,0 +1,31 @@
+{
+  "document_id": "doc_20250902_183110_d10fed1f",
+  "timestamp": "2025-09-02T18:31:39.946642",
+  "chunk_count": 1,
+  "chunks": [
+    {
+      "chunk_id": "2e63cbad07036ef0",
+      "document_id": "doc_20250902_183110_d10fed1f",
+      "content": "# Processed Document: Attendance System_August.pdf\n\n**Document ID**: doc_20250902_183110_d10fed1f\n**Pages**: 1\n**Processing Date**: 2025-09-02 18:31:21\n**Content Length**: 2,871 characters\n\n---\n\n## Document Content with AI Vision Enhancement\n\n## Attendance System\n\nName :\n\nHamza Khaled Mahmoud Ahmed [PP0043]\n\nMonth :\n\nAugust\n\nYear   :\n\n2025\n\n| Date:         | Time In:   | Time Out:   |   Total Hours: | Remark:             |\n|---------------|------------|-------------|----------------|---------------------|\n| Fri 1/8/2025  | -          | -           |            0   | Work From Home(WFH) |\n| Sat 2/8/2025  | -          | -           |            0   |                     |\n| Sun 3/8/2025  | -          | -           |            0   |                     |\n| Mon 4/8/2025  | 8:06:28AM  | 5:16:53PM   |            9.2 |                     |\n| Tue 5/8/2025  | 8:01:18AM  | 4:59:56PM   |            9   |                     |\n| Wed 6/8/2025  | 7:58:23AM  | 6:23:21PM   |           10.4 |                     |\n| Thu 7/8/2025  | 8:04:41AM  | 5:21:25PM   |            9.3 | Work From Home(WFH) |\n| Fri 8/8/2025  | -          | -           |            0   |                     |\n| Sat 9/8/2025  | -          | -           |            0   |                     |\n| Sun 10/8/2025 | -          | -           |            0   |                     |\n| Mon 11/8/2025 | 8:06:02AM  | 5:02:00PM   |            8.9 |                     |\n| Tue 12/8/2025 | 7:59:48AM  | 5:01:24PM   |            9   |                     |\n| Wed 13/8/2025 | 7:56:01AM  | 5:01:15PM   |            9.1 |                     |\n| Thu 14/8/2025 | 7:58:06AM  | 5:21:12PM   |            9.4 |                     |\n| Fri 15/8/2025 | -          | -           |            0   |                     |\n| Sat 16/8/2025 | -          | -           |            0   |                     |\n| Sun 17/8/2025 | -          | -           |            0   |                     |\n| Mon 18/8/2025 | 8:02:30AM  | 4:59:32PM   |            9   |                     |\n| Tue 19/8/2025 | 7:51:04AM  | 4:53:26PM   |            9   |                     |\n| Wed 20/8/2025 | 8:01:24AM  | 5:01:08PM   |            9   |                     |\n| Thu 21/8/2025 | 8:26:52AM  | 5:13:47PM   |            8.8 |                     |\n| Fri 22/8/2025 | -          | -           |            0   |                     |\n| Sat 23/8/2025 | -          | -           |            0   |                     |\n| Sun 24/8/2025 | -          | -           |            0   |                     |\n| Mon 25/8/2025 | 8:02:38AM  | 4:59:10PM   |            9   |                     |\n| Tue 26/8/2025 | 8:00:07AM  | 5:00:07PM   |            9   |                     |\n| Wed 27/8/2025 | 7:59:02AM  | 4:55:22PM   |            8.9 |                     |\n| Thu 28/8/2025 | 8:02:00AM  | -           |            0   | Work From Home(WFH) |\n| Fri 29/8/2025 | -          | -           |            0   |                     |\n| Sat 30/8/2025 | -          | -           |            0   |                     |\n| Sun 31/8/2025 | -          | -           |            0   | Hari Kebangsaan     |",
+      "page_number": 1,
+      "chunk_index": 0,
+      "metadata": {
+        "chunk_length": 3114,
+        "word_count": 409,
+        "created_at": "2025-09-02T18:31:39.946642",
+        "chunking_strategy": "two_stage_semantic",
+        "source_file_path": "data\\documents\\processed\\doc_20250902_183110_d10fed1f\\doc_20250902_183110_d10fed1f_processed.md",
+        "original_filename": "doc_20250902_183110_d10fed1f_processed",
+        "document_type": "other",
+        "chunk_position": "start"
+      }
+    }
+  ],
+  "statistics": {
+    "total_characters": 3114,
+    "total_words": 409,
+    "avg_chunk_length": 3114.0,
+    "min_chunk_length": 3114,
+    "max_chunk_length": 3114
+  }
+}

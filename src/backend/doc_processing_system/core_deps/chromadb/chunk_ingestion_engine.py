@@ -48,13 +48,13 @@ class ChunkIngestionEngine:
         
         self.logger.info("ChunkIngestionEngine initialized with ChromaDB integration")
     
-    def ingest_document(self, document_id: str, collection_name: str = None) -> bool:
+    def ingest_document(self, document_id: str, collection_name: str = "rag_documents") -> bool:
         """
         Ingest a complete document's chunks and embeddings into ChromaDB.
         
         Args:
             document_id: Document identifier to ingest
-            collection_name: ChromaDB collection name (optional)
+            collection_name: ChromaDB collection name (defaults to "rag_documents")
             
         Returns:
             bool: True if ingestion successful
@@ -93,13 +93,13 @@ class ChunkIngestionEngine:
             self.logger.error(f"❌ Document ingestion failed for {document_id}: {e}")
             return False
     
-    def ingest_from_chromadb_ready_file(self, embeddings_file_path: str, collection_name: str = None) -> bool:
+    def ingest_from_chromadb_ready_file(self, embeddings_file_path: str, collection_name: str = "rag_documents") -> bool:
         """
         Ingest directly from embeddings file with ChromaDB-ready format.
         
         Args:
             embeddings_file_path: Path to embeddings JSON file
-            collection_name: ChromaDB collection name (optional)
+            collection_name: ChromaDB collection name (defaults to "rag_documents")
             
         Returns:
             bool: True if ingestion successful

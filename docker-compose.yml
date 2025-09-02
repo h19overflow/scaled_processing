@@ -35,11 +35,12 @@ services:
     image: postgres:15
     container_name: postgres
     ports:
-      - "5444:5432"
+      - "5444:5444"
     environment:
       POSTGRES_DB: document_processing
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      PGPORT: 5444
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -61,7 +62,7 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - POSTGRES_DSN=postgresql://postgres:postgres@postgres:5444/document_processing
+      - POSTGRES_DSN=postgresql://postgres:postgres@postgres:5432/document_processing
     volumes:
       - .:/app
     command: python -m src.backend.doc_processing_system.messaging.orchestration.kafka_topics_setup
@@ -75,7 +76,7 @@ services:
     depends_on:
       - postgres
     environment:
-      - POSTGRES_DSN=postgresql://postgres:postgres@postgres:5444/document_processing
+      - POSTGRES_DSN=postgresql://postgres:postgres@postgres:5432/document_processing
     volumes:
       - .:/app
     command: python -m src.backend.doc_processing_system.core_deps.database.setup_tables
