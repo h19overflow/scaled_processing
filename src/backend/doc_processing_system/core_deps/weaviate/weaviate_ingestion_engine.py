@@ -152,7 +152,7 @@ class WeaviateIngestionEngine:
         """Convert ChromaDB format to Weaviate format and store."""
         try:
             collection = self._cached_weaviate_manager.get_collection(collection_name)
-            if not collection:
+            if collection is None:
                 self.logger.error(f"Failed to get/create collection: {collection_name}")
                 return False
             
@@ -165,7 +165,6 @@ class WeaviateIngestionEngine:
                     batch.add_object(
                         properties=obj["properties"],
                         vector=obj["vector"],
-                        uuid=obj.get("id")
                     )
                     if batch.number_errors > 10:
                         self.logger.error("Batch import stopped due to excessive errors")
@@ -209,7 +208,7 @@ class WeaviateIngestionEngine:
         """Ingest from validated_embeddings format directly to Weaviate."""
         try:
             collection = self._cached_weaviate_manager.get_collection(collection_name)
-            if not collection:
+            if collection is None:
                 self.logger.error(f"Failed to get/create collection: {collection_name}")
                 return False
             
@@ -226,6 +225,7 @@ class WeaviateIngestionEngine:
                     "properties": {
                         "content": embedding.get("chunk_content", ""),
                         "document_id": embedding.get("document_id"),
+                        "chunk_id": embedding.get("chunk_id"),
                         "chunk_index": chunk_metadata.get("chunk_index", 0),
                         "page_number": chunk_metadata.get("page_number", 1),
                         "word_count": chunk_metadata.get("word_count", 0),
@@ -248,7 +248,6 @@ class WeaviateIngestionEngine:
                     batch.add_object(
                         properties=obj["properties"],
                         vector=obj["vector"],
-                        uuid=obj.get("id")
                     )
                     if batch.number_errors > 10:
                         self.logger.error("Batch import stopped due to excessive errors")

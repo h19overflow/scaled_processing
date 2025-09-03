@@ -106,7 +106,11 @@ class CollectionManager:
                 return collection
             else:
                 # Clean up failed collection
-                self._cleanup_failed_collection(client, collection_name)
+                try:
+                    client.collections.delete(collection_name)
+                    self.logger.info(f"Cleaned up failed collection: {collection_name}")
+                except Exception as cleanup_error:
+                    self.logger.warning(f"Failed to cleanup collection {collection_name}: {cleanup_error}")
                 return None
 
         except Exception as create_error:
