@@ -22,6 +22,7 @@ dependencies = [
     "langchain-experimental>=0.3.0",
     # Vector Database & Embeddings
     "chromadb>=0.4.18",
+    "weaviate-client>=4.16.9",
     "sentence-transformers>=2.2.2",
     "faiss-cpu>=1.7.4",
     # Database & Storage

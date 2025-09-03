@@ -28,7 +28,10 @@
       "Bash(del consolidate_collections.py)",
       "Bash(copy:*)",
       "Bash(del:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(find:*)",
+      "Bash(PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest tests/unit/test_weaviate_manager.py -v)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []
