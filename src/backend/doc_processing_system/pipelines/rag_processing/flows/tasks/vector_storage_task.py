@@ -11,32 +11,32 @@ from datetime import datetime
 
 from prefect import task, get_run_logger
 from .config import MAX_RETRIES, RETRY_DELAY, STORAGE_TIMEOUT
-from .....core_deps.chromadb.isolated_chromadb_worker import get_isolated_chromadb_worker
+from .....core_deps.weaviate.weaviate_ingestion_engine import WeaviateIngestionEngine
 
 
 @task(
     name="vector_storage",
-    description="Store embeddings in ChromaDB vector database",
+    description="Store embeddings in Weaviate vector database",
     retries=MAX_RETRIES,
     retry_delay_seconds=RETRY_DELAY,
     timeout_seconds=STORAGE_TIMEOUT,
-    tags=["storage", "chromadb", "vectors"]
+    tags=["storage", "weaviate", "vectors"]
 )
 async def store_vectors_task(
     embeddings_file_path: str,
     collection_name: str = "rag_documents"
 ) -> Dict[str, Any]:
-    """Store embeddings in ChromaDB vector database.
+    """Store embeddings in Weaviate vector database.
     
     Args:
-        embeddings_file_path: Path to embeddings JSON file with chromadb_ready format
-        collection_name: ChromaDB collection name
+        embeddings_file_path: Path to embeddings JSON file 
+        collection_name: Weaviate collection name
         
     Returns:
         Dict containing storage results and ingestion stats
         
     Raises:
-        Exception: If ChromaDB storage fails
+        Exception: If Weaviate storage fails
     """
     logger = get_run_logger()
     start_time = time.time()
@@ -96,54 +96,33 @@ async def store_vectors_task(
         logger.info(f"📊 Using embeddings file: {embeddings_file_path}")
         logger.info(f"📊 File size: {file_size:,} bytes ({file_size/1024/1024:.2f} MB)")
         
-        # Get isolated ChromaDB worker to prevent segmentation faults
-        logger.info("🛡️ Initializing isolated ChromaDB worker...")
-        isolated_worker = get_isolated_chromadb_worker()
+        # Initialize Weaviate ingestion engine directly (no isolation needed!)
+        logger.info("🚀 Initializing Weaviate ingestion engine...")
+        weaviate_engine = WeaviateIngestionEngine()
         
-        if not isolated_worker:
-            raise Exception("Failed to get isolated ChromaDB worker instance")
+        logger.info("✅ Weaviate ingestion engine ready")
+        logger.info("🔧 Direct ingestion - no process isolation needed with Weaviate!")
         
-        logger.info("✅ Isolated ChromaDB worker ready")
-        logger.info("🔧 Using separate process to avoid Windows ChromaDB segmentation faults")
-        
-        # Use isolated worker to safely store in ChromaDB
-        logger.info("🚀 Starting isolated ChromaDB ingestion process...")
-        result = isolated_worker.ingest_from_chromadb_ready_file(
+        # Use Weaviate engine to store embeddings directly
+        logger.info("🚀 Starting Weaviate ingestion process...")
+        success = weaviate_engine.ingest_from_embeddings_file(
             embeddings_file_path=embeddings_file_path,
             collection_name=collection_name
         )
         
-        success = result.get("success", False)
         if not success:
-            error_msg = result.get("error", "Unknown error in isolated ChromaDB worker")
-            logger.error(f"❌ Isolated ChromaDB worker failed: {error_msg}")
-            
-            if result.get("segmentation_fault"):
-                logger.warning("⚠️ ChromaDB segmentation fault detected and gracefully handled by isolated worker")
-                logger.info("🛡️ Main process was protected from crashing - this is expected behavior")
-                logger.info("🔧 Known ChromaDB Windows compatibility issue - isolated worker functioning correctly")
-                if result.get("graceful_recovery"):
-                    logger.info("✅ System recovered gracefully - continuing with pipeline")
-                    # Don't treat this as a failure since it's gracefully handled
-                    success = True  # Override success flag
-            elif result.get("timeout"):
-                logger.error("⏰ The operation timed out - this prevents system hangs")
-            elif result.get("exit_code") is not None:
-                logger.error(f"💀 Worker process exit code: {result.get('exit_code')}")
+            logger.error(f"❌ Weaviate ingestion failed")
         else:
-            worker_pid = result.get("worker_pid", "unknown")
-            worker_time = result.get("processing_time", 0)
-            logger.info(f"✅ Isolated ChromaDB ingestion completed successfully")
-            logger.info(f"👨‍💻 Worker PID: {worker_pid}, Processing time: {worker_time:.2f}s")
+            logger.info(f"✅ Weaviate ingestion completed successfully")
         
         processing_time = time.time() - start_time
         
         if success:
-            logger.info("✅ ChromaDB ingestion completed successfully!")
+            logger.info("✅ Weaviate ingestion completed successfully!")
             
-            # Get ingestion stats from worker result
-            logger.info("📊 Using ingestion statistics from worker result...")
-            stats = result.get("stats", {})
+            # Get ingestion stats from Weaviate engine
+            logger.info("📊 Getting ingestion statistics...")
+            stats = weaviate_engine.get_ingestion_stats(collection_name)
             
             result = {
                 "storage_status": "success",
@@ -165,14 +144,14 @@ async def store_vectors_task(
             logger.info("✨" + "="*80 + "✨")
         else:
             logger.error("❌" + "="*80 + "❌")
-            logger.error(f"❌ CHROMADB STORAGE FAILED")
+            logger.error(f"❌ WEAVIATE STORAGE FAILED")
             logger.error("❌" + "="*80 + "❌")
             result = {
                 "storage_status": "failed",
                 "collection_name": collection_name,
                 "embeddings_file_path": embeddings_file_path,
                 "vectors_stored": False,
-                "error": "ChromaDB ingestion failed",
+                "error": "Weaviate ingestion failed",
                 "task_name": "vector_storage",
                 "task_processing_time": round(processing_time, 3),
                 "task_completed_at": datetime.now().isoformat()

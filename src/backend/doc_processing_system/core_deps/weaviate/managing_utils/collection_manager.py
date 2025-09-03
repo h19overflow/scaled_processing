@@ -53,7 +53,7 @@ class CollectionManager:
                 return collection
             else:
                 # Collection exists but is broken - try to recreate it
-                return self._recreate_collection(client, collection_name)
+                return self._create_collection(client, collection_name)
 
         except Exception as get_error:
             self.logger.debug(f"Collection '{collection_name}' not found, creating new one. Error: {get_error}")
@@ -77,9 +77,7 @@ class CollectionManager:
             # Create collection with BYOV configuration
             collection = client.collections.create(
                 collection_name,
-                vectorizer_config={
-                    'none': {}  # BYOV configuration
-                },
+                vector_config=Configure.Vectors.self_provided(),
                 properties=[
                     Property(name="content", data_type=DataType.TEXT),
                     Property(name="document_id", data_type=DataType.TEXT),
