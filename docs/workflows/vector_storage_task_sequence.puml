@@ -1,0 +1,148 @@
+@startuml Vector Storage Task Sequence
+!theme plain
+skinparam backgroundColor white
+skinparam participant {
+    BackgroundColor lightblue
+    BorderColor black
+}
+skinparam note {
+    BackgroundColor lightyellow
+    BorderColor orange
+}
+
+title Vector Storage Task - Complete Sequence Flow
+
+participant "Prefect Task Runner" as Runner
+participant "Vector Storage Task" as Task  
+participant "WeaviateIngestionEngine" as Engine
+participant "WeaviateManager" as Manager
+participant "CollectionManager" as Collections
+participant "ConnectionManager" as Connection
+participant "Weaviate Server" as Weaviate
+
+== Task Initialization ==
+Runner -> Task: **store_vectors_task**(embeddings_file_path, collection_name)
+activate Task
+
+Task -> Task: validate_file_exists()
+note right Task: Check file exists and get size\n4,613,465 bytes (4.40 MB)
+
+Task -> Task: log_task_start()
+Task -> Engine: **WeaviateIngestionEngine()**
+activate Engine
+
+Engine -> Manager: **WeaviateManager()**  
+activate Manager
+
+Manager -> Collections: **CollectionManager**(connection_manager)
+activate Collections
+
+Manager -> Connection: **ConnectionManager**("localhost:8080")
+activate Connection
+
+== File Processing ==
+Task -> Engine: **ingest_from_embeddings_file**(file_path, collection_name)
+
+Engine -> Engine: **_load_json_file**(file_path)
+note right Engine: Load and parse JSON\n69 validated embeddings
+
+Engine -> Engine: **detect_format()**
+note right Engine: Check for "validated_embeddings"\nvs "chromadb_ready" format
+
+alt validated_embeddings format (Current Path)
+    Engine -> Engine: **_ingest_validated_embeddings()**
+    note right Engine: Direct Weaviate ingestion\nNo format conversion needed
+else chromadb_ready format
+    Engine -> Engine: **_store_in_weaviate()**  
+    note right Engine: Convert ChromaDB format\nthen store in Weaviate
+end
+
+== Collection Management ==
+Engine -> Manager: **get_collection**(collection_name)
+Manager -> Collections: **get_or_create_collection**(collection_name)
+
+Collections -> Connection: **get_client()**
+Connection -> Weaviate: **establish_connection()**
+Weaviate --> Connection: weaviate_client
+Connection --> Collections: client
+
+Collections -> Weaviate: **client.collections.get**(collection_name)
+
+alt Collection Exists
+    Weaviate --> Collections: existing_collection
+    Collections -> Collections: **_validate_collection()**
+    Collections -> Weaviate: **collection.aggregate.over_all**(total_count=True)
+    Weaviate --> Collections: validation_response
+    note right Collections: Validation successful
+else Collection Not Found  
+    Collections -> Collections: **_create_collection()**
+    Collections -> Weaviate: **client.collections.create**(schema)
+    note right Collections: Create with BYOV config\nvector_config=Configure.Vectors.self_provided()
+    Weaviate --> Collections: new_collection
+    Collections -> Collections: **_validate_collection()**
+    Collections -> Weaviate: **collection.aggregate.over_all**(total_count=True)
+    Weaviate --> Collections: validation_success
+end
+
+Collections -> Collections: **cache_collection**(collection_name, collection)
+Collections --> Manager: validated_collection
+Manager --> Engine: collection_instance
+
+== Data Ingestion Pipeline ==
+Engine -> Engine: **process_validated_embeddings**(69 embeddings)
+
+loop Batch Processing (100 objects per batch)
+    Engine -> Engine: **convert_to_weaviate_objects()**
+    note right Engine: Map properties:\n- content\n- document_id\n- chunk_id\n- metadata fields
+    
+    Engine -> Weaviate: **collection.batch.fixed_size(100)**
+    activate Weaviate
+    
+    Engine -> Weaviate: **batch.add_object**(properties, vector)
+    note right Engine: Auto-generate UUIDs\nStore chunk_id as property
+    
+    Weaviate --> Engine: batch_response
+    deactivate Weaviate
+end
+
+Engine -> Engine: **check_failed_objects()**
+alt No Failures (Success Case)
+    Engine -> Engine: log_success("Successfully stored 69 objects")
+else Has Failures
+    Engine -> Engine: **evaluate_failure_rate()**
+    alt failure_rate < 10%
+        Engine -> Engine: log_warning("Some failures but acceptable")
+    else failure_rate >= 10% 
+        Engine -> Engine: log_error("Too many failures")
+        Engine --> Task: **return False**
+    end
+end
+
+== Statistics Collection ==
+Engine -> Engine: **get_ingestion_stats**(collection_name)
+Engine -> Manager: **get_collection_info**(collection_name)
+Manager -> Collections: **get_collection_info**(collection_name)
+
+Collections -> Weaviate: **collection.aggregate.over_all**(total_count=True)
+Weaviate --> Collections: count_response(69)
+Collections --> Manager: collection_info
+Manager --> Engine: enhanced_stats
+
+== Task Completion ==
+Engine --> Task: **success=True**
+Task -> Task: **prepare_result_dict()**
+note right Task: {\n  "storage_status": "success",\n  "vectors_stored": True,\n  "document_count": 69,\n  "processing_time": 2.605\n}
+
+Task -> Task: **log_completion_stats()**
+
+deactivate Connection
+deactivate Collections
+deactivate Manager  
+deactivate Engine
+
+Task --> Runner: **result_dict**
+deactivate Task
+
+note over Runner: ✅ TASK COMPLETED\n69 vectors stored successfully\nProcessing time: 2.6 seconds
+
+@enduml

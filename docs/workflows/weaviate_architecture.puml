@@ -1,0 +1,195 @@
+@startuml Weaviate Architecture & Critical Methods
+!theme plain
+skinparam backgroundColor white
+skinparam package {
+    BackgroundColor lightblue
+    BorderColor black
+    FontStyle bold
+}
+skinparam class {
+    BackgroundColor lightgreen
+    BorderColor black
+    AttributeFontColor blue
+    AttributeFontStyle italic
+}
+skinparam note {
+    BackgroundColor lightyellow  
+    BorderColor orange
+}
+
+title Weaviate Integration Architecture - Critical Methods & Data Flow
+
+package "Pipeline Entry Point" {
+    class VectorStorageTask {
+        +store_vectors_task(embeddings_file_path, collection_name)
+        --
+        **CRITICAL METHODS:**
+        +validate_file_exists()
+        +get_file_size()
+        +prepare_result_dict()
+    }
+}
+
+package "Weaviate Core Layer" {
+    class WeaviateIngestionEngine {
+        -_cached_weaviate_manager: WeaviateManager
+        --
+        **CRITICAL METHODS:**
+        +ingest_from_embeddings_file(file_path, collection_name): bool
+        +get_ingestion_stats(collection_name): Dict
+        -_load_json_file(file_path): Dict
+        -_ingest_validated_embeddings(data, collection_name): bool
+        -_store_in_weaviate(chromadb_data, collection_name): bool
+        -_convert_chromadb_to_weaviate(data): List[Dict]
+    }
+    
+    class WeaviateManager {
+        +collection_manager: CollectionManager  
+        +connection_manager: ConnectionManager
+        --
+        **CRITICAL METHODS:**
+        +get_collection(collection_name): Collection
+        +get_collection_info(collection_name): Dict
+        +get_status(): Dict
+        +add_documents(documents, collection_name): bool
+        +search_documents(query, collection_name): List
+        +maintenance(): Dict
+    }
+}
+
+package "Management Layer" {
+    class CollectionManager {
+        -_cached_collections: Dict[str, Collection]
+        +connection_manager: ConnectionManager
+        --
+        **CRITICAL METHODS:**
+        +get_or_create_collection(collection_name): Collection
+        +get_collection_info(collection_name): Dict
+        +list_collections(): List[str]
+        +delete_collection(collection_name): bool
+        -_create_collection(client, collection_name): Collection
+        -_validate_collection(collection, collection_name): bool
+        +reset_cache(): void
+    }
+    
+    class ConnectionManager {
+        -_client: WeaviateClient
+        +weaviate_url: str
+        --
+        **CRITICAL METHODS:**
+        +initialize_connection(): bool
+        +get_client(): WeaviateClient
+        +is_healthy(): bool
+        +close_connection(): void
+    }
+}
+
+package "External Dependencies" {
+    class WeaviateServer {
+        +collections: CollectionAPI
+        +schema: SchemaAPI
+        +batch: BatchAPI
+        --
+        **CRITICAL OPERATIONS:**
+        +collections.get(name): Collection
+        +collections.create(schema): Collection
+        +collections.delete(name): bool
+        +batch.add_object(properties, vector): Response
+        +aggregate.over_all(total_count): AggregateResponse
+    }
+}
+
+package "Data Formats" {
+    class ValidatedEmbeddings {
+        +chunk_id: str
+        +document_id: str  
+        +embedding_vector: List[float]
+        +chunk_content: str
+        +chunk_metadata: Dict
+        +embedding_model: str
+    }
+    
+    class ChromaDBFormat {
+        +ids: List[str]
+        +embeddings: List[List[float]]
+        +metadatas: List[Dict]
+        +documents: List[str]
+    }
+}
+
+' Relationships
+VectorStorageTask --> WeaviateIngestionEngine: uses
+WeaviateIngestionEngine --> WeaviateManager: manages via
+WeaviateManager --> CollectionManager: delegates to  
+WeaviateManager --> ConnectionManager: uses
+CollectionManager --> ConnectionManager: requests client from
+ConnectionManager --> WeaviateServer: connects to
+WeaviateIngestionEngine --> ValidatedEmbeddings: processes
+WeaviateIngestionEngine --> ChromaDBFormat: converts from
+
+' Critical Path Annotations
+note top of WeaviateIngestionEngine
+  **PRIMARY ENTRY POINT**
+  Handles both data formats:
+  • validated_embeddings (direct)
+  • chromadb_ready (conversion)
+  
+  **Performance**: 2.6s for 69 embeddings
+end note
+
+note right of CollectionManager
+  **COLLECTION LIFECYCLE**
+  • Auto-create with BYOV config
+  • Validation via aggregate queries  
+  • Caching for performance
+  • Error recovery & cleanup
+  
+  **Schema**: 15 properties + vectors
+end note
+
+note bottom of ConnectionManager
+  **CONNECTION MANAGEMENT**
+  • Single client per session
+  • Health monitoring
+  • Automatic reconnection
+  • Resource cleanup
+end note
+
+note left of WeaviateServer
+  **WEAVIATE OPERATIONS**
+  • BYOV (Bring Your Own Vectors)
+  • Batch processing (100 objects)
+  • Auto-UUID generation
+  • Cosine distance similarity
+  
+  **Endpoint**: localhost:8080
+end note
+
+' Critical Method Call Flow
+note as N1
+**CRITICAL METHOD EXECUTION ORDER:**
+1. store_vectors_task() → Entry point
+2. ingest_from_embeddings_file() → Format detection
+3. get_or_create_collection() → Collection setup  
+4. _ingest_validated_embeddings() → Data processing
+5. batch.add_object() → Weaviate storage
+6. get_collection_info() → Statistics
+end note
+
+' Performance & Error Handling
+note as N2  
+**CRITICAL ERROR HANDLING:**
+• Collection validation: bool(collection) vs None check
+• UUID format: Auto-generate vs manual IDs
+• Batch failures: <10% tolerance
+• Connection issues: Proper cleanup
+• Format detection: Graceful fallbacks
+end note
+
+' Data Flow Arrows
+ValidatedEmbeddings -[#red,bold]-> WeaviateIngestionEngine: **Direct Path**
+ChromaDBFormat -[#orange,dashed]-> WeaviateIngestionEngine: **Legacy Support**
+WeaviateIngestionEngine -[#green,bold]-> WeaviateServer: **Batch Insert**
+WeaviateServer -[#blue,bold]-> WeaviateIngestionEngine: **Success Response**
+
+@enduml
