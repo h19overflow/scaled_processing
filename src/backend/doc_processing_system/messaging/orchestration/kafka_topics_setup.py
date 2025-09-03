@@ -199,7 +199,15 @@ class KafkaTopicManager:
             created_topics = []
             failed_topics = []
             
-            for topic_name, future in future_map.items():
+            # Handle different response formats based on kafka-python version
+            if hasattr(future_map, 'items'):
+                # Standard dict-like response
+                items = future_map.items()
+            else:
+                # Response object - extract topic futures differently
+                items = [(topic.name, future_map[topic.name]) for topic in topics_to_create]
+            
+            for topic_name, future in items:
                 try:
                     future.result()  # Wait for completion
                     created_topics.append(topic_name)
