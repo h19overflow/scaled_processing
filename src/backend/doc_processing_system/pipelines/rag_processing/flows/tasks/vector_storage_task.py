@@ -175,3 +175,10 @@ async def store_vectors_task(
         
         logger.error("❌" + "="*80 + "❌")
         raise
+    
+
+if __name__ == "__main__":
+    import asyncio
+    # For direct testing
+    test_file = "path/to/embeddings_testdoc.json"
+    asyncio.run(store_vectors_task(test_file, collection_name="test_collection"))

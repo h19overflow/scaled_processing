@@ -314,9 +314,8 @@ def main():
             print(f"📊 Status: {status['status']}, Collections: {status.get('total_collections', 0)}")
             print(f"🏥 Health: {'HEALTHY' if status.get('healthy', False) else 'ISSUES'}")
             manager.list_collections()
-            print("📂 Collection created: rag_documents")
-            collection = manager.get_collection('rag_documents')
             info = manager.get_collection_info('rag_documents')
+            print(info)
 
             client.close()
             print("✅ Demo completed successfully")

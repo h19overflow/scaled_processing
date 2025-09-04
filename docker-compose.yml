@@ -43,14 +43,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  chromadb:
-    image: chromadb/chroma:latest
-    container_name: chromadb
-    ports:
-      - "8000:8000"
-    volumes:
-      - chromadb_data:/chroma/chroma
-
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.32.4
     container_name: weaviate
