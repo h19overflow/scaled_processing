@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 
-from .weaviate_manager import WeaviateManager
+from ..weaviate_manager import WeaviateManager
 
 
 class WeaviateIngestionEngine:

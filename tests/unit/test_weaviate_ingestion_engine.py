@@ -9,7 +9,7 @@ import tempfile
 from unittest.mock import Mock, patch, MagicMock, mock_open
 from pathlib import Path
 from datetime import datetime
-from src.backend.doc_processing_system.core_deps.weaviate.weaviate_ingestion_engine import WeaviateIngestionEngine
+from doc_processing_system.core_deps.weaviate.managing_utils.weaviate_ingestion_engine import WeaviateIngestionEngine
 
 
 class TestWeaviateIngestionEngine:

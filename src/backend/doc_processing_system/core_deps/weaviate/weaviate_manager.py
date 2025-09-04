@@ -7,7 +7,7 @@ from datetime import datetime
 import weaviate
 import weaviate.classes as wvc
 
-from .managing_utils import ConnectionManager, CollectionManager, HelperUtilities, TestUtils
+from .managing_utils import ConnectionManager, CollectionManager
 
 WEAVIATE_AVAILABLE = True
 
@@ -28,8 +28,6 @@ class WeaviateManager:
         # Initialize utility classes first
         self.connection_manager = ConnectionManager()
         self.collection_manager = CollectionManager(self.connection_manager)
-        self.helper_utilities = HelperUtilities()
-        self.test_utils = TestUtils(self.connection_manager, self.collection_manager)
 
         # Configuration
         self.collection_name = collection_name

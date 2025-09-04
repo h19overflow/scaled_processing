@@ -11,7 +11,7 @@ from datetime import datetime
 
 from prefect import task, get_run_logger
 from .config import MAX_RETRIES, RETRY_DELAY, STORAGE_TIMEOUT
-from .....core_deps.weaviate.weaviate_ingestion_engine import WeaviateIngestionEngine
+from .....core_deps.weaviate.managing_utils.weaviate_ingestion_engine import WeaviateIngestionEngine
 
 
 @task(
