@@ -17,7 +17,6 @@ collection_manager = _collection_manager
 # Update global instances in respective modules
 from . import connection_manager
 from . import collection_manager
-from . import test_utils
 
 connection_manager.connection_manager = _connection_manager
 collection_manager.collection_manager = _collection_manager

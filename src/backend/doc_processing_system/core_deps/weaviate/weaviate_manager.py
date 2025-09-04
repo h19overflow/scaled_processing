@@ -31,13 +31,9 @@ class WeaviateManager:
 
         # Configuration
         self.collection_name = collection_name
-        self.persist_directory = persist_directory or self._get_default_persist_dir()
 
         self.logger.info("WeaviateManager initialized with modular utilities")
 
-    def _get_default_persist_dir(self) -> str:
-        """Get default persistence directory."""
-        return self.helper_utilities.get_default_persist_dir()
     
     def get_client(self) -> Optional[weaviate.WeaviateClient]:
         """Get the active Weaviate client."""

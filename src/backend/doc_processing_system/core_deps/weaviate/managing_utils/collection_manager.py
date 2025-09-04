@@ -239,23 +239,3 @@ class CollectionManager:
 
 # Global collection manager instance
 collection_manager = CollectionManager(None)
-
-
-if __name__ == "__main__":
-    import asyncio
-    from .connection_manager import ConnectionManager  # Assuming this exists
-
-    # Example usage
-    logging.basicConfig(level=logging.DEBUG)
-    conn_manager = ConnectionManager("http://localhost:8080")  # Example Weaviate URL
-    conn_manager.initialize_connection()    
-
-    async def main():
-        collection = collection_manager.get_or_create_collection("test_collection")
-        if collection:
-            info = collection_manager.get_collection_info("test_collection")
-            print(f"Collection Info: {info}")
-        else:
-            print("Failed to get or create collection.")
-
-    asyncio.run(main())
