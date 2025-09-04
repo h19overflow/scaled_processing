@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import weaviate
+import weaviate.classes as wvc
 
 from .managing_utils import ConnectionManager, CollectionManager, HelperUtilities, TestUtils
 
@@ -303,27 +304,12 @@ def main():
     try:
         manager = WeaviateManager()
         client = manager.get_client()
-        print(manager.list_collections())
-        manager.delete_collection('Test_collection')
-        print(manager.list_collections())
-        if client:
-            print("✅ Connected to Weaviate")
-
-            # Test status using clean abstraction
-            status = manager.get_status()
-            print(f"📊 Status: {status['status']}, Collections: {status.get('total_collections', 0)}")
-            print(f"🏥 Health: {'HEALTHY' if status.get('healthy', False) else 'ISSUES'}")
-            manager.list_collections()
-            info = manager.get_collection_info('rag_documents')
-            print(info)
-
-            client.close()
-            print("✅ Demo completed successfully")
-            return True
-        else:
-            print("❌ Failed to connect to Weaviate")
-            return False
-
+        rag_documents = client.collections.get('rag_documents')
+        print(rag_documents.config.get())
+        objects = rag_documents.query.fetch_objects(limit=2 , return_properties=["content"])
+        
+        print(objects)
+        client.close()
     except Exception as e:
         print(f"❌ Error: {e}")
         return False
