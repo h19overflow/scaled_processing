@@ -1,57 +1,70 @@
-# LangExtract Structured Extraction Demo
+# Multi-Agent LangExtract Structured Extraction System
 
-Simple proof-of-concept for extracting structured data from documents using Google's LangExtract framework with LangGraph orchestration.
+Advanced multi-agent system for extracting structured data from full documents using Google's LangExtract framework with progressive schema discovery.
 
 ## Architecture
 
 ```
-Document → Schema Discovery → Config Generation → LangExtract → Results
+Document → Chunking → Sequential Discovery → Schema Consolidation → LangExtract → Results
 ```
+
+**Key Innovation**: Processes entire documents through sequential multi-agent schema discovery that builds context progressively across chunks.
 
 ## Components
 
-### 1. `schema_discovery.py`
-**Purpose**: Analyzes documents to identify extractable fields  
-**Key Decision**: Uses **Gemini 2.0 Flash** to discover document type and extraction classes  
-**Output**: `DocumentSchema` with field specifications and extraction prompt
+### 1. `document_chunker.py`
+**Purpose**: Splits documents into token-based overlapping chunks for processing  
+**Key Decision**: Uses **TikToken** with fallback to character-based chunking  
+**Output**: List of `DocumentChunk` objects with metadata
 
-### 2. `config_generator.py` 
-**Purpose**: Converts discovered schemas into langextract configuration  
-**Key Decision**: Creates example data for langextract training  
-**Output**: Langextract-compatible config with prompt and examples
+### 2. `sequential_schema_discovery.py` 
+**Purpose**: Progressive schema discovery across document chunks  
+**Key Decision**: Each chunk builds on previous discoveries using **Gemini 2.0 Flash**  
+**Output**: `ProgressiveSchema` results with cumulative field discovery
 
-### 3. `extraction_workflow.py`
-**Purpose**: LangGraph orchestration of the extraction pipeline  
-**Key Decision**: Sequential workflow: discover → generate → extract  
-**Output**: Complete extraction state with results
+### 3. `schema_consolidation.py`
+**Purpose**: Consolidates discovered fields into optimized final schema  
+**Key Decision**: AI-powered deduplication and prioritization to best fields  
+**Output**: `ConsolidatedSchema` with refined extraction classes
 
-### 4. `results_handler.py`
-**Purpose**: Saves extraction results and generates reports  
-**Key Decision**: Dual output - JSON for systems, Markdown for humans  
-**Output**: Structured files in `demo_results/`
+### 4. `multi_agent_workflow.py`
+**Purpose**: LangGraph orchestration of the complete multi-agent pipeline  
+**Key Decision**: 5-step workflow with state management and error handling  
+**Output**: `MultiAgentState` with complete extraction results
 
-### 5. `langextract_demo.py`
-**Purpose**: Main orchestrator that runs the complete demo  
-**Key Decision**: Simple async interface for testing  
-**Output**: Console summary + saved results
+### 5. `multi_agent_demo.py`
+**Purpose**: Main orchestrator for the multi-agent extraction system  
+**Key Decision**: Configurable chunk size and field limits for optimization  
+**Output**: Console progress + comprehensive results
 
-## Key Design Decisions
+### 6. `config_generator.py` + `results_handler.py`
+**Purpose**: LangExtract configuration and results management  
+**Key Decision**: Dual output format for systems and human readability  
+**Output**: JSON data + Markdown summaries
 
-- **Schema Discovery**: Gemini 2.0 Flash analyzes documents to suggest extraction fields
-- **Simple Workflow**: Linear LangGraph pipeline (no complex branching)
-- **Fallback Strategy**: Mock extractions when langextract unavailable
-- **Dual Serialization**: Handle both langextract objects and JSON storage
+## Multi-Agent Pipeline Results
+
+**Test Results** (Hamza CV - 10,477 characters):
+- **Chunking**: 4 overlapping chunks (800 tokens each)
+- **Progressive Discovery**: 21 total fields discovered across chunks
+- **Consolidation**: Optimized to 4 high-value extraction classes
+- **Final Extraction**: 43 targeted structured items
+
+**Discovered Schema**:
+1. **Skills**: Technical skills, tools, and technologies
+2. **Projects**: Project descriptions with technologies used  
+3. **Core Strengths**: Candidate abilities with proficiency levels
+4. **Education**: Academic details including graduation and GPA
 
 ## Usage
 
 ```bash
-python -m src.backend.doc_processing_system.pipelines.structured_extraction.demo.langextract_demo
+python -m src.backend.doc_processing_system.pipelines.structured_extraction.demo.multi_agent_demo
 ```
 
-Processes `Hamza_CV_Updated_processed.md` and saves results to `demo_results/`.
+## Key Advantages Over Single-Agent
 
-## Example Output
-
-- **Discovered Schema**: Resume with personal_info + skills extraction classes
-- **Extractions**: 104 items (4 personal details + 100 technical skills)
-- **Categories**: Automatic attribute assignment for context
+- ✅ **Full Document Coverage** (no 2000-character limit)
+- ✅ **Progressive Context Building** (each chunk aware of previous findings)
+- ✅ **Intelligent Optimization** (consolidates duplicates, prioritizes value)
+- ✅ **Better Quality Results** (43 targeted vs 104 redundant extractions)

@@ -69,17 +69,18 @@ class ConfigGenerator:
         # Create mock extractions based on schema
         extractions = []
         for field in schema.extraction_classes[:2]:  # Limit to 2 examples
+            attributes = {"category": field.category, "subcategory": field.subcategory}
             if LANGEXTRACT_AVAILABLE:
                 extraction = lx.data.Extraction(
                     extraction_class=field.field_name,
                     extraction_text=field.example_text,
-                    attributes=field.attributes
+                    attributes=attributes
                 )
             else:
                 extraction = Extraction(
                     extraction_class=field.field_name,
                     extraction_text=field.example_text,
-                    attributes=field.attributes
+                    attributes=attributes
                 )
             extractions.append(extraction)
         

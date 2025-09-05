@@ -1,32 +1,66 @@
-@startuml langextract_demo_architecture
-title LangExtract Demo - Component Architecture & Flow
+@startuml multi_agent_extraction_architecture
+title Multi-Agent LangExtract System - Full Document Processing
 
 skinparam Linetype ortho
-' Component Definitions
-package "Demo Components" {
-    class LangExtractDemo {
-        +workflow: ExtractionWorkflow
+skinparam Padding 10
+skinparam packageStyle rectangle
+
+' Main Components
+package "Multi-Agent System" {
+    class MultiAgentDemo {
+        +workflow: MultiAgentWorkflow
         +results_handler: ResultsHandler
         --
         +run_demo(document_path, document_id)
         +load_document(path) : str
     }
     
-    class ExtractionWorkflow {
-        +schema_discovery: SchemaDiscovery
+    class MultiAgentWorkflow {
+        +chunker: DocumentChunker
+        +sequential_discovery: SequentialSchemaDiscovery
+        +consolidation: SchemaConsolidation
         +config_generator: ConfigGenerator
         +workflow: StateGraph
         --
-        +run_extraction(text, id) : ExtractionState
-        -_discover_schema_node()
-        -_generate_config_node() 
+        +run_extraction(text, id) : MultiAgentState
+        -_chunk_document_node()
+        -_sequential_discovery_node()
+        -_consolidate_schema_node()
+        -_generate_config_node()
         -_extract_data_node()
     }
-    
-    class SchemaDiscovery {
-        +schema_discovery_agent: Agent
+}
+
+' Processing Components
+package "Processing Agents" {
+    class DocumentChunker {
+        +max_tokens: int
+        +overlap_tokens: int
+        +use_tiktoken: bool
         --
-        +discover_schema(text) : DocumentSchema
+        +chunk_document(text, id) : List[DocumentChunk]
+        -_tiktoken_chunk(text) : List[DocumentChunk]
+        -_simple_chunk(text) : List[DocumentChunk]
+        +get_chunk_summary(chunks) : Dict
+    }
+    
+    class SequentialSchemaDiscovery {
+        +discovered_fields: List[FieldSchema]
+        +document_type: str
+        +sequential_discovery_agent: Agent
+        --
+        +discover_chunk_schema(chunk) : ProgressiveSchema
+        +process_all_chunks(chunks) : List[ProgressiveSchema]
+        +get_consolidated_schema() : DocumentSchema
+        +reset()
+    }
+    
+    class SchemaConsolidation {
+        +consolidation_agent: Agent
+        --
+        +consolidate_schema(fields, type, max_fields) : ConsolidatedSchema
+        +to_document_schema(consolidated) : DocumentSchema
+        -_simple_consolidation() : ConsolidatedSchema
     }
     
     class ConfigGenerator {
@@ -49,30 +83,40 @@ package "Demo Components" {
 
 ' External Dependencies
 package "External Libraries" {
-    class "Gemini2Flash" as Gemini <<AI Model>> {
+    class "Gemini 2.0 Flash" as Gemini <<AI Model>> {
         --
-        +analyze_document()
-        +suggest_extraction_schema()
+        +Sequential schema discovery across chunks
+        +Schema consolidation and optimization
+        +Context-aware field identification
     }
     
     class "LangExtract" as LangExtract <<Google Framework>> {
         --
         +extract(text, prompt, examples)
+        +Structured data extraction
     }
     
     class "LangGraph" as LangGraph <<Workflow Engine>> {
         --
-        +StateGraph
-        +workflow_orchestration()
+        +StateGraph workflow orchestration
+        +Multi-step pipeline management
+    }
+    
+    class "TikToken" as TikToken <<Tokenizer>> {
+        --
+        +Token-based chunking
+        +Fallback to character chunking
     }
 }
 
 ' Data Models
 package "Data Models" {
-    class DocumentSchema {
-        +document_type: str
-        +extraction_classes: List[FieldSchema]
-        +extraction_prompt: str
+    class DocumentChunk {
+        +chunk_id: int
+        +text: str
+        +start_char: int
+        +end_char: int
+        +token_count: int
     }
     
     class FieldSchema {
@@ -80,79 +124,119 @@ package "Data Models" {
         +field_type: str
         +description: str
         +example_text: str
-        +attributes: Dict
+        +category: str
+        +subcategory: str
     }
     
-    class ExtractionState {
+    class ProgressiveSchema {
+        +discovered_fields: List[FieldSchema]
+        +document_type: str
+        +confidence_level: str
+        +chunk_coverage: int
+    }
+    
+    class ConsolidatedSchema {
+        +final_fields: List[FieldSchema]
+        +document_type: str
+        +optimization_notes: str
+        +extraction_prompt: str
+    }
+    
+    class MultiAgentState {
         +document_text: str
         +document_id: str
-        +schema: DocumentSchema
+        +chunks: List[DocumentChunk]
+        +progressive_results: List[ProgressiveSchema]
+        +consolidated_schema: ConsolidatedSchema
+        +final_schema: DocumentSchema
         +config: Dict
         +extractions: List
         +status: str
+        +error: str
     }
 }
 
 ' Output Files
-package "Output Files" {
-    class "extraction.json" as ExtractionFile <<file>> {
-        Complete results with metadata
-        Schema + Config + Extractions
+package "Results" {
+    class "Hamza_CV_Quick_extraction.json" as ExtractionFile <<file>> {
+        📊 Complete multi-agent results
+        21 discovered fields → 4 optimized fields
+        43 structured extractions
     }
     
-    class "summary.md" as SummaryFile <<file>> {
-        Human-readable report
-        Discovered schema + extracted items
+    class "Hamza_CV_Quick_summary.md" as SummaryFile <<file>> {
+        📝 Human-readable report
+        Skills, Projects, Education, Core Strengths
+        Progressive discovery summary
     }
 }
 
-' Flow Relationships
-LangExtractDemo --> ExtractionWorkflow : orchestrates
-LangExtractDemo --> ResultsHandler : saves results
+' Workflow Relationships
+MultiAgentDemo --> MultiAgentWorkflow : orchestrates
+MultiAgentDemo --> ResultsHandler : saves results
 
-ExtractionWorkflow --> SchemaDiscovery : step 1: discover schema
-ExtractionWorkflow --> ConfigGenerator : step 2: generate config  
-ExtractionWorkflow --> LangExtract : step 3: extract data
-ExtractionWorkflow --> LangGraph : workflow engine
+MultiAgentWorkflow --> DocumentChunker : step 1: chunk document
+MultiAgentWorkflow --> SequentialSchemaDiscovery : step 2: progressive discovery
+MultiAgentWorkflow --> SchemaConsolidation : step 3: consolidate schemas
+MultiAgentWorkflow --> ConfigGenerator : step 4: generate config
+MultiAgentWorkflow --> LangExtract : step 5: extract data
+MultiAgentWorkflow --> LangGraph : workflow engine
 
-SchemaDiscovery --> Gemini : uses AI model
-SchemaDiscovery --> DocumentSchema : produces
-
-ConfigGenerator --> DocumentSchema : consumes
-ConfigGenerator --> LangExtract : configures
+' Agent Dependencies
+DocumentChunker --> TikToken : token-based chunking
+SequentialSchemaDiscovery --> Gemini : per-chunk analysis
+SchemaConsolidation --> Gemini : optimization & merging
+ConfigGenerator --> LangExtract : configuration
 
 ' Data Flow
-ExtractionState --> DocumentSchema : contains
-DocumentSchema --> FieldSchema : contains
+DocumentChunker --> DocumentChunk : produces
+SequentialSchemaDiscovery --> ProgressiveSchema : produces
+SchemaConsolidation --> ConsolidatedSchema : produces
+MultiAgentWorkflow --> MultiAgentState : manages
+
+MultiAgentState --> DocumentChunk : contains
+ProgressiveSchema --> FieldSchema : contains
+ConsolidatedSchema --> FieldSchema : contains
 
 ResultsHandler --> ExtractionFile : creates
 ResultsHandler --> SummaryFile : creates
 
-' Decision Points (highlighted)
-note right of SchemaDiscovery
-    **KEY DECISION POINT**
-    Gemini 2.0 Flash decides:
-    - Document type
-    - Extraction classes
-    - Field descriptions
-    - Example texts
+' Multi-Agent Pipeline Flow
+note top of MultiAgentWorkflow
+    **MULTI-AGENT PIPELINE**
+    1. 📄 Chunk: 10,477 chars → 4 chunks (800 tokens each)
+    2. 🔍 Progressive Discovery: 21 fields across chunks
+    3. 🔧 Consolidation: 21 fields → 4 optimized fields  
+    4. ⚡ Extraction: 43 structured items using final schema
+    
+    **Key Innovation:** Each chunk builds on previous discoveries
 end note
 
-note right of ConfigGenerator
-    **KEY DECISION POINT**
-    Transforms schema into:
-    - LangExtract prompt format
-    - Training examples
-    - Model configuration
+note right of SequentialSchemaDiscovery
+    **SEQUENTIAL DISCOVERY**
+    Chunk 0: Discovers 5 base fields
+    Chunk 1: +3 new fields (aware of previous 5)
+    Chunk 2: +4 new fields (aware of previous 8)
+    Chunk 3: +9 new fields (aware of previous 12)
+    
+    Total: 21 unique fields discovered progressively
 end note
 
-note bottom of ExtractionWorkflow
-    **KEY DECISION POINT**
-    LangGraph orchestrates:
-    - Sequential workflow steps
-    - State management
-    - Error handling
-    - Result aggregation
+note right of SchemaConsolidation
+    **INTELLIGENT CONSOLIDATION**
+    Input: 21 discovered fields
+    Process: Remove duplicates, merge similar fields
+    Optimize: Prioritize most valuable extractions
+    Output: 4 high-value extraction classes
+    
+    Skills | Projects | Education | Core Strengths
+end note
+
+note bottom of LangExtract
+    **FINAL RESULTS**
+    ✅ 43 structured extractions using optimized schema
+    📊 Better quality vs 104 items from single-pass approach
+    🎯 Targeted fields: Skills, Projects, Education, Strengths
 end note
 
 @enduml

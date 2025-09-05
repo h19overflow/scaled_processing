@@ -112,7 +112,8 @@ class ResultsHandler:
                     "field_type": field.field_type,
                     "description": field.description,
                     "example_text": field.example_text,
-                    "attributes": field.attributes
+                    "category": field.category,
+                    "subcategory": field.subcategory
                 }
                 for field in schema.extraction_classes
             ]
