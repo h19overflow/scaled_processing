@@ -9,15 +9,18 @@ from typing import Dict, Any
 from prefect import flow, get_run_logger
 from prefect.task_runners import ConcurrentTaskRunner
 
+from src.backend.doc_processing_system.pipelines.document_processing.flows.tasks.vision_enriching_task import \
+    markdown_vision_task
 from .tasks import (
     duplicate_detection_task,
     docling_processing_task,
-    chunking_task,
+    vision_enriching_task,
     document_saving_task,
     kafka_message_preparation_task,
     weaviate_storage_task
 )
 
+# TODO : {'status': 'skipped', 'message': 'No embedded chunks available for storage'}?
 
 @flow(
     name="document-processing-pipeline",
@@ -77,7 +80,7 @@ async def document_processing_flow(
             logger.error(f"❌ Duplicate detection failed, aborting flow")
             return duplicate_result
         
-        # Step 2: Docling extraction (extract rich markdown + images)
+        # Step 2: Docling extraction (extract markdown)
         document_id = duplicate_result["document_id"]
         logger.info(f"🔄 Step 2: Docling extraction for: {document_id}")
         docling_result = docling_processing_task(raw_file_path, document_id, user_id)
@@ -87,8 +90,8 @@ async def document_processing_flow(
             return docling_result or {"status": "error", "message": "Docling extraction returned None"}
         
         # Step 3: Vision enhancement and chunking (process extracted content)
-        logger.info(f"🔄 Step 3: Vision enhancement and chunking for: {document_id}")
-        vision_result = await chunking_task(
+        logger.info(f"🔄 Step 3: Vision enhancement: {document_id}")
+        vision_result = await markdown_vision_task(
             processed_markdown_path=docling_result["processed_markdown_path"],
             extracted_images_dir=docling_result["extracted_images_dir"],
             document_id=document_id,
@@ -99,7 +102,7 @@ async def document_processing_flow(
         if not vision_result or vision_result["status"] != "completed":
             logger.error(f"❌ Vision enhancement failed, aborting flow")
             return vision_result or {"status": "error", "message": "Vision enhancement returned None"}
-        
+
         # Step 4: Document saving  
         logger.info(f"🔄 Step 4: Saving processed document: {document_id}")
         save_result = document_saving_task(
@@ -114,7 +117,8 @@ async def document_processing_flow(
         if save_result.get("save_result", {}).get("status") != "saved":
             logger.error(f"❌ Document saving failed, aborting flow")
             return save_result
-        
+        # TODO : ADD CHUNK GENERATION AND  EMBEDDING GENERATION AND CHUNK OVERLAP REFINMENT before the saving.
+
         # Step 5: Kafka message preparation
         logger.info(f"🔄 Step 5: Preparing Kafka messages: {document_id}")
         kafka_result = kafka_message_preparation_task(save_result, user_id)
@@ -234,3 +238,9 @@ async def process_document_with_flow(
         enable_weaviate_storage, 
         weaviate_collection
     )
+
+if __name__ == "__main__":
+    import asyncio
+    test_file_path = "C:\\Users\\User\Projects\\scaled_processing\\data\documents\\raw\\Hamza_CV_Updated.pdf"  # Replace with an actual file path for testing
+    result = asyncio.run(process_document_with_flow(test_file_path, user_id="test_user", enable_weaviate_storage=True))
+    print(result)

@@ -58,14 +58,13 @@ class ChonkieTwoStageChunker(BaseChunker):
         
         # Initialize OverlapRefinery for post-processing
         self.refinery = OverlapRefinery(
-            tokenizer_or_token_counter="tiktoken",
+            tokenizer_or_token_counter="character",
             context_size=0.35,
-            min_chunk_tokens=80,
             merge=True
         )
         
         # Initialize embeddings for chunk embedding generation
-        self.embeddings = SentenceTransformerEmbeddings(model_name=embedding_model)
+        self.embeddings = SentenceTransformerEmbeddings(embedding_model)
     
     def chunk(self, text: str, **kwargs) -> List[Chunk]:
         """Chonkie interface method using our two-stage chunker (sync version).

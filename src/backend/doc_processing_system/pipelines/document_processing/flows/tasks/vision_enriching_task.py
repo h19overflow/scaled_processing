@@ -13,8 +13,9 @@ from prefect import task, get_run_logger
 from ...utils.vision_processor import VisionProcessor
 from ...utils.vision_config import VisionConfig
 
-@task(name="chunking", retries=1)
-async def chunking_task(
+
+@task(name="Markdown_VISION", retries=1)
+async def markdown_vision_task(
     processed_markdown_path: str,
     extracted_images_dir: str, 
     document_id: str,
