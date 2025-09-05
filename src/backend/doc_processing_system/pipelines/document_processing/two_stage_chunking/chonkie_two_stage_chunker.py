@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional
 
 from chonkie import BaseChunker
 from chonkie.types import Chunk
-from ..rag_processing.components.chunking.two_stage_chunker import TwoStageChunker
+from .components.chunking.two_stage_chunker import TwoStageChunker
 
 
 class ChonkieTwoStageChunker(BaseChunker):

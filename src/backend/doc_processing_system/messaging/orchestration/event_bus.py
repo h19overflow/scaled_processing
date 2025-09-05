@@ -9,7 +9,6 @@ from threading import Thread, Event as ThreadEvent
 from enum import Enum
 
 from ..document_processing.document_producer import DocumentProducer
-from ..rag_pipeline.rag_producer import RAGProducer
 from ..extraction_pipeline.extraction_producer import ExtractionProducer
 from ..query_processing.query_producer import QueryProducer
 

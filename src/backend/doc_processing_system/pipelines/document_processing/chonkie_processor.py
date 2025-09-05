@@ -13,7 +13,7 @@ from chonkie import SentenceTransformerEmbeddings, OpenAIEmbeddings, CohereEmbed
 from chonkie import WeaviateHandshake
 from chonkie import TextChef
 
-from .chonkie_two_stage_chunker import ChonkieTwoStageChunker
+from .two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
 from ...data_models.document import ParsedDocument, DocumentMetadata, FileType
 
 
@@ -67,18 +67,14 @@ class ChonkieProcessor:
         
         # Configure Weaviate handshake for direct storage
         self.weaviate_handshake = WeaviateHandshake(
-            embeddings=self.embeddings,
+            embedding_model=self.embeddings,  # Changed from 'embeddings' to 'embedding_model'
             collection_name=weaviate_collection,
             url=weaviate_url or os.getenv("WEAVIATE_URL", "http://localhost:8080"),
             api_key=weaviate_api_key or os.getenv("WEAVIATE_API_KEY")
         )
         
         # Initialize complete Chonkie TextChef (pipeline orchestrator)
-        self.chef = TextChef(
-            chunker=self.chunker,
-            embeddings=self.embeddings,
-            handshake=self.weaviate_handshake
-        )
+        self.chef = TextChef()
         
         self.logger.info("ChonkieProcessor initialized - complete DoclingProcessor replacement")
         self.logger.info(f"Configuration: embedding_model={embedding_model}, collection={weaviate_collection}")
@@ -99,7 +95,7 @@ class ChonkieProcessor:
             )
         else:
             # Default to Hugging Face sentence-transformers
-            return SentenceTransformerEmbeddings(model_name=embedding_model)
+            return SentenceTransformerEmbeddings(embedding_model)
     
     async def process_document_with_duplicate_check(self, raw_file_path: str, user_id: str = "default") -> Dict[str, Any]:
         """Complete workflow: check duplicates, process with Chonkie, save results.
@@ -254,9 +250,7 @@ class ChonkieProcessor:
                 "chunking_strategy": "two_stage_semantic_boundary",
                 "weaviate_collection": self.weaviate_collection
             }
-            
             self.logger.info(f"Chonkie pipeline complete: {chunks_processed} chunks → {embeddings_generated} embeddings → {vectors_stored} vectors")
-            
             return processing_stats
             
         except Exception as e:
@@ -296,3 +290,19 @@ class ChonkieProcessor:
             logger.addHandler(handler)
             logger.setLevel(logging.INFO)
         return logger
+    
+if __name__ == "__main__":
+    # Example usage
+    processor = ChonkieProcessor(
+        enable_vision=True,
+        embedding_model="BAAI/bge-large-en-v1.5",
+        chunk_size=700,
+        semantic_threshold=0.75,
+        concurrent_agents=10,
+        chunking_model="gemini-2.0-flash",
+        weaviate_collection="rag_documents"
+    )
+    
+    import asyncio
+    result = asyncio.run(processor.process_document_with_duplicate_check("data\\documents\\raw\\Hamza_CV_Updated.pdf", user_id="user123"))
+    print(result)

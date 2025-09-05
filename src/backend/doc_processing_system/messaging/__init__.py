@@ -8,7 +8,6 @@ Structure:
 - base/: Base classes for producers and consumers
 - file_ingestion/: File detection and initial processing
 - document_processing/: Document workflow coordination  
-- rag_pipeline/: RAG processing events
 - extraction_pipeline/: Structured extraction events
 - query_processing/: Query handling events
 - orchestration/: Event routing and system management
@@ -17,7 +16,6 @@ Structure:
 # Import key components for easy access
 from .base import BaseKafkaConsumer, BaseKafkaProducer
 from .file_ingestion import FileProcessingConsumer
-from .rag_pipeline import RAGProducer
 from .extraction_pipeline import ExtractionProducer
 from .query_processing import QueryProducer
 from .orchestration.event_bus import  EventType
@@ -34,7 +32,6 @@ __all__ = [
     "DocumentProducer",
     
     # Pipeline producers
-    "RAGProducer",
     "ExtractionProducer", 
     "QueryProducer",
     

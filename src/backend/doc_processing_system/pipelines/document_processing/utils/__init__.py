@@ -6,6 +6,7 @@ from .vision_agent import VisionAgent
 from .markdown_enhancer import MarkdownEnhancer
 from .vision_processor import VisionProcessor
 from .document_output_manager import DocumentOutputManager
+from .docling_processor import DoclingProcessor
 
 __all__ = [
     'VisionConfig',
@@ -13,5 +14,6 @@ __all__ = [
     'VisionAgent',
     'MarkdownEnhancer', 
     'VisionProcessor',
-    'DocumentOutputManager'
+    'DocumentOutputManager',
+    'DoclingProcessor'
 ]

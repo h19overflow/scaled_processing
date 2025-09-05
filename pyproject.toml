@@ -78,9 +78,9 @@ dependencies = [
     "watchdog>=6.0.0",
     "docling-core>=2.45.0",
     "python-snappy>=0.7.3",
-    "numpy<2",
     "pyarrow==14.0.1",
     "chonkie[all]",
+    "numpy==1.26.4",
 ]
 
 [project.optional-dependencies]
