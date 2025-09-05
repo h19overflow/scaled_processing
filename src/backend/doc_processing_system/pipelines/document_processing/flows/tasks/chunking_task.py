@@ -12,7 +12,6 @@ from prefect import task, get_run_logger
 
 from ...utils.vision_processor import VisionProcessor
 from ...utils.vision_config import VisionConfig
-from ...chonkie_processor import ChonkieProcessor
 
 
 @task(name="chunking", retries=1)
@@ -91,7 +90,6 @@ async def chunking_task(
         logger.info(f"✅ Vision enhancement completed: {len(enhanced_content)} chars")
         logger.info(f"💾 Enhanced markdown saved to: {enhanced_markdown_path}")
         
-        # Optional Step 6: Apply chunking if ChonkieProcessor integration needed
         # This can be added later for additional processing
         
         return {

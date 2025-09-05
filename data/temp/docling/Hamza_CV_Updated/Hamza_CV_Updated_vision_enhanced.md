@@ -1,14 +1,3 @@
-# Processed Document: Hamza_CV_Updated.pdf
-
-**Document ID**: Hamza_CV_Updated
-**Pages**: 3
-**Processing Date**: 2025-09-05 20:13:37
-**Content Length**: 10,257 characters
-
----
-
-## Document Content with AI Vision Enhancement
-
 ## Hamza Khaled Mahmoud Ahmed
 
 AI Engineer - Machine Learning Engineer - Data Scientist

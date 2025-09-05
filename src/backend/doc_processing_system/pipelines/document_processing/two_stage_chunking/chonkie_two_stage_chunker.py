@@ -6,7 +6,7 @@ Integrates our semantic chunking + boundary refinement workflow into the Chonkie
 import asyncio
 from typing import List, Dict, Any, Optional
 
-from chonkie import BaseChunker
+from chonkie import BaseChunker, OverlapRefinery, SentenceTransformerEmbeddings
 from chonkie.types import Chunk
 from .components.chunking.two_stage_chunker import TwoStageChunker
 
@@ -20,6 +20,7 @@ class ChonkieTwoStageChunker(BaseChunker):
                  boundary_context: int = 200,
                  concurrent_agents: int = 10,
                  model_name: str = "gemini-2.0-flash",
+                 embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
                  tokenizer_or_token_counter: Optional[Any] = None):
         """Initialize the ChonkieTwoStageChunker.
         
@@ -29,6 +30,7 @@ class ChonkieTwoStageChunker(BaseChunker):
             boundary_context: Context window for boundary analysis
             concurrent_agents: Number of concurrent boundary review agents
             model_name: LLM model for boundary decisions
+            embedding_model: Hugging Face model for embeddings
             tokenizer_or_token_counter: Tokenizer for Chonkie compatibility (not used in our implementation)
         """
         # Simple word-based token counter if none provided
@@ -43,6 +45,7 @@ class ChonkieTwoStageChunker(BaseChunker):
         self.boundary_context = boundary_context
         self.concurrent_agents = concurrent_agents
         self.model_name = model_name
+        self.embedding_model = embedding_model
         
         # Initialize our existing two-stage chunker
         self.two_stage_chunker = TwoStageChunker(
@@ -52,6 +55,17 @@ class ChonkieTwoStageChunker(BaseChunker):
             concurrent_agents=concurrent_agents,
             model_name=model_name
         )
+        
+        # Initialize OverlapRefinery for post-processing
+        self.refinery = OverlapRefinery(
+            tokenizer_or_token_counter="tiktoken",
+            context_size=0.35,
+            min_chunk_tokens=80,
+            merge=True
+        )
+        
+        # Initialize embeddings for chunk embedding generation
+        self.embeddings = SentenceTransformerEmbeddings(model_name=embedding_model)
     
     def chunk(self, text: str, **kwargs) -> List[Chunk]:
         """Chonkie interface method using our two-stage chunker (sync version).
@@ -111,7 +125,54 @@ class ChonkieTwoStageChunker(BaseChunker):
             )
             chonkie_chunks.append(chunk)
         
-        return chonkie_chunks
+        # Apply OverlapRefinery post-processing
+        refined_chunks = self.refinery(chonkie_chunks)
+        
+        return refined_chunks
+    
+    def generate_embeddings(self, chunks: List[Chunk]) -> List[Chunk]:
+        """Generate embeddings for chunks using SentenceTransformer.
+        
+        Args:
+            chunks: List of Chunk objects to embed
+            
+        Returns:
+            List of Chunk objects with embeddings in metadata
+        """
+        for chunk in chunks:
+            try:
+                # Generate embedding for chunk text
+                vector = self.embeddings.embed(chunk.text)
+                
+                # Add embedding to chunk metadata
+                chunk.metadata["embedding"] = vector
+                chunk.metadata["embedding_model"] = self.embedding_model
+                
+            except Exception as e:
+                # Log error but continue processing other chunks
+                print(f"Failed to generate embedding for chunk {chunk.metadata.get('chunk_id', 'unknown')}: {e}")
+                chunk.metadata["embedding_error"] = str(e)
+        
+        return chunks
+    
+    async def chunk_with_embeddings(self, text: str, document_id: Optional[str] = None, **kwargs) -> List[Chunk]:
+        """Generate chunks with embeddings in one step.
+        
+        Args:
+            text: Text to chunk
+            document_id: Optional document identifier
+            **kwargs: Additional keyword arguments
+            
+        Returns:
+            List of Chunk objects with embeddings
+        """
+        # First get refined chunks
+        refined_chunks = await self.chunk_async(text, document_id, **kwargs)
+        
+        # Then generate embeddings
+        embedded_chunks = self.generate_embeddings(refined_chunks)
+        
+        return embedded_chunks
     
     def get_params(self) -> Dict[str, Any]:
         """Return chunker parameters for Chonkie."""

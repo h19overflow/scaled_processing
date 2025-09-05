@@ -25,7 +25,7 @@ async def test_docling_pipeline():
         return
     
     # Test with a sample PDF file (you'll need to provide a real file path)
-    test_file_path = "src/backend/doc_processing_system/pipelines/document_processing/Hamza_updated.pdf"
+    test_file_path = "C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\Hamza_CV_Updated.pdf"
     test_file = Path(test_file_path)
     
     if not test_file.exists():
@@ -73,7 +73,7 @@ def test_docling_processor_only():
         return
     
     # Test file
-    test_file_path = "src/backend/doc_processing_system/pipelines/document_processing/Hamza_updated.pdf"
+    test_file_path = "C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\Hamza_CV_Updated.pdf"
     test_file = Path(test_file_path)
     
     if not test_file.exists():

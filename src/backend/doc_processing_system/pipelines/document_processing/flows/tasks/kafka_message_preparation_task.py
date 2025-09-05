@@ -33,7 +33,6 @@ def kafka_message_preparation_task(
     
     document_id = save_result["document_id"]
     processed_file_path = save_result["processed_file_path"]
-    parsed_document = save_result["parsed_document"]
     
     logger.info(f"📤 Preparing Kafka messages for: {document_id}")
     
@@ -41,13 +40,17 @@ def kafka_message_preparation_task(
         # Initialize output manager
         output_manager = DocumentOutputManager()
         
-        # Prepare metadata for Kafka message
+        # Reconstruct filename from processed_file_path if needed
+        from pathlib import Path
+        processed_path = Path(processed_file_path)
+        
+        # Prepare metadata for Kafka message using available data
         metadata = {
-            "filename": parsed_document.metadata.filename if hasattr(parsed_document.metadata, 'filename') else "unknown",
-            "page_count": parsed_document.page_count,
-            "content_length": len(parsed_document.content),
-            "file_type": parsed_document.metadata.file_type,
-            "file_size": parsed_document.metadata.file_size,
+            "filename": processed_path.stem.replace("_processed", "") + ".pdf",  # Reverse engineer original filename
+            "page_count": save_result.get("page_count", 0),
+            "content_length": save_result.get("content_length", 0),
+            "file_type": "pdf",  # Default assumption, could be improved
+            "file_size": 0,  # Not available at this point
             "processing_timestamp": datetime.now().isoformat(),
             "vision_processing": True
         }

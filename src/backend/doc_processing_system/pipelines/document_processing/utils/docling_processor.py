@@ -3,16 +3,12 @@ DoclingProcessor - Smart document extraction with format detection and path-base
 Extracts rich markdown and images from documents using adaptive Docling pipelines.
 """
 
-import os
 import logging
-import mimetypes
-import tempfile
 import shutil
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
-
+from typing import Dict, Any
 try:
-    from docling.document_converter import DocumentConverter, PdfFormatOption, DocxFormatOption
+    from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption, PowerpointFormatOption
     from docling.datamodel.base_models import InputFormat
     from docling.datamodel.pipeline_options import PdfPipelineOptions, PaginatedPipelineOptions
     from docling_core.types.doc import ImageRefMode
@@ -80,7 +76,7 @@ class DoclingProcessor:
             
             # Step 3: Convert document with appropriate pipeline
             converter = self._get_converter_for_format(doc_format)
-            conv_result = converter.convert_single(str(raw_path))
+            conv_result = converter.convert(str(raw_path))
             
             if conv_result.status.name != "SUCCESS":
                 return self._error_result("Docling conversion failed", raw_file_path, 
@@ -148,10 +144,10 @@ class DoclingProcessor:
                 format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_config)}
             ),
             "docx": DocumentConverter(
-                format_options={InputFormat.DOCX: DocxFormatOption(pipeline_options=office_config)}
+                format_options={InputFormat.DOCX: WordFormatOption(pipeline_options=office_config)}
             ),
             "pptx": DocumentConverter(
-                format_options={InputFormat.PPTX: PdfFormatOption(pipeline_options=office_config)}
+                format_options={InputFormat.PPTX: PowerpointFormatOption(pipeline_options=office_config)}
             )
         }
         
