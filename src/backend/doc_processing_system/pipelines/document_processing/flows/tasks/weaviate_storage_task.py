@@ -17,7 +17,6 @@ def weaviate_storage_task(
     document_id: str,
     collection_name: str = "advanced_docs",
     weaviate_url: str = None,
-    weaviate_api_key: str = None,
     batch_size: int = 128,
     user_id: str = "default"
 ) -> Dict[str, Any]:
@@ -29,7 +28,6 @@ def weaviate_storage_task(
         document_id: Document identifier
         collection_name: Weaviate collection name
         weaviate_url: Weaviate server URL
-        weaviate_api_key: Weaviate API key
         batch_size: Batch size for storage operations
         user_id: User who uploaded the document
         
@@ -54,7 +52,7 @@ def weaviate_storage_task(
             url=weaviate_url or os.getenv("WEAVIATE_URL", "http://localhost:8080"),
             collection_name=collection_name,
             batch_size=batch_size,
-            embedding_model="model2vec"  # Match to embedding pipeline
+            embedding_model="model2vec"  # Match to an embedding pipeline
         )
         
         # Filter chunks that have embeddings

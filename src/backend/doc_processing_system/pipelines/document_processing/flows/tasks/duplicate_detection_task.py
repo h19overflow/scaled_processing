@@ -26,7 +26,7 @@ def duplicate_detection_task(raw_file_path: str, user_id: str = "default") -> Di
     logger.info(f"🔍 Starting duplicate detection for: {Path(raw_file_path).name}")
     
     try:
-        # Initialize processor without vision for fast duplicate check
+        # Initialize a processor without vision for a fast duplicate check
         processor = ChonkieProcessor(enable_vision=False)
         output_manager = processor.get_output_manager()
         

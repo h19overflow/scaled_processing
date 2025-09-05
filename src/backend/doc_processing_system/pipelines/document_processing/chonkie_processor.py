@@ -18,7 +18,7 @@ from ...data_models.document import ParsedDocument, DocumentMetadata, FileType
 
 
 class ChonkieProcessor:
-    """Complete replacement for DoclingProcessor using Chonkie pipeline."""
+    """Complete replacement for DoclingProcessor using a Chonkie pipeline."""
     
     def __init__(self, 
                  enable_vision: bool = True,
@@ -30,7 +30,7 @@ class ChonkieProcessor:
                  weaviate_collection: str = "rag_documents",
                  weaviate_url: str = None,
                  weaviate_api_key: str = None):
-        """Initialize ChonkieProcessor with unified pipeline.
+        """Initialize ChonkieProcessor with a unified pipeline.
         
         Args:
             enable_vision: Enable vision processing (for compatibility)
@@ -47,13 +47,13 @@ class ChonkieProcessor:
         self.embedding_model = embedding_model
         self.weaviate_collection = weaviate_collection
         
-        # Initialize output manager for compatibility (lazy loaded)
+        # Initialize the output manager for compatibility (lazy loaded)
         self.output_manager = None
         
         # Setup logging
         self.logger = self._setup_logging()
         
-        # Configure embeddings based on model type
+        # Configure embeddings based on the model type
         self.embeddings = self._initialize_embeddings(embedding_model)
         
         # Initialize our custom two-stage chunker

@@ -14,7 +14,8 @@ from .tasks import (
     docling_processing_task,
     chunking_task,
     document_saving_task,
-    kafka_message_preparation_task
+    kafka_message_preparation_task,
+    weaviate_storage_task
 )
 
 
@@ -27,24 +28,29 @@ from .tasks import (
 )
 async def document_processing_flow(
     raw_file_path: str,
-    user_id: str = "default"
+    user_id: str = "default",
+    enable_weaviate_storage: bool = True,
+    weaviate_collection: str = "advanced_docs"
 ) -> Dict[str, Any]:
     """
-    Complete document processing workflow with Prefect orchestration.
-    
+    Complete the document processing workflow with Prefect orchestration.
+
     This flow handles:
     1. Duplicate detection using content hash
     2. Docling extraction (markdown + images) if document is new
     3. Vision enhancement and chunking processing
     4. Structured document saving
     5. Kafka message preparation for downstream pipelines
-    
+    6. Optional Weaviate vector storage for RAG capabilities
+
     Args:
         raw_file_path: Path to the raw document file
         user_id: User who uploaded the document
-        
+        enable_weaviate_storage: Whether to store chunks in Weaviate for vector search
+        weaviate_collection: Weaviate collection name for vector storage
+
     Returns:
-        Dict containing complete processing results
+        Dict containing complete processing results including optional Weaviate storage
     """
     logger = get_run_logger()
     logger.info(f"🚀 Starting document processing flow for: {Path(raw_file_path).name}")
@@ -111,28 +117,88 @@ async def document_processing_flow(
         
         # Step 5: Kafka message preparation
         logger.info(f"🔄 Step 5: Preparing Kafka messages: {document_id}")
-        final_result = kafka_message_preparation_task(save_result, user_id)
-        
-        # Final status check
-        if  final_result.get("kafka_message").get("status") == "processed":
-            logger.info(f"✅ Document processing flow completed successfully!")
-            logger.info(f"📄 Document ID: {final_result['document_id']}")
-            logger.info(f"📁 Processed file: {final_result['processed_file_path']}")
-            logger.info(f"📤 Kafka message prepared for downstream pipelines")
-            
-            return {
-                "status": "completed",
-                "document_id": final_result["document_id"],
-                "processed_file_path": final_result["processed_file_path"],
-                "document_directory": final_result["document_directory"],
-                "kafka_message": final_result["kafka_message"],
-                "content_length": final_result["content_length"],
-                "page_count": final_result["page_count"],
-                "message": f"Document processing completed: {final_result['document_id']}"
-            }
+        kafka_result = kafka_message_preparation_task(save_result, user_id)
+
+        # Validate Kafka message preparation
+        if not kafka_result.get("kafka_message") or kafka_result.get("kafka_message", {}).get("status") != "processed":
+            logger.error(f"❌ Kafka message preparation failed, aborting flow")
+            return kafka_result
+
+        # Step 6: Optional Weaviate vector storage
+        weaviate_result = None
+        if enable_weaviate_storage:
+            logger.info(f"🔄 Step 6: Storing document chunks in Weaviate: {document_id}")
+
+            # For now, we'll create dummy embedded chunks since we don't have the chunking/embedding pipeline
+            # In a full implementation, this would come from a previous chunking/embedding step
+            try:
+                # This is a placeholder - in real implementation, embedded_chunks would come from
+                # the chunking task or a separate embedding pipeline
+                embedded_chunks = []  # Would contain actual Chunk objects with embeddings
+
+                if embedded_chunks:  # Only proceed if we have embedded chunks
+                    weaviate_result = weaviate_storage_task(
+                        embedded_chunks=embedded_chunks,
+                        document_id=document_id,
+                        collection_name=weaviate_collection,
+                        user_id=user_id
+                    )
+
+                    if weaviate_result.get("status") == "completed":
+                        logger.info(f"✅ Weaviate storage completed: {weaviate_result.get('chunks_stored', 0)} chunks stored")
+                    else:
+                        logger.warning(f"⚠️ Weaviate storage failed: {weaviate_result.get('error', 'Unknown error')}")
+                else:
+                    logger.info("ℹ️ Skipping Weaviate storage: No embedded chunks available")
+                    weaviate_result = {
+                        "status": "skipped",
+                        "message": "No embedded chunks available for storage"
+                    }
+
+            except Exception as e:
+                logger.error(f"❌ Weaviate storage error: {e}")
+                weaviate_result = {
+                    "status": "error",
+                    "error": str(e),
+                    "message": f"Weaviate storage failed: {e}"
+                }
         else:
-            logger.error(f"❌ Final step failed or missing Kafka message")
-            return final_result
+            logger.info("ℹ️ Weaviate storage disabled, skipping vector storage step")
+            weaviate_result = {
+                "status": "disabled",
+                "message": "Weaviate storage not enabled"
+            }
+
+        # Final success logging
+        logger.info(f"✅ Document processing flow completed successfully!")
+        logger.info(f"📄 Document ID: {kafka_result['document_id']}")
+        logger.info(f"📁 Processed file: {kafka_result['processed_file_path']}")
+        logger.info(f"📤 Kafka message prepared for downstream pipelines")
+        if enable_weaviate_storage and weaviate_result.get("status") == "completed":
+            logger.info(f"🗄️ Vector storage: {weaviate_result.get('chunks_stored', 0)} chunks in Weaviate")
+
+        # Enhanced final result with all processing steps
+        final_result = {
+            "status": "completed",
+            "document_id": kafka_result["document_id"],
+            "processed_file_path": kafka_result["processed_file_path"],
+            "document_directory": kafka_result["document_directory"],
+            "kafka_message": kafka_result["kafka_message"],
+            "content_length": kafka_result["content_length"],
+            "page_count": kafka_result["page_count"],
+            "processing_steps": {
+                "duplicate_detection": duplicate_result.get("status"),
+                "docling_extraction": docling_result.get("status"),
+                "vision_enhancement": vision_result.get("status"),
+                "document_saving": save_result.get("save_result", {}).get("status"),
+                "kafka_preparation": kafka_result.get("kafka_message", {}).get("status"),
+                "weaviate_storage": weaviate_result.get("status") if weaviate_result else "disabled"
+            },
+            "weaviate_storage": weaviate_result,
+            "message": f"Document processing completed: {kafka_result['document_id']}"
+        }
+
+        return final_result
             
     except Exception as e:
         logger.error(f"❌ Document processing flow failed: {e}")
@@ -144,15 +210,27 @@ async def document_processing_flow(
 
 
 # Convenience function for direct flow execution
-async def process_document_with_flow(raw_file_path: str, user_id: str = "default") -> Dict[str, Any]:
+async def process_document_with_flow(
+    raw_file_path: str, 
+    user_id: str = "default",
+    enable_weaviate_storage: bool = False,
+    weaviate_collection: str = "advanced_docs"
+) -> Dict[str, Any]:
     """
     Convenience function to run the document processing flow directly.
-    
+
     Args:
         raw_file_path: Path to the raw document file
         user_id: User who uploaded the document
-        
+        enable_weaviate_storage: Whether to store chunks in Weaviate for vector search
+        weaviate_collection: Weaviate collection name for vector storage
+
     Returns:
         Dict containing processing results
     """
-    return await document_processing_flow(raw_file_path, user_id)
+    return await document_processing_flow(
+        raw_file_path, 
+        user_id, 
+        enable_weaviate_storage, 
+        weaviate_collection
+    )
