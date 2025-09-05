@@ -1,1 +1,0 @@
-# Orchestration Layer - Master pipeline coordination

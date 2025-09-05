@@ -35,8 +35,8 @@ class FileProcessingConsumer(BaseKafkaConsumer):
         self.document_crud = DocumentCRUD(self.connection_manager)
         
         # Lazy import to avoid circular imports
-        from ...pipelines.document_processing.docling_processor import DoclingProcessor
-        self.docling_processor = DoclingProcessor()
+        from ...pipelines.document_processing.chonkie_processor import ChonkieProcessor
+        self.chonkie_processor = ChonkieProcessor()
         self.document_producer = DocumentProducer()
         
         self.logger.info("FileProcessingConsumer initialized with direct component integration")
@@ -59,7 +59,8 @@ class FileProcessingConsumer(BaseKafkaConsumer):
         """
         try:
             if topic == "file-detected":
-                return self._handle_file_detected(message_data, key)
+                import asyncio
+                return asyncio.run(self._handle_file_detected(message_data, key))
             else:
                 self.logger.warning(f"Unknown topic: {topic}")
                 return False
@@ -68,7 +69,7 @@ class FileProcessingConsumer(BaseKafkaConsumer):
             self.logger.error(f"Error processing message from {topic}: {e}")
             return False
     
-    def _handle_file_detected(self, message_data: Dict[str, Any], key: Optional[str]) -> bool:
+    async def _handle_file_detected(self, message_data: Dict[str, Any], key: Optional[str]) -> bool:
         """
         Handle file detected events with direct component integration.
         SIMPLIFIED: No wrapper pipeline, direct processing flow.
@@ -106,13 +107,13 @@ class FileProcessingConsumer(BaseKafkaConsumer):
             user_id = self._extract_user_id(event.file_path)
             
             # SIMPLIFIED PROCESSING: Direct component integration
-            return self._process_document_directly(file_path, user_id)
+            return await self._process_document_directly(file_path, user_id)
             
         except Exception as e:
             self.logger.error(f"Failed to handle file detected event: {e}")
             return False
     
-    def _process_document_directly(self, file_path: Path, user_id: str) -> bool:
+    async def _process_document_directly(self, file_path: Path, user_id: str) -> bool:
         """
         Process document directly using core components.
         SIMPLIFIED: No wrapper pipeline needed.
@@ -145,8 +146,8 @@ class FileProcessingConsumer(BaseKafkaConsumer):
             document.processing_status = ProcessingStatus.PARSING
             document_id = self.document_crud.create(document, raw_hash)
             
-            # Process with DoclingProcessor directly (no wrapper)
-            processed_result = self.docling_processor.process_document(str(file_path))
+            # Process with ChonkieProcessor directly (no wrapper)
+            processed_result = await self.chonkie_processor.process_document_with_duplicate_check(str(file_path), user_id)
             
             # Update document with processing results
             self.document_crud.update_metadata(

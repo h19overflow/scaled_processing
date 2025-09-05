@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 
 from ....messaging.base.base_consumer import BaseKafkaConsumer
-from .rag_processing_flow import rag_processing_flow
+from .chonkie_rag_flow import chonkie_rag_processing_flow
 
 
 class RagProcessingConsumer(BaseKafkaConsumer):
@@ -108,7 +108,7 @@ class RagProcessingConsumer(BaseKafkaConsumer):
                 # Execute RAG pipeline
                 self.logger.info(f"🚀 Starting RAG pipeline: {document_id}")
                 
-                result = await rag_processing_flow(
+                result = await chonkie_rag_processing_flow(
                     file_path=processed_file_path,
                     document_id=document_id
                 )

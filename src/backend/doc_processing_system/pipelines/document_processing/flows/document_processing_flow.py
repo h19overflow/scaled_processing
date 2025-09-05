@@ -11,7 +11,7 @@ from datetime import datetime
 from prefect import flow, task, get_run_logger
 from prefect.task_runners import ConcurrentTaskRunner
 
-from ..docling_processor import DoclingProcessor
+from ..chonkie_processor import ChonkieProcessor
 from ..utils.document_output_manager import DocumentOutputManager
 
 
@@ -32,7 +32,7 @@ def duplicate_detection_task(raw_file_path: str, user_id: str = "default") -> Di
     
     try:
         # Initialize processor without vision for fast duplicate check
-        processor = DoclingProcessor(enable_vision=False)
+        processor = ChonkieProcessor(enable_vision=False)
         output_manager = processor._get_output_manager()
         
         # Check for duplicates
@@ -78,7 +78,7 @@ async def vision_processing_task(
     
     try:
         # Initialize processor with vision enabled
-        processor = DoclingProcessor(enable_vision=True)
+        processor = ChonkieProcessor(enable_vision=True)
         
         # Process document with vision AI
         parsed_document = await processor.process_document_with_vision(

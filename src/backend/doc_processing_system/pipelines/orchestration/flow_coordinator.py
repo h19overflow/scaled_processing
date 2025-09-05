@@ -1,1 +1,0 @@
-# FlowCoordinator - Inter-pipeline coordination

@@ -32,7 +32,8 @@
       "Bash(find:*)",
       "Bash(PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest tests/unit/test_weaviate_manager.py -v)",
       "Bash(sed:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
