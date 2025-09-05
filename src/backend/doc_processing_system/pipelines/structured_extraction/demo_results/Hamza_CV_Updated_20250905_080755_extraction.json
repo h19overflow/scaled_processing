@@ -1,0 +1,792 @@
+{
+  "metadata": {
+    "document_id": "Hamza_CV_Updated",
+    "extraction_timestamp": "20250905_080755",
+    "status": "extraction_complete",
+    "langextract_demo": true
+  },
+  "schema": {
+    "document_type": "resume",
+    "extraction_prompt": "Extract personal information and technical skills from this resume.",
+    "extraction_classes": [
+      {
+        "field_name": "personal_info",
+        "field_type": "contact",
+        "description": "Name, email, phone, location",
+        "example_text": "Hamza Khaled Mahmoud Ahmed",
+        "attributes": {
+          "type": "identity"
+        }
+      },
+      {
+        "field_name": "skills",
+        "field_type": "technical_skill",
+        "description": "Technical skills and technologies",
+        "example_text": "Python, Machine Learning, TensorFlow",
+        "attributes": {
+          "category": "technical"
+        }
+      }
+    ]
+  },
+  "config": {
+    "prompt": "Extract personal information and technical skills from this resume.\n\n            Extract the following types of information:\n            - personal_info: Name, email, phone, location\n- skills: Technical skills and technologies\n\n            Use exact text for extractions. Provide meaningful attributes for context.",
+    "examples": [
+      {
+        "text": "# Processed Document: Hamza_CV_Updated.pdf\n\n**Document ID**: Hamza_CV_Updated\n**Pages**: 3\n**Processing Date**: 2025-09-04 20:07:46\n**Content Length**: 10,253 characters\n\n---\n\n## Document Content with",
+        "extractions": [
+          {
+            "extraction_class": "personal_info",
+            "extraction_text": "Hamza Khaled Mahmoud Ahmed",
+            "attributes": {
+              "type": "identity"
+            }
+          },
+          {
+            "extraction_class": "skills",
+            "extraction_text": "Python, Machine Learning, TensorFlow",
+            "attributes": {
+              "category": "technical"
+            }
+          }
+        ]
+      }
+    ],
+    "model_id": "gemini-2.5-flash",
+    "extraction_classes": [
+      "personal_info",
+      "skills"
+    ]
+  },
+  "extractions": [
+    {
+      "extraction_class": "personal_info",
+      "extraction_text": "Hamza Khaled Mahmoud Ahmed",
+      "attributes": {
+        "type": "name"
+      }
+    },
+    {
+      "extraction_class": "personal_info",
+      "extraction_text": "hamzakhaledlklk@gmail.com",
+      "attributes": {
+        "type": "email"
+      }
+    },
+    {
+      "extraction_class": "personal_info",
+      "extraction_text": "Cyberjaya, Malaysia",
+      "attributes": {
+        "type": "location"
+      }
+    },
+    {
+      "extraction_class": "personal_info",
+      "extraction_text": "+60 122938594",
+      "attributes": {
+        "type": "phone"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Data Science",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Machine Learning",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Artificial Intelligence",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "predictive analytics",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "deep learning",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "computer vision",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "natural language processing",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "AI automation systems",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "statistics",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "advanced mathematics",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "data analysis",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "algorithm development",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "predictive modeling",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Data engineering",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "preprocessing",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "feature engineering",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "data pipeline development",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Exploratory data analysis (EDA)",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "statistical inference",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "hypothesis testing",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Model development",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "classical ML",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "deep learning",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "neural networks",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "LLMs",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "RAG",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "AI agents",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "training",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "hyperparameter optimization",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Model evaluation",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "performance tuning",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "cross-validation",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "deployment strategies",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "AI/ML",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Federated Learning",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Advanced RAG Systems",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "AI Inference Optimization",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Full-Stack AI Development",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Computer Vision",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Statistics, Calculus, Discrete Mathematics, Machine Learning Algorithms, Data Analysis, Deep Learning, Object-Oriented Programming, Object-Oriented Analysis & Design, Database Management, Artificial Intelligence",
+      "attributes": {
+        "category": "coursework"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Python, NVIDIA FLARE, MedGemma, vLLM, MongoDB Atlas, RAG, PyTorch",
+      "attributes": {
+        "category": "technologies"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Federated Learning",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "SQL search",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "medical LLM",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "vLLM",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Paged Attention",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "dynamic batching",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "ETL pipeline",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Python",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "LightRAG",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "LangGraph",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Google Gemini API (Vision Pro & Flash)",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "PostgreSQL",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Pydantic",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "MinerU",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Retrieval-Augmented Generation",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "vector search",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "ETL pipeline",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Vision Language Model (VLM)",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "knowledge graph",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "multi-agent system",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "LangGraph",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "AI agents",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "hybrid retrieval strategies (vector + graph)",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "AI reasoning capabilities",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "LangGraph, Python, LLMs, Pandas, Multi-Agent Systems",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "LangGraph, LangChain, FastAPI, Google Gemini (LLM), Google Vision (OCR), SQLite, React, TypeScript, Docker, Python",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Python, LangChain (LangGraph), Scikit-learn (Random Forest), ONNX, MongoDB Atlas, Redis",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "TensorFlow",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Keras (ResNet50V2)",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Flower (flwr)",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Deep Learning",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Google Gemini API",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "RAG",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Flask",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "React",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "FAISS",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "LangChain",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Python",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Pandas",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "NumPy",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Vector Databases",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "XGBoost",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Random Forest",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Scikit-learn",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Pandas",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "SMOTE",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Ensemble Methods",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Python, SQL, PostgreSQL, MySQL, SQLite, Java, Kotlin, Pandas, NumPy, SciPy, Matplotlib, Seaborn, Tableau, Exploratory Data Analysis (EDA), Regression, Classification, Clustering, Ensemble Methods, Feature Engineering, Hyperparameter Optimization, Model Evaluation, Anomaly Detection, TensorFlow, Keras, PyTorch, Scikit-learn, XGBoost, Hugging Face Transformers, ONNX, LLMs, Gemini, MedGemma, Advanced RAG, Knowledge Graphs, Structured Data Extraction, Text Embeddings, Prompt Engineering, AI Agent Systems, LangChain, LangGraph, LightRAG, CrewAI, OpenCV, YOLO, MediaPipe, Object Detection, Image Classification, Optical Character Recognition (OCR)",
+      "attributes": {
+        "category": "technical"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Flower, NVIDIA FLARE, Privacy-Preserving ML, Distributed Training",
+      "attributes": {
+        "category": "Federated Learning"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "vLLM, Paged Attention, Model Quantization (Conceptual), Latency/Throughput Tuning",
+      "attributes": {
+        "category": "Inference Optimization"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Google Cloud Platform (GCP), Vertex AI (Gemini Models)",
+      "attributes": {
+        "category": "Cloud Platforms"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Prefect (Intermediate), Weights and Biases (Intermediate)",
+      "attributes": {
+        "category": "Orchestration & Monitoring"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Docker, Git, GitHub, Jupyter Notebooks, CI/CD (Conceptual)",
+      "attributes": {
+        "category": "DevOps & Tools"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "SQL (PostgreSQL, MySQL), NoSQL (MongoDB Atlas), Vector Databases (FAISS), Redis",
+      "attributes": {
+        "category": "Databases"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Knowledge Graphs, Data Modeling, Data Warehousing (Conceptual)",
+      "attributes": {
+        "category": "Data Concepts"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Flask, FastAPI, RESTful APIs",
+      "attributes": {
+        "category": "Backend Development"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "React, TypeScript",
+      "attributes": {
+        "category": "Frontend Development"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "Statistical Modeling, Hypothesis Testing, Linear Algebra, Calculus, Probability & Statistics, Optimization",
+      "attributes": {
+        "category": "Statistical & Mathematical Foundations"
+      }
+    },
+    {
+      "extraction_class": "skills",
+      "extraction_text": "AI Utilization",
+      "attributes": {
+        "category": "technical"
+      }
+    }
+  ],
+  "error": ""
+}
