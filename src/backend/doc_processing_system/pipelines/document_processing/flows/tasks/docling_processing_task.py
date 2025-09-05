@@ -1,6 +1,6 @@
 """
 Docling processing task for document processing flow.
-Extracts rich markdown and images using DoclingProcessor with strict path-based I/O.
+Extracts rich Markdown and images using DoclingProcessor with strict path-based I/O.
 """
 
 from typing import Dict, Any

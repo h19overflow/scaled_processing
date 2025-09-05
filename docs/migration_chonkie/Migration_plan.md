@@ -256,7 +256,7 @@ class ChonkieProcessor:
         """Complete workflow: check duplicates, process with Chonkie, save results"""
         try:
             # Step 1: Check for duplicates using existing output manager
-            output_manager = self._get_output_manager()
+            output_manager = self.get_output_manager()
             check_result = output_manager.check_and_process_document(raw_file_path, user_id)
             
             if check_result["status"] == "duplicate":
@@ -362,7 +362,7 @@ class ChonkieProcessor:
         
         return parsed_doc
     
-    def _get_output_manager(self):
+    def get_output_manager(self):
         """Lazy initialization of DocumentOutputManager"""
         if self.output_manager is None:
             from .utils.document_output_manager import DocumentOutputManager

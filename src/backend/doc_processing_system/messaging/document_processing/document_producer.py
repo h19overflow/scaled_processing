@@ -3,12 +3,10 @@ Document-specific Kafka producer for document ingestion events.
 Handles all document-related event publishing using existing data models.
 """
 
-from typing import Optional
 from datetime import datetime
 
-from ..base.base_producer import BaseKafkaProducer, create_message_key, validate_event_data
-from ...data_models.document import ParsedDocument
-from ...data_models.events import FileDetectedEvent, DocumentReceivedEvent, WorkflowInitializedEvent
+from ..base.base_producer import BaseKafkaProducer, create_message_key
+from ...data_models.events import FileDetectedEvent,  WorkflowInitializedEvent
 
 
 class DocumentProducer(BaseKafkaProducer):
@@ -75,7 +73,7 @@ class DocumentProducer(BaseKafkaProducer):
             document_id = document_data.get("document_id")
             user_id = document_data.get("user_id", "default")
             
-            # Create message key for partitioning
+            # Create a message key for partitioning
             message_key = create_message_key(
                 document_id=document_id,
                 user_id=user_id

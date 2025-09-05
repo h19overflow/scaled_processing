@@ -28,7 +28,7 @@ def duplicate_detection_task(raw_file_path: str, user_id: str = "default") -> Di
     try:
         # Initialize processor without vision for fast duplicate check
         processor = ChonkieProcessor(enable_vision=False)
-        output_manager = processor._get_output_manager()
+        output_manager = processor.get_output_manager()
         
         # Check for duplicates
         result = output_manager.check_and_process_document(raw_file_path, user_id)

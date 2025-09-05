@@ -13,7 +13,6 @@ from prefect import task, get_run_logger
 from ...utils.vision_processor import VisionProcessor
 from ...utils.vision_config import VisionConfig
 
-
 @task(name="chunking", retries=1)
 async def chunking_task(
     processed_markdown_path: str,

@@ -78,6 +78,10 @@ class ChonkieProcessor:
         
         self.logger.info("ChonkieProcessor initialized - complete DoclingProcessor replacement")
         self.logger.info(f"Configuration: embedding_model={embedding_model}, collection={weaviate_collection}")
+
+
+    def get_output_manager(self):
+        return self.output_manager
     
     async def process_and_refine_chunks(self, text: str, document_id: str) -> Dict[str, Any]:
         """Process document text with chunking and refinement.
@@ -110,48 +114,5 @@ class ChonkieProcessor:
                 "document_id": document_id,
                 "error": str(e)
             }
-    
-    def _initialize_embeddings(self, embedding_model: str):
-        """Initialize appropriate embeddings provider based on model string."""
-        if embedding_model.startswith("openai:"):
-            model_name = embedding_model.split(":", 1)[1]
-            return OpenAIEmbeddings(
-                model=model_name,
-                api_key=os.getenv("OPENAI_API_KEY")
-            )
-        elif embedding_model.startswith("cohere:"):
-            model_name = embedding_model.split(":", 1)[1]
-            return CohereEmbeddings(
-                model=model_name,
-                api_key=os.getenv("COHERE_API_KEY")
-            )
-        else:
-            # Default to Hugging Face sentence-transformers
-            return SentenceTransformerEmbeddings(embedding_model)
+
    
-    def _setup_logging(self) -> logging.Logger:
-        """Setup logging for Chonkie processor."""
-        logger = logging.getLogger(__name__)
-        if not logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
-            logger.setLevel(logging.INFO)
-        return logger
-    
-if __name__ == "__main__":
-    # Example usage
-    processor = ChonkieProcessor(
-        enable_vision=True,
-        embedding_model="BAAI/bge-large-en-v1.5",
-        chunk_size=700,
-        semantic_threshold=0.75,
-        concurrent_agents=10,
-        chunking_model="gemini-2.0-flash",
-        weaviate_collection="rag_documents"
-    )
-    
-    import asyncio
-    result = asyncio.run(processor.process_document_with_duplicate_check("data\\documents\\raw\\Hamza_CV_Updated.pdf", user_id="user123"))
-    print(result)

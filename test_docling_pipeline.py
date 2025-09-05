@@ -110,7 +110,7 @@ if __name__ == "__main__":
     # First test just the DoclingProcessor
     print("\n1. Testing DoclingProcessor component:")
     test_docling_processor_only()
-    
+
     # Then test the complete pipeline
     print("\n2. Testing complete pipeline:")
     asyncio.run(test_docling_pipeline())

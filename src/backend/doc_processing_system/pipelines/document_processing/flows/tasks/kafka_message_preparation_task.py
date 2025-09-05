@@ -44,12 +44,12 @@ def kafka_message_preparation_task(
         from pathlib import Path
         processed_path = Path(processed_file_path)
         
-        # Prepare metadata for Kafka message using available data
+        # Prepare metadata for a Kafka message using available data
         metadata = {
             "filename": processed_path.stem.replace("_processed", "") + ".pdf",  # Reverse engineer original filename
             "page_count": save_result.get("page_count", 0),
             "content_length": save_result.get("content_length", 0),
-            "file_type": "pdf",  # Default assumption, could be improved
+            "file_type": "pdf",  # Default assumption could be improved
             "file_size": 0,  # Not available at this point
             "processing_timestamp": datetime.now().isoformat(),
             "vision_processing": True
