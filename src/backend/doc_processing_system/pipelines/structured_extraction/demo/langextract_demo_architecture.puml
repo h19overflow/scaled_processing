@@ -1,0 +1,158 @@
+@startuml langextract_demo_architecture
+title LangExtract Demo - Component Architecture & Flow
+
+skinparam Linetype ortho
+' Component Definitions
+package "Demo Components" {
+    class LangExtractDemo {
+        +workflow: ExtractionWorkflow
+        +results_handler: ResultsHandler
+        --
+        +run_demo(document_path, document_id)
+        +load_document(path) : str
+    }
+    
+    class ExtractionWorkflow {
+        +schema_discovery: SchemaDiscovery
+        +config_generator: ConfigGenerator
+        +workflow: StateGraph
+        --
+        +run_extraction(text, id) : ExtractionState
+        -_discover_schema_node()
+        -_generate_config_node() 
+        -_extract_data_node()
+    }
+    
+    class SchemaDiscovery {
+        +schema_discovery_agent: Agent
+        --
+        +discover_schema(text) : DocumentSchema
+    }
+    
+    class ConfigGenerator {
+        --
+        +generate_config(schema) : Dict
+        -_format_extraction_classes()
+        -_create_examples()
+    }
+    
+    class ResultsHandler {
+        +output_dir: Path
+        --
+        +save_results(results) : str
+        +save_summary(results) : str
+        +generate_summary() : str
+        -_serialize_schema()
+        -_serialize_config()
+    }
+}
+
+' External Dependencies
+package "External Libraries" {
+    class "Gemini2Flash" as Gemini <<AI Model>> {
+        --
+        +analyze_document()
+        +suggest_extraction_schema()
+    }
+    
+    class "LangExtract" as LangExtract <<Google Framework>> {
+        --
+        +extract(text, prompt, examples)
+    }
+    
+    class "LangGraph" as LangGraph <<Workflow Engine>> {
+        --
+        +StateGraph
+        +workflow_orchestration()
+    }
+}
+
+' Data Models
+package "Data Models" {
+    class DocumentSchema {
+        +document_type: str
+        +extraction_classes: List[FieldSchema]
+        +extraction_prompt: str
+    }
+    
+    class FieldSchema {
+        +field_name: str
+        +field_type: str
+        +description: str
+        +example_text: str
+        +attributes: Dict
+    }
+    
+    class ExtractionState {
+        +document_text: str
+        +document_id: str
+        +schema: DocumentSchema
+        +config: Dict
+        +extractions: List
+        +status: str
+    }
+}
+
+' Output Files
+package "Output Files" {
+    class "extraction.json" as ExtractionFile <<file>> {
+        Complete results with metadata
+        Schema + Config + Extractions
+    }
+    
+    class "summary.md" as SummaryFile <<file>> {
+        Human-readable report
+        Discovered schema + extracted items
+    }
+}
+
+' Flow Relationships
+LangExtractDemo --> ExtractionWorkflow : orchestrates
+LangExtractDemo --> ResultsHandler : saves results
+
+ExtractionWorkflow --> SchemaDiscovery : step 1: discover schema
+ExtractionWorkflow --> ConfigGenerator : step 2: generate config  
+ExtractionWorkflow --> LangExtract : step 3: extract data
+ExtractionWorkflow --> LangGraph : workflow engine
+
+SchemaDiscovery --> Gemini : uses AI model
+SchemaDiscovery --> DocumentSchema : produces
+
+ConfigGenerator --> DocumentSchema : consumes
+ConfigGenerator --> LangExtract : configures
+
+' Data Flow
+ExtractionState --> DocumentSchema : contains
+DocumentSchema --> FieldSchema : contains
+
+ResultsHandler --> ExtractionFile : creates
+ResultsHandler --> SummaryFile : creates
+
+' Decision Points (highlighted)
+note right of SchemaDiscovery
+    **KEY DECISION POINT**
+    Gemini 2.0 Flash decides:
+    - Document type
+    - Extraction classes
+    - Field descriptions
+    - Example texts
+end note
+
+note right of ConfigGenerator
+    **KEY DECISION POINT**
+    Transforms schema into:
+    - LangExtract prompt format
+    - Training examples
+    - Model configuration
+end note
+
+note bottom of ExtractionWorkflow
+    **KEY DECISION POINT**
+    LangGraph orchestrates:
+    - Sequential workflow steps
+    - State management
+    - Error handling
+    - Result aggregation
+end note
+
+@enduml
