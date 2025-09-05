@@ -74,11 +74,13 @@ def document_saving_task(
             logger.error(f"❌ Failed to save document: {save_result.get('error')}")
             
         return {
-            **vision_result,
+            "document_id": document_id,
             "save_result": save_result,
             "status": "completed" if save_result["status"] == "saved" else "error",
             "processed_file_path": save_result.get("processed_file_path"),
-            "document_directory": save_result.get("document_directory")
+            "document_directory": save_result.get("document_directory"),
+            "content_length": content_length,
+            "page_count": page_count
         }
         
     except Exception as e:
