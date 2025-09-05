@@ -31,7 +31,8 @@
       "WebSearch",
       "Bash(find:*)",
       "Bash(PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest tests/unit/test_weaviate_manager.py -v)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []
