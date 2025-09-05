@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
 
-from .schema_discovery import FieldSchema, DocumentSchema
+from .models import FieldSchema, DocumentSchema
 
 load_dotenv()
 
@@ -27,7 +27,7 @@ class ConsolidationDeps(BaseModel):
     max_fields: int = 8
 
 consolidation_agent = Agent(
-    'gemini-2.0-flash-exp',
+    'gemini-2.0-flash',
     result_type=ConsolidatedSchema,
     deps_type=ConsolidationDeps,
 )

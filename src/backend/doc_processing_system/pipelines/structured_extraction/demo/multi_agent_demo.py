@@ -6,20 +6,30 @@ Tests the full chunking + sequential discovery + consolidation pipeline.
 import asyncio
 import os
 from pathlib import Path
+from datetime import datetime
 
 from .multi_agent_workflow import MultiAgentWorkflow
 from .results_handler import ResultsHandler
+from .logging_config import setup_logging
 
 class MultiAgentDemo:
     """Main demo class for multi-agent structured extraction."""
     
     def __init__(self, max_tokens: int = 1500, max_fields: int = 8):
         """Initialize multi-agent demo components."""
+        # Setup logging
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_file = f"src/backend/doc_processing_system/pipelines/structured_extraction/demo_results/extraction_debug_{timestamp}.log"
+        self.logger = setup_logging("DEBUG", log_file)
+        
         self.workflow = MultiAgentWorkflow(
             max_tokens=max_tokens, 
             max_fields=max_fields
         )
         self.results_handler = ResultsHandler()
+        
+        self.logger.info(f"🚀 Initialized MultiAgentDemo - max_tokens: {max_tokens}, max_fields: {max_fields}")
+        self.logger.info(f"📝 Debug log: {log_file}")
     
     def load_document(self, document_path: str) -> str:
         """Load document content from file."""
@@ -28,23 +38,31 @@ class MultiAgentDemo:
     
     async def run_demo(self, document_path: str, document_id: str = None) -> dict:
         """Run the complete multi-agent extraction demo."""
-        print("=" * 60)
-        print(f"🚀 Multi-Agent Structured Extraction Demo")
-        print(f"📄 Document: {document_path}")
-        print("=" * 60)
+        self.logger.info("=" * 60)
+        self.logger.info(f"🚀 Multi-Agent Structured Extraction Demo")
+        self.logger.info(f"📄 Document: {document_path}")
+        self.logger.info("=" * 60)
         
         # Load document
         document_text = self.load_document(document_path)
         if document_id is None:
             document_id = Path(document_path).stem
         
-        print(f"📊 Document loaded: {len(document_text):,} characters")
+        self.logger.info(f"📊 Document loaded: {len(document_text):,} characters")
+        self.logger.debug(f"Document preview: {document_text[:500]}...")
         
         # Run multi-agent extraction workflow
-        results = await self.workflow.run_extraction(
-            document_text=document_text,
-            document_id=document_id
-        )
+        self.logger.info("🔄 Starting multi-agent workflow...")
+        try:
+            results = await self.workflow.run_extraction(
+                document_text=document_text,
+                document_id=document_id
+            )
+            self.logger.info("✅ Workflow completed successfully")
+        except Exception as e:
+            self.logger.error(f"❌ Workflow failed: {str(e)}")
+            self.logger.error(f"Error type: {type(e).__name__}")
+            raise
         
         # Save results
         print("\n💾 Saving results...")

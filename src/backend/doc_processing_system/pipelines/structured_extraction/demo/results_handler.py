@@ -36,7 +36,8 @@ class ResultsHandler:
             "schema": self._serialize_schema(results.get("schema")),
             "config": self._serialize_config(results.get("config", {})),
             "extractions": results.get("extractions", []),
-            "error": results.get("error", "")
+            # Only include error field if there's an actual error
+            **({"error": results["error"]} if results.get("error") else {})
         }
         
         # Save to file

@@ -13,7 +13,7 @@ from .document_chunker import DocumentChunker, DocumentChunk
 from .sequential_schema_discovery import SequentialSchemaDiscovery, ProgressiveSchema
 from .schema_consolidation import SchemaConsolidation, ConsolidatedSchema
 from .config_generator import ConfigGenerator
-from .schema_discovery import DocumentSchema
+from .models import DocumentSchema
 
 try:
     import langextract as lx
@@ -124,6 +124,10 @@ class MultiAgentWorkflow:
         try:
             print("🔧 Consolidating discovered schemas...")
             
+            # Validate discovered fields before consolidation
+            if not self.sequential_discovery.discovered_fields or len(self.sequential_discovery.discovered_fields) == 0:
+                raise ValueError("No fields discovered to consolidate")
+            
             consolidated = await self.consolidation.consolidate_schema(
                 discovered_fields=self.sequential_discovery.discovered_fields,
                 document_type=self.sequential_discovery.document_type,
@@ -131,6 +135,10 @@ class MultiAgentWorkflow:
             )
             
             final_schema = self.consolidation.to_document_schema(consolidated)
+            
+            # Validate final schema
+            if not final_schema or len(final_schema.extraction_classes) == 0:
+                raise ValueError("Schema consolidation produced no extraction classes")
             
             print(f"📊 Consolidated to {len(final_schema.extraction_classes)} final fields")
             print(f"📋 Document type: {final_schema.document_type}")
@@ -176,6 +184,13 @@ class MultiAgentWorkflow:
             print("⚡ Running final extraction with consolidated schema...")
             
             if LANGEXTRACT_AVAILABLE:
+                # Validate inputs before extraction
+                if not state["document_text"] or len(state["document_text"].strip()) < 100:
+                    raise ValueError("Document text is too short or empty")
+                
+                if not state["config"]["examples"] or len(state["config"]["examples"]) == 0:
+                    raise ValueError("No examples provided for extraction")
+                
                 result = lx.extract(
                     text_or_documents=state["document_text"],
                     prompt_description=state["config"]["prompt"],
@@ -183,13 +198,25 @@ class MultiAgentWorkflow:
                     model_id=state["config"]["model_id"]
                 )
                 
+                if not result or not hasattr(result, 'extractions'):
+                    raise ValueError("LangExtract returned invalid result")
+                
                 extractions = []
                 for extraction in result.extractions:
-                    extractions.append({
-                        "extraction_class": extraction.extraction_class,
-                        "extraction_text": extraction.extraction_text,
-                        "attributes": extraction.attributes
-                    })
+                    # Filter out empty or null extractions
+                    if (extraction.extraction_text and 
+                        extraction.extraction_text.strip() and 
+                        extraction.extraction_text.lower() not in ['null', 'none', 'n/a', ''] and
+                        len(extraction.extraction_text.strip()) > 5):  # Minimum meaningful length
+                        extractions.append({
+                            "extraction_class": extraction.extraction_class,
+                            "extraction_text": extraction.extraction_text.strip(),
+                            "attributes": extraction.attributes
+                        })
+                
+                # Ensure we have meaningful extractions
+                if len(extractions) == 0:
+                    raise ValueError("No valid extractions found - all extractions were empty or invalid")
             else:
                 # Mock extractions based on schema
                 extractions = []

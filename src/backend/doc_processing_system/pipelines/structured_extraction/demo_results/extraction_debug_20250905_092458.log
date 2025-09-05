@@ -1,0 +1,43 @@
+09:24:58 | multi_agent_extraction | INFO | __init__:31 | 🚀 Initialized MultiAgentDemo - max_tokens: 1500, max_fields: 8
+09:24:58 | multi_agent_extraction | INFO | __init__:32 | 📝 Debug log: src/backend/doc_processing_system/pipelines/structured_extraction/demo_results/extraction_debug_20250905_092458.log
+09:24:58 | multi_agent_extraction | INFO | run_demo:41 | ============================================================
+09:24:58 | multi_agent_extraction | INFO | run_demo:42 | 🚀 Multi-Agent Structured Extraction Demo
+09:24:58 | multi_agent_extraction | INFO | run_demo:43 | 📄 Document: data/documents/processed/Hamza_CV_Updated/Hamza_CV_Updated_processed.md
+09:24:58 | multi_agent_extraction | INFO | run_demo:44 | ============================================================
+09:24:58 | multi_agent_extraction | INFO | run_demo:51 | 📊 Document loaded: 10,477 characters
+09:24:58 | multi_agent_extraction | DEBUG | run_demo:52 | Document preview: # Processed Document: Hamza_CV_Updated.pdf
+
+**Document ID**: Hamza_CV_Updated
+**Pages**: 3
+**Processing Date**: 2025-09-04 20:07:46
+**Content Length**: 10,253 characters
+
+---
+
+## Document Content with AI Vision Enhancement
+
+## Hamza Khaled Mahmoud Ahmed
+
+AI Engineer - Machine Learning Engineer - Data Scientist
+
+hamzakhaledlklk@gmail.com
+
+github.com/h19overflow - Hamza Khaled Linkedin
+
+Cyberjaya, Malaysia - +60 122938594
+
+## Summary
+
+Highly motivated Computer Science student (expected graduation ...
+09:24:58 | multi_agent_extraction | INFO | run_demo:55 | 🔄 Starting multi-agent workflow...
+09:24:59 | multi_agent_extraction | DEBUG | discover_chunk_schema:88 | Processing chunk 0: 7394 chars, 1500 tokens
+09:24:59 | multi_agent_extraction | INFO | log_agent_call:48 | 🤖 SequentialDiscovery - Starting with input: {'chunk_id': 0, 'chunk_length': 7394, 'previous_fields_count': 0, 'document_type': 'unknown'}...
+09:24:59 | multi_agent_extraction | DEBUG | discover_chunk_schema:107 | Sending to agent: 7394 chars, 0 previous fields
+09:25:02 | multi_agent_extraction | INFO | log_schema_discovery:56 | 🔍 Chunk 0: Discovered 4 new fields (total: 4)
+09:25:02 | multi_agent_extraction | INFO | log_agent_call:50 | ✅ SequentialDiscovery - Completed successfully
+09:25:02 | multi_agent_extraction | DEBUG | discover_chunk_schema:88 | Processing chunk 1: 4034 chars, 870 tokens
+09:25:02 | multi_agent_extraction | INFO | log_agent_call:48 | 🤖 SequentialDiscovery - Starting with input: {'chunk_id': 1, 'chunk_length': 4034, 'previous_fields_count': 4, 'document_type': 'CV'}...
+09:25:02 | multi_agent_extraction | DEBUG | discover_chunk_schema:107 | Sending to agent: 4034 chars, 4 previous fields
+09:25:05 | multi_agent_extraction | INFO | log_schema_discovery:56 | 🔍 Chunk 1: Discovered 5 new fields (total: 9)
+09:25:05 | multi_agent_extraction | INFO | log_agent_call:50 | ✅ SequentialDiscovery - Completed successfully
+09:25:37 | multi_agent_extraction | INFO | run_demo:61 | ✅ Workflow completed successfully

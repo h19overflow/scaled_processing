@@ -4,13 +4,15 @@ Progressively discovers schemas while being aware of previous findings.
 """
 
 import os
+import logging
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
 from dotenv import load_dotenv
 
-from .schema_discovery import FieldSchema, DocumentSchema
+from .models import FieldSchema, DocumentSchema
 from .document_chunker import DocumentChunk
+from .logging_config import log_agent_call, log_schema_discovery
 
 load_dotenv()
 
@@ -29,7 +31,7 @@ class SequentialDiscoveryDeps(BaseModel):
     document_type: str
 
 sequential_discovery_agent = Agent(
-    'gemini-2.0-flash-exp',
+    'gemini-2.0-flash',
     result_type=ProgressiveSchema,
     deps_type=SequentialDiscoveryDeps,
 )
@@ -75,6 +77,7 @@ class SequentialSchemaDiscovery:
         os.environ.setdefault("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
         self.discovered_fields: List[FieldSchema] = []
         self.document_type: str = "unknown"
+        self.logger = logging.getLogger("multi_agent_extraction")
     
     async def discover_chunk_schema(
         self, 
@@ -82,13 +85,26 @@ class SequentialSchemaDiscovery:
         document_type: str = "unknown"
     ) -> ProgressiveSchema:
         """Discover schema for a single chunk considering previous discoveries."""
+        self.logger.debug(f"Processing chunk {chunk.chunk_id}: {len(chunk.text)} chars, {chunk.token_count} tokens")
+        
         try:
+            # Log input preparation
+            input_data = {
+                "chunk_id": chunk.chunk_id,
+                "chunk_length": len(chunk.text),
+                "previous_fields_count": len(self.discovered_fields),
+                "document_type": self.document_type if self.document_type != "unknown" else document_type
+            }
+            log_agent_call(self.logger, "SequentialDiscovery", input_data, "start")
+            
             deps = SequentialDiscoveryDeps(
                 chunk_text=chunk.text,
                 chunk_id=chunk.chunk_id,
                 previous_discoveries=self.discovered_fields.copy(),
                 document_type=self.document_type if self.document_type != "unknown" else document_type
             )
+            
+            self.logger.debug(f"Sending to agent: {len(deps.chunk_text)} chars, {len(deps.previous_discoveries)} previous fields")
             
             result = await sequential_discovery_agent.run(
                 f"Analyze chunk {chunk.chunk_id} and find new extractable fields",
@@ -97,13 +113,21 @@ class SequentialSchemaDiscovery:
             
             # Update accumulated discoveries
             progressive_schema = result.data
+            new_fields_count = len(progressive_schema.discovered_fields)
+            
             self.discovered_fields.extend(progressive_schema.discovered_fields)
             self.document_type = progressive_schema.document_type
+            
+            log_schema_discovery(self.logger, chunk.chunk_id, new_fields_count, len(self.discovered_fields))
+            log_agent_call(self.logger, "SequentialDiscovery", {"fields_discovered": new_fields_count}, "success")
             
             return progressive_schema
             
         except Exception as e:
-            print(f"⚠️ Schema discovery error for chunk {chunk.chunk_id}: {e}")
+            self.logger.error(f"Schema discovery error for chunk {chunk.chunk_id}: {str(e)}")
+            self.logger.error(f"Error type: {type(e).__name__}")
+            log_agent_call(self.logger, "SequentialDiscovery", {"error": str(e)}, "error")
+            
             # Fallback progressive schema with basic fields
             basic_fields = [
                 FieldSchema(
@@ -124,12 +148,21 @@ class SequentialSchemaDiscovery:
                 )
             ]
             
-            return ProgressiveSchema(
+            fallback_schema = ProgressiveSchema(
                 discovered_fields=basic_fields if chunk.chunk_id == 0 else [],
                 document_type="resume" if document_type == "unknown" else document_type,
                 confidence_level="low",
                 chunk_coverage=chunk.chunk_id + 1
             )
+            
+            # Update accumulated discoveries even with fallback
+            if chunk.chunk_id == 0:
+                self.discovered_fields.extend(basic_fields)
+                self.document_type = fallback_schema.document_type
+            
+            self.logger.warning(f"Using fallback schema for chunk {chunk.chunk_id}: {len(fallback_schema.discovered_fields)} basic fields")
+            
+            return fallback_schema
     
     async def process_all_chunks(
         self, 

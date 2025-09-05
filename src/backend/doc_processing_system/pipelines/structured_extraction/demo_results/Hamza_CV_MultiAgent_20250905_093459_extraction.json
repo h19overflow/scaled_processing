@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "document_id": "Hamza_CV_MultiAgent",
+    "extraction_timestamp": "20250905_093459",
+    "status": "error",
+    "langextract_demo": true
+  },
+  "schema": {},
+  "config": {
+    "prompt": "Extract contact information, LinkedIn and Github profiles, skills, project details, education, achievements, and core strengths from the CV.\n\n            Extract the following types of information:\n            - Contact Information: Consolidated contact details including phone number and email address.\n- LinkedIn Profile: URL of the candidate's LinkedIn profile.\n- Github Profile: URL of the candidate's Github profile.\n- Skills: Technical proficiencies including programming languages, machine learning and databases.\n- Projects: Name, description, and technologies of notable projects.\n- Education: Institution name, degree, graduation date, and CGPA.\n- Achievements: Key achievements and awards.\n- Core Strengths: Primary professional competencies and personal strengths.\n\n            IMPORTANT RULES:\n            - Use exact text from the document for extractions\n            - Only extract information that actually exists in the document\n            - If information is not found, skip that extraction class\n            - Provide meaningful attributes for context\n            - Do not create empty or duplicate extractions",
+    "examples": [
+      {
+        "text": "# Processed Document: Hamza_CV_Updated.pdf\n\n**Document ID**: Hamza_CV_Updated\n**Pages**: 3\n**Processing Date**: 2025-09-04 20:07:46\n**Content Length**: 10,253 characters\n\n---\n\n## Document Content with AI Vision Enhancement\n\n## Hamza Khaled Mahmoud Ahmed\n\nAI Engineer - Machine Learning Engineer - Data Scientist\n\nhamzakhaledlklk@gmail.com\n\ngithub.com/h19overflow - Hamza Khaled Linkedin\n\nCyberjaya, Malaysia - +60 122938594\n\n## Summary\n\nHighly motivated Computer Science student (expected graduation May 2026 ) specializing in Data Science , Machine Learning , and Artificial Intelligence , with 1.5+ years of hands-on project experience in predictive analytics , deep learning , computer vision , natural language processing , and AI automation systems . Possesses a robust foundation in statistics , advanced mathematics , data analysis , algorithm development , and predictive modeling . Proven ability to manage the end-to-end machine learning lifecycle :\n\n- Data engineering , preprocessing, fea",
+        "extractions": [
+          {
+            "extraction_class": "Contact Information",
+            "extraction_text": "Hamza Khaled Mahmoud Ahmed",
+            "attributes": {
+              "category": "Personal Information",
+              "subcategory": "general"
+            }
+          },
+          {
+            "extraction_class": "LinkedIn Profile",
+            "extraction_text": "linkedin.com/in/hamza-khaled",
+            "attributes": {
+              "category": "Personal Information",
+              "subcategory": "general"
+            }
+          },
+          {
+            "extraction_class": "Github Profile",
+            "extraction_text": "github.com/h19overflow",
+            "attributes": {
+              "category": "Personal Information",
+              "subcategory": "general"
+            }
+          },
+          {
+            "extraction_class": "Skills",
+            "extraction_text": "Machine Learning, Data Science, Machine Learning",
+            "attributes": {
+              "category": "Technical Skills",
+              "subcategory": "general"
+            }
+          },
+          {
+            "extraction_class": "Projects",
+            "extraction_text": "Advanced AI/ML Projects with Real-world Applications",
+            "attributes": {
+              "category": "Experience",
+              "subcategory": "general"
+            }
+          },
+          {
+            "extraction_class": "Education",
+            "extraction_text": "BSc in Computer Science (Specialization in Data Science)",
+            "attributes": {
+              "category": "Education",
+              "subcategory": "general"
+            }
+          },
+          {
+            "extraction_class": "Achievements",
+            "extraction_text": "Academic Excellence, Leadership Recognition",
+            "attributes": {
+              "category": "Education",
+              "subcategory": "general"
+            }
+          },
+          {
+            "extraction_class": "Core Strengths",
+            "extraction_text": "Analytical Thinking, Problem Solving, Innovation",
+            "attributes": {
+              "category": "Skills",
+              "subcategory": "general"
+            }
+          }
+        ]
+      }
+    ],
+    "model_id": "gemini-2.5-flash",
+    "extraction_classes": [
+      "Contact Information",
+      "LinkedIn Profile",
+      "Github Profile",
+      "Skills",
+      "Projects",
+      "Education",
+      "Achievements",
+      "Core Strengths"
+    ]
+  },
+  "extractions": [],
+  "error": "Extraction failed: extract() got an unexpected keyword argument 'generation_config'"
+}
