@@ -15,7 +15,7 @@ from chonkie.types import Chunk
 def weaviate_storage_task(
     embedded_chunks: List[Chunk],
     document_id: str,
-    collection_name: str = "advanced_docs",
+    collection_name: str = "rag_documents",
     weaviate_url: str = None,
     batch_size: int = 128,
     user_id: str = "default"
@@ -52,7 +52,7 @@ def weaviate_storage_task(
             url=weaviate_url or os.getenv("WEAVIATE_URL", "http://localhost:8080"),
             collection_name=collection_name,
             batch_size=batch_size,
-            embedding_model="model2vec"  # Match to an embedding pipeline
+            embedding_model="nomic-ai/nomic-embed-text-v1.5"  # Match to an embedding pipeline
         )
         
         # Filter chunks that have embeddings
@@ -109,7 +109,7 @@ def weaviate_storage_task(
 @task(name="weaviate-query", retries=1)
 def weaviate_query_task(
     query_text: str,
-    collection_name: str = "advanced_docs",
+    collection_name: str = "rag_documents",
     limit: int = 5,
     weaviate_url: str = None,
     weaviate_api_key: str = None,

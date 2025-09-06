@@ -9,7 +9,7 @@ from pathlib import Path
 from prefect import task, get_run_logger
 from chonkie.types import Chunk
 
-from ..two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
+from ...two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
 
 
 @task(name="chonkie-chunking", retries=2)
@@ -23,7 +23,7 @@ def chonkie_chunking_task(
     boundary_context: int = 200,
     concurrent_agents: int = 10,
     model_name: str = "gemini-2.0-flash",
-    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_model: str = "nomic-ai/nomic-embed-text-v1.5"
 ) -> Dict[str, Any]:
     """
     Process document text using ChonkieTwoStageChunker with embeddings.

@@ -20,7 +20,7 @@ class ChonkieTwoStageChunker(BaseChunker):
                  boundary_context: int = 200,
                  concurrent_agents: int = 10,
                  model_name: str = "gemini-2.0-flash",
-                 embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+                 embedding_model: str = "nomic-ai/nomic-embed-text-v1.5",
                  tokenizer_or_token_counter: Optional[Any] = None):
         """Initialize the ChonkieTwoStageChunker.
         
