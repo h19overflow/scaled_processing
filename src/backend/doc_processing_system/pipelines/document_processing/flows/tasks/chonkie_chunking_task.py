@@ -2,8 +2,7 @@
 Chonkie two-stage chunking task for document processing flow.
 """
 
-import os
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from pathlib import Path
 
 from prefect import task, get_run_logger
