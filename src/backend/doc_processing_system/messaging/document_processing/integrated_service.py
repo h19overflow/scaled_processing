@@ -6,7 +6,15 @@ from .document_flow_orchestrator import DocumentFlowOrchestrator
 from .document_processing_consumer import create_document_processing_consumer
 from ..file_ingestion.file_watcher import FileWatcherService
 
-# TODO SCALE COMPONENTS SEPERATLY
+# TODO FIX nomic-ai/nomic-bert-2048 You can inspect the repository content at https://hf.co/nomic-ai/nomic-embed-text-v1.5. Please pass the argument `trust_remote_code=True` to allow custom code to be run.
+#9-06 11:01:48,297 - __main__ - INFO - 🔄 Service running... Press Ctrl+C to stop
+# 11:01:48.297 | INFO    | __main__ - 🔄 Service running... Press Ctrl+C to stop
+# 2025-09-06 11:02:19,549 - DocumentProducer - INFO - Published to file-detected:2:37
+# 11:02:19.549 | INFO    | DocumentProducer - Published to file-detected:2:37
+# 2025-09-06 11:02:19,550 - DocumentProducer - INFO - File detected event sent: C:\Users\User\Projects\scaled_processing\data\documents\raw\Monthly-Report-Aug.docx
+# 11:02:19.550 | INFO    | DocumentProducer - File detected event sent: C:\Users\User\Projects\scaled_processing\data\documents\raw\Monthly-Report-Aug.docx
+#  TODO the pipeline stops here for some reason, i need to study more about kafka and prefct and the overall system design.
+
 class IntegratedDocumentProcessingService:
     def __init__(self, watch_directory: str = None):
         self.logger = self._setup_logging()
