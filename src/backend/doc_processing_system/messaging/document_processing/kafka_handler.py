@@ -69,10 +69,17 @@ class KafkaHandler:
     def send_file_detected(self, file_path: str, filename: str) -> bool:
         """Send file detected event."""
         try:
+            import os
+            file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            file_extension = os.path.splitext(filename)[1].lower()
+            
             event = FileDetectedEvent(
                 file_path=file_path,
                 filename=filename,
-                detected_at=datetime.now()
+                file_size=file_size,
+                file_extension=file_extension,
+                detected_at=datetime.now().isoformat(),
+                event_type="file_detected"
             )
             
             key = create_message_key(document_id=filename, user_id="file_watcher")

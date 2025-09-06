@@ -10,7 +10,13 @@ from chonkie.types import Chunk
 
 from ...two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
 
-
+# TODO 17:43:38.110 | ERROR   | Task run 'chonkie-chunking-bcb' - ❌ Chonkie chunking failed for Attendance System_August: nomic-ai/nomic-bert-2048 You can inspect the repository content at https://hf.co/nomic-ai/nomic-embed-text-v1.5.
+# Please pass the argument `trust_remote_code=True` to allow custom code to be run.
+# 17:43:38.112 | INFO    | Task run 'chonkie-chunking-bcb' - Finished in state Completed()
+# 17:43:38.387 | INFO    | Flow run 'incredible-flounder' - Finished in state Completed()
+# 2025-09-06 17:43:38,389 - __main__ - ERROR - ❌ Failed: Chonkie chunking failed: nomic-ai/nomic-bert-2048 You can inspect the repository content at https://hf.co/nomic-ai/nomic-embed-text-v1.5.
+# Please pass the argument `trust_remote_code=True` to allow custom code to be run.
+# 17:43:38.389 | ERROR   | __main__ - ❌ Failed: Chonkie chunking failed:
 @task(name="chonkie-chunking", retries=2)
 def chonkie_chunking_task(
     text_content: str,
@@ -22,7 +28,7 @@ def chonkie_chunking_task(
     boundary_context: int = 200,
     concurrent_agents: int = 10,
     model_name: str = "gemini-2.0-flash",
-    embedding_model: str = "nomic-ai/nomic-embed-text-v1.5"
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
 ) -> Dict[str, Any]:
     """
     Process document text using ChonkieTwoStageChunker with embeddings.
@@ -67,11 +73,9 @@ def chonkie_chunking_task(
             embedding_model=embedding_model
         )
         
-        # Process document with embeddings
-        embedded_chunks = chunker.chunk_with_embeddings(
-            text=text_content,
-            document_id=document_id
-        )
+        # Process document with embeddings (using sync method)
+        chunks = chunker.chunk(text_content)
+        embedded_chunks = chunker.generate_embeddings(chunks)
         
         # Add document-level metadata to each chunk
         embedded_chunks = _prepare_chunks(
