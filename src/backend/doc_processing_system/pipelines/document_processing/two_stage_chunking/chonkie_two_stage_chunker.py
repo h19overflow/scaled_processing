@@ -165,7 +165,7 @@ class ChonkieTwoStageChunker(BaseChunker):
         Returns:
             List of Chunk objects with embeddings
         """
-        # First get refined chunks
+        # First, get refined chunks
         refined_chunks = await self.chunk_async(text, document_id, **kwargs)
         
         # Then generate embeddings
