@@ -262,10 +262,25 @@ class DocumentOutputManager:
     
     # HELPER FUNCTIONS
     def _generate_document_id(self, file_path: Path) -> str:
-        """Generate document ID using original filename."""
+        """Generate document ID using original filename with Windows-safe path handling."""
+        import re
+        
         # Use the original filename without extension as the document ID
         file_stem = file_path.stem  # filename without extension
-        return file_stem
+        
+        # Create Windows-safe directory name by:
+        # 1. Replace spaces with underscores
+        # 2. Remove or replace invalid Windows path characters: < > : " | ? * \
+        # 3. Strip leading/trailing whitespace and periods
+        safe_id = re.sub(r'[<>:"|?*\\\/]', '', file_stem)  # Remove invalid chars
+        safe_id = re.sub(r'\s+', '_', safe_id)  # Replace spaces with underscores
+        safe_id = safe_id.strip('. _')  # Strip leading/trailing spaces, periods, and underscores
+        
+        # Ensure we don't have an empty string
+        if not safe_id:
+            safe_id = "document"
+        
+        return safe_id
     
     def _create_document_directory(self, document_id: str) -> Path:
         """Create directory structure for document."""

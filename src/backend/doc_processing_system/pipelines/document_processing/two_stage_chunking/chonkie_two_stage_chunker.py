@@ -76,7 +76,27 @@ class ChonkieTwoStageChunker(BaseChunker):
         Returns:
             List of Chonkie Chunk objects
         """
-        # Run the async version synchronously
+        # Try to use existing event loop if available, otherwise create new one
+        try:
+            # Check if there's already a running event loop
+            loop = asyncio.get_running_loop()
+            # If we get here, there's already a loop running
+            # We need to run this in a thread to avoid the conflict
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(self._run_chunk_async, text, **kwargs)
+                return future.result()
+        except RuntimeError:
+            # No running event loop, we can create our own
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(self.chunk_async(text, **kwargs))
+            finally:
+                loop.close()
+    
+    def _run_chunk_async(self, text: str, **kwargs) -> List[Chunk]:
+        """Helper method to run chunk_async in a new event loop."""
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -104,24 +124,26 @@ class ChonkieTwoStageChunker(BaseChunker):
         # Convert to Chonkie Chunk format
         chonkie_chunks = []
         for i, chunk_data in enumerate(result["text_chunks"]):
-            # Create Chonkie Chunk object
+            # Create Chonkie Chunk object (without metadata parameter)
             chunk = Chunk(
                 text=chunk_data["content"],
                 start_index=0,  # We don't track character positions in our chunker
                 end_index=len(chunk_data["content"]),
-                token_count=chunk_data["metadata"]["word_count"],  # Approximate
-                metadata={
-                    **chunk_data["metadata"],
-                    "chunk_id": chunk_data["chunk_id"],
-                    "chunk_index": chunk_data["chunk_index"],
-                    "document_id": chunk_data["document_id"],
-                    "chunking_method": "two_stage_semantic_boundary",
-                    "semantic_threshold": self.semantic_threshold,
-                    "boundary_context": self.boundary_context,
-                    "concurrent_agents": self.concurrent_agents,
-                    "model_name": self.model_name
-                }
+                token_count=chunk_data["metadata"]["word_count"]  # Approximate
             )
+            
+            # Add metadata after construction
+            chunk.metadata.update({
+                **chunk_data["metadata"],
+                "chunk_id": chunk_data["chunk_id"],
+                "chunk_index": chunk_data["chunk_index"],
+                "document_id": chunk_data["document_id"],
+                "chunking_method": "two_stage_semantic_boundary",
+                "semantic_threshold": self.semantic_threshold,
+                "boundary_context": self.boundary_context,
+                "concurrent_agents": self.concurrent_agents,
+                "model_name": self.model_name
+            })
             chonkie_chunks.append(chunk)
 
         # Apply OverlapRefinery post-processing

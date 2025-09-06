@@ -48,7 +48,19 @@ class DocumentProcessor:
     def process_document(self, file_path: str, user_id: str = "default") -> Dict[str, Any]:
         """Process a single document."""
         try:
-            self.logger.info(f"🔄 Processing document: {file_path}")
+            # Convert to absolute path to ensure DoclingProcessor can find the file
+            from pathlib import Path
+            absolute_file_path = str(Path(file_path).resolve())
+            
+            self.logger.info(f"🔄 Processing document: {absolute_file_path}")
+            
+            # Verify the file exists
+            if not Path(absolute_file_path).exists():
+                return {
+                    "status": "error",
+                    "error": "File not found",
+                    "message": f"Cannot find file at path: {absolute_file_path}"
+                }
             
             # Check if models loaded successfully
             if not self._cached_processor:
@@ -59,11 +71,11 @@ class DocumentProcessor:
                 }
             
             # Use the pre-loaded processor (super fast - no model loading!)
-            result = asyncio.run(document_processing_flow(raw_file_path=file_path))
+            result = asyncio.run(document_processing_flow(raw_file_path=absolute_file_path))
             
             # Send completion events if successful
             if result.get("status") == "completed":
-                self._send_completion_events(result, file_path, user_id)
+                self._send_completion_events(result, absolute_file_path, user_id)
                 self.logger.info(f"✅ Completed: {result.get('document_id')}")
             else:
                 self.logger.error(f"❌ Failed: {result.get('message')}")
@@ -71,7 +83,7 @@ class DocumentProcessor:
             return result
             
         except Exception as e:
-            self.logger.error(f"Processing failed for {file_path}: {e}")
+            self.logger.error(f"Processing failed for {absolute_file_path}: {e}")
             return {"status": "error", "error": str(e)}
     
     def start_service(self):

@@ -30,17 +30,26 @@ def duplicate_detection_task(raw_file_path: str, user_id: str = "default") -> Di
         processor = ChonkieProcessor(enable_vision=False)
         output_manager = processor.get_output_manager()
         
-        # Check for duplicates
-        result = output_manager.check_and_process_document(raw_file_path, user_id)
+        # Only check for duplicates, don't do the full processing
+        raw_path = Path(raw_file_path)
+        is_duplicate, existing_doc_id = output_manager.document_crud.check_duplicate_by_raw_file(str(raw_path))
         
-        if result["status"] == "duplicate":
-            logger.info(f"📋 Document is duplicate: {result['document_id']}")
-        elif result["status"] == "ready_for_processing":
-            logger.info(f"✅ Document is new, ready for processing: {result['document_id']}")
+        if is_duplicate:
+            logger.info(f"📋 Document is duplicate: {existing_doc_id}")
+            return {
+                "status": "duplicate",
+                "document_id": existing_doc_id,
+                "message": f"Document already processed: {existing_doc_id}"
+            }
         else:
-            logger.warning(f"⚠️ Unexpected status: {result['status']}")
-            
-        return result
+            # Generate safe document ID for new document
+            document_id = output_manager._generate_document_id(raw_path)
+            logger.info(f"✅ Document is new, ready for processing: {document_id}")
+            return {
+                "status": "ready_for_processing",
+                "document_id": document_id,
+                "message": f"Document ready for processing: {document_id}"
+            }
         
     except Exception as e:
         logger.error(f"❌ Duplicate detection failed: {e}")
