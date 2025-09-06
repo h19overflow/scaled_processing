@@ -1,15 +1,12 @@
 """
-Document processing messaging components.
-Handles document-received events and workflow coordination.
+Simple document processing messaging.
+Process documents and handle Kafka events without unnecessary abstractions.
 """
 
-from .document_producer import DocumentProducer
-from .document_processing_consumer import DocumentProcessingConsumer, create_document_processing_consumer
-from .document_flow_orchestrator import DocumentFlowOrchestrator
+from .document_processor import DocumentProcessor
+from .kafka_handler import KafkaHandler
 
 __all__ = [
-    "DocumentProducer",
-    "DocumentProcessingConsumer", 
-    "DocumentFlowOrchestrator",
-    "create_document_processing_consumer"
+    "DocumentProcessor",
+    "KafkaHandler"
 ]
