@@ -6,8 +6,8 @@ Creates all required topics with appropriate configurations.
 import time
 import logging
 from kafka import KafkaAdminClient
-from kafka.admin import ConfigResource, ConfigResourceType, NewTopic
-from kafka.errors import TopicAlreadyExistsError, KafkaError
+from kafka.admin import NewTopic
+from kafka.errors import TopicAlreadyExistsError
 
 from .event_bus import EventType
 from src.backend.doc_processing_system.config.settings import get_settings
