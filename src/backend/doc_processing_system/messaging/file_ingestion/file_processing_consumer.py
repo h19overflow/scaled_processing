@@ -9,10 +9,10 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 from datetime import datetime
 from ..base.base_consumer import BaseKafkaConsumer
-from ..document_processing.document_producer import DocumentProducer
 from ...data_models.events import FileDetectedEvent
 from ...core_deps.database import ConnectionManager, DocumentCRUD
 from ...data_models.document import Document, ProcessingStatus, FileType
+from ..document_processing.kafka_handler import KafkaHandler
 
 class FileProcessingConsumer(BaseKafkaConsumer):
     """
@@ -37,7 +37,7 @@ class FileProcessingConsumer(BaseKafkaConsumer):
         # Lazy import to avoid circular imports
         from ...pipelines.document_processing.chonkie_processor import ChonkieProcessor
         self.chonkie_processor = ChonkieProcessor()
-        self.document_producer = DocumentProducer()
+        self.kafka = KafkaHandler()
 
         self.logger.info("FileProcessingConsumer initialized with direct component integration")
 
@@ -156,14 +156,9 @@ class FileProcessingConsumer(BaseKafkaConsumer):
                 processing_status=ProcessingStatus.COMPLETED.value
             )
 
-            # STEP 3: Publish event for downstream processing
-            self.document_producer.send_document_available({
-                "document_id": document_id,
-                "file_path": str(file_path),
-                "processed_content": processed_result,
-                "user_id": user_id,
-                "timestamp": datetime.now().isoformat()
-            })
+            # STEP 3: Send events directly for downstream processing
+            self.kafka.send_document_ready(document_id, str(file_path), user_id)
+            self.kafka.send_workflow_ready(document_id, ["rag", "extraction"])
 
             self.logger.info(f"Document processing completed: {document_id}")
             return True
@@ -220,12 +215,3 @@ class FileProcessingConsumer(BaseKafkaConsumer):
         # to extract user from folder structure or filename
         return "file_watcher_user"
 
-
-def create_file_processing_consumer() -> FileProcessingConsumer:
-    """
-    Create a file processing consumer for production use.
-
-    Returns:
-        FileProcessingConsumer: Configured consumer instance
-    """
-    return FileProcessingConsumer("file_processing_group")

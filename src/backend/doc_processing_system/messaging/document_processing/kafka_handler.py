@@ -12,40 +12,59 @@ from ..base.base_consumer import BaseKafkaConsumer
 from ...data_models.events import FileDetectedEvent, WorkflowInitializedEvent
 
 
-class KafkaHandler(BaseKafkaProducer, BaseKafkaConsumer):
+class _ConcreteProducer(BaseKafkaProducer):
+    """Simple concrete producer for KafkaHandler."""
+    def get_default_topic(self) -> str:
+        return "document-available"
+
+
+class KafkaHandler:
     """Handles all Kafka messaging for document processing."""
     
     def __init__(self, consumer_group: str = "document_processing_v3"):
-        BaseKafkaProducer.__init__(self)
-        BaseKafkaConsumer.__init__(self, consumer_group)
-        self._file_handler: Optional[Callable] = None
-        
         self.logger = logging.getLogger(__name__)
+        
+        # Initialize producer and consumer separately
+        self._producer = _ConcreteProducer()
+        self._consumer = None  # Only create when needed
+        self._consumer_group = consumer_group
+        self._file_handler: Optional[Callable] = None
     
-    def get_default_topic(self) -> str:
-        """Default topic for publishing."""
-        return "document-available"
-    
-    def get_subscribed_topics(self) -> list:
-        """Topics to consume from."""
-        return ["file-detected"]
+    def _create_consumer_if_needed(self):
+        """Create lightweight consumer only when needed."""
+        if self._consumer is None:
+            # Create a simple consumer that just handles events without heavy models
+            from ..base.base_consumer import BaseKafkaConsumer
+            
+            class SimpleFileConsumer(BaseKafkaConsumer):
+                def __init__(self, group_id, file_handler):
+                    super().__init__(group_id)
+                    self._file_handler = file_handler
+                
+                def get_subscribed_topics(self):
+                    return ["file-detected"]
+                
+                def process_message(self, message_data, topic, key=None):
+                    if topic == "file-detected" and self._file_handler:
+                        return self._file_handler(message_data)
+                    return False
+            
+            self._consumer = SimpleFileConsumer(self._consumer_group, self._file_handler)
     
     def subscribe_to_file_events(self, handler: Callable[[Dict[str, Any]], bool]):
         """Subscribe to file detected events."""
         self._file_handler = handler
     
-    def process_message(self, message_data: Dict[str, Any], topic: str, key: Optional[str] = None) -> bool:
-        """Process incoming Kafka messages."""
-        try:
-            if topic == "file-detected" and self._file_handler:
-                return self._file_handler(message_data)
-            else:
-                self.logger.warning(f"No handler for topic: {topic}")
-                return False
-                
-        except Exception as e:
-            self.logger.error(f"Error processing {topic} message: {e}")
-            return False
+    def start_consuming(self):
+        """Start consuming messages."""
+        self._create_consumer_if_needed()
+        if self._consumer:
+            self._consumer.start_consuming()
+    
+    def stop_consuming(self):
+        """Stop consuming messages."""
+        if self._consumer:
+            self._consumer.stop_consuming()
     
     def send_file_detected(self, file_path: str, filename: str) -> bool:
         """Send file detected event."""
@@ -58,7 +77,7 @@ class KafkaHandler(BaseKafkaProducer, BaseKafkaConsumer):
             
             key = create_message_key(document_id=filename, user_id="file_watcher")
             
-            success = self.publish_event(
+            success = self._producer.publish_event(
                 topic=event.topic,
                 event_data=event.dict(),
                 key=key
@@ -87,7 +106,7 @@ class KafkaHandler(BaseKafkaProducer, BaseKafkaConsumer):
             
             key = create_message_key(document_id, user_id)
             
-            success = self.publish_event(
+            success = self._producer.publish_event(
                 topic="document-available",
                 event_data=event_data,
                 key=key
@@ -113,7 +132,7 @@ class KafkaHandler(BaseKafkaProducer, BaseKafkaConsumer):
             
             key = create_message_key(document_id)
             
-            success = self.publish_event(
+            success = self._producer.publish_event(
                 topic=event.topic,
                 event_data=event.dict(),
                 key=key
@@ -143,7 +162,7 @@ class KafkaHandler(BaseKafkaProducer, BaseKafkaConsumer):
                 "event_type": "chunking_complete"
             }
             
-            success = self.publish_event(
+            success = self._producer.publish_event(
                 topic="chunking-complete",
                 event_data=event_data,
                 key=document_id
@@ -170,7 +189,7 @@ class KafkaHandler(BaseKafkaProducer, BaseKafkaConsumer):
                 "event_type": "ingestion_complete"
             }
             
-            success = self.publish_event(
+            success = self._producer.publish_event(
                 topic="ingestion-complete",
                 event_data=event_data,
                 key=document_id
@@ -198,7 +217,7 @@ class KafkaHandler(BaseKafkaProducer, BaseKafkaConsumer):
                 "event_type": "embedding_ready"
             }
             
-            return self.publish_event(
+            return self._producer.publish_event(
                 topic="embedding-ready",
                 event_data=event_data,
                 key=document_id

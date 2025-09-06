@@ -11,17 +11,17 @@ from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileCreatedEvent, FileModifiedEvent
 
-from ..document_processing.document_producer import DocumentProducer
 from ...config.settings import get_settings
+from ..document_processing.kafka_handler import KafkaHandler
 
 
 class DocumentFileHandler(FileSystemEventHandler):
     """Handler for document file system events."""
     
-    def __init__(self, document_producer: DocumentProducer):
+    def __init__(self, kafka_handler: KafkaHandler):
         super().__init__()
         self.logger = logging.getLogger(__name__)
-        self.document_producer = document_producer
+        self.kafka = kafka_handler
         self.processing_files: Set[str] = set()  # Prevent duplicate processing
         
         # Supported file extensions
@@ -69,35 +69,18 @@ class DocumentFileHandler(FileSystemEventHandler):
         except Exception as e:
             self.logger.error(f"Error handling file event for {file_path}: {e}")
         finally:
-            # Remove from processing set after a delay (using threading instead of asyncio)
+            # Simple cleanup - remove from processing set immediately
             if 'file_key' in locals():
-                import threading
-                def delayed_cleanup():
-                    import time
-                    time.sleep(5)  # 5 second delay
-                    self.processing_files.discard(file_key)
-                
-                cleanup_thread = threading.Thread(target=delayed_cleanup)
-                cleanup_thread.daemon = True
-                cleanup_thread.start()
+                self.processing_files.discard(file_key)
     
     def _publish_file_detected(self, file_path: Path):
         """Publish file detection event to Kafka."""
         try:
-            file_stats = file_path.stat()
+            # Send file detected event directly - no complex formatting needed
+            success = self.kafka.send_file_detected(str(file_path), file_path.name)
             
-            event_data = {
-                "file_path": str(file_path),
-                "filename": file_path.name,
-                "file_size": file_stats.st_size,
-                "file_extension": file_path.suffix.lower(),
-                "detected_at": datetime.now().isoformat(),
-                "event_type": "file_detected"
-            }
-            
-            # Use the existing document producer to send the event
-            self.document_producer.send_file_detected(event_data)
-            self.logger.info(f"Published file detection event for: {file_path}")
+            if success:
+                self.logger.info(f"File detected event sent: {file_path.name}")
             
         except Exception as e:
             self.logger.error(f"Failed to publish file detection event: {e}")
@@ -119,8 +102,8 @@ class FileWatcherService:
         self.watch_directory.mkdir(parents=True, exist_ok=True)
         
         # Initialize components
-        self.document_producer = DocumentProducer()
-        self.event_handler = DocumentFileHandler(self.document_producer)
+        self.kafka = KafkaHandler()
+        self.event_handler = DocumentFileHandler(self.kafka)
         self.observer = Observer()
         
         self.logger.info(f"File watcher initialized for directory: {self.watch_directory}")
@@ -154,6 +137,3 @@ class FileWatcherService:
         """Check if the file watcher is running."""
         return self.observer.is_alive()
 
-
-# Service instance for easy import
-file_watcher_service = FileWatcherService()

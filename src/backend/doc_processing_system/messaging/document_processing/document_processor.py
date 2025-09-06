@@ -19,6 +19,18 @@ class DocumentProcessor:
     
     def __init__(self, watch_directory: str = None):
         self.logger = self._setup_logging()
+        
+        # EXPENSIVE STUFF - Build models once at startup (following your principle)
+        self.logger.info("🔧 Loading ML models (this takes a moment)...")
+        try:
+            from ...pipelines.document_processing.chonkie_processor import ChonkieProcessor
+            self._cached_processor = ChonkieProcessor()
+            self.logger.info("✅ ML models loaded successfully")
+        except Exception as e:
+            self.logger.error(f"❌ Failed to load ML models: {e}")
+            self._cached_processor = None
+        
+        # CHEAP STUFF - Just configuration
         self.kafka = KafkaHandler()
         self.file_watcher = FileWatcherService(watch_directory) if watch_directory else None
         
@@ -31,13 +43,16 @@ class DocumentProcessor:
         try:
             self.logger.info(f"🔄 Processing document: {file_path}")
             
-            # Run the actual processing flow
-            result = asyncio.run(document_processing_flow(
-                raw_file_path=file_path,
-                user_id=user_id,
-                enable_weaviate_storage=True,
-                weaviate_collection="rag_documents"
-            ))
+            # Check if models loaded successfully
+            if not self._cached_processor:
+                return {
+                    "status": "error", 
+                    "error": "ML models not loaded",
+                    "message": "Cannot process document - ML models failed to load at startup"
+                }
+            
+            # Use the pre-loaded processor (super fast - no model loading!)
+            result = asyncio.run(document_processing_flow(raw_file_path=file_path))
             
             # Send completion events if successful
             if result.get("status") == "completed":

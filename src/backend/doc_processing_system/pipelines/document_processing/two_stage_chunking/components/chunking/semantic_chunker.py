@@ -26,7 +26,7 @@ except ImportError:
 class SentenceTransformerEmbeddings(Embeddings):
     """Wrapper for SentenceTransformer models to work with LangChain."""
     
-    def __init__(self, model_name: str = 'nomic-ai/nomic-embed-text-v1.5'):
+    def __init__(self, model_name: str = 'BAAI/bge-small-en-v1.5'):
         """Initialize the SentenceTransformer embeddings wrapper.
         
         Args:
@@ -34,11 +34,14 @@ class SentenceTransformerEmbeddings(Embeddings):
         """
         try:
             from sentence_transformers import SentenceTransformer
-            self.model = SentenceTransformer(model_name, trust_remote_code=True)
-        except Exception:
+            # Use a reliable model that doesn't need trust_remote_code
+            self.model = SentenceTransformer(model_name)
+            print(f"✅ Successfully loaded embedding model: {model_name}")
+        except Exception as e:
+            print(f"❌ Failed to load {model_name}, trying fallback: {e}")
             # Fallback to a more standard model
             from sentence_transformers import SentenceTransformer
-            self.model = SentenceTransformer('BAAI/bge-large-en-v1.5',trust_remote_code=True)
+            self.model = SentenceTransformer('BAAI/bge-small-en-v1.5')
     
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs.
@@ -94,7 +97,7 @@ class SemanticChunker:
         try:
             if LANGCHAIN_SEMANTIC_AVAILABLE:
                 # Create embeddings wrapper
-                embeddings = SentenceTransformerEmbeddings('BAAI/bge-small-en-v1.5',trust_remote_code=True)
+                embeddings = SentenceTransformerEmbeddings('BAAI/bge-small-en-v1.5')
                 
                 # Calculate min_chunk_size based on chunk_size
                 min_chunk_size = max(500, self.chunk_size // 4)

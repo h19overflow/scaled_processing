@@ -1,16 +1,6 @@
-"""
-Central event bus for routing messages between producers and consumers.
-Provides unified interface for event publishing and subscription management.
-"""
 
-import logging
-from typing import Dict, List, Optional, Callable, Any
-from threading import Thread, Event as ThreadEvent
+
 from enum import Enum
-
-from ..document_processing.document_producer import DocumentProducer
-from ..extraction_pipeline.extraction_producer import ExtractionProducer
-from ..query_processing.query_producer import QueryProducer
 
 
 class EventType(str, Enum):

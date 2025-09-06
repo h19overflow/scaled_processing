@@ -19,7 +19,7 @@ import json
 
 from ....core_deps.database import ConnectionManager, DocumentCRUD
 from ....data_models.document import Document, ProcessingStatus, FileType
-from ....messaging.document_processing.document_producer import DocumentProducer
+from ....messaging.document_processing.kafka_handler import KafkaHandler
 
 
 class DocumentOutputManager:
@@ -42,7 +42,7 @@ class DocumentOutputManager:
         self.document_crud = DocumentCRUD(self.connection_manager)
         
         # Initialize messaging components
-        self.document_producer = DocumentProducer()
+        self.kafka = KafkaHandler()
         
         # Set up directory structure
         self.processed_dir = Path(processed_documents_dir)
@@ -105,6 +105,9 @@ class DocumentOutputManager:
                 db_document_id = self.document_crud.create(document, raw_hash)
                 
                 self.logger.info(f"Document record created in database: {db_document_id}")
+                
+                # Send document ready event directly
+                self.kafka.send_document_ready(document_id, str(raw_path), user_id)
                 
                 processing_result = {
                     "status": "ready_for_processing", 
@@ -172,6 +175,9 @@ class DocumentOutputManager:
             # Step 4: Store document record in database
             self._store_document_in_database(document_id, metadata, user_id)
             
+            # Step 5: Send completion events directly
+            self.send_processing_complete_events(document_id, str(processed_file_path), metadata, user_id)
+            
             self.logger.info(f"Document saved successfully: {document_id}")
             
             return {
@@ -192,55 +198,24 @@ class DocumentOutputManager:
                 "message": f"Failed to save document: {e}"
             }
     
-    def prepare_kafka_message(self, 
-                            document_id: str, 
-                            processed_file_path: str,
-                            metadata: Dict[str, Any],
-                            user_id: str = "default") -> Dict[str, Any]:
-        """
-        Prepare message data for Kafka producers (DocumentProducer).
-        
-        Args:
-            document_id: Document identifier
-            processed_file_path: Path to saved processed document
-            metadata: Document metadata
-            user_id: User ID
-            
-        Returns:
-            Dict containing message data ready for DocumentProducer
-        """
+    def send_processing_complete_events(self, 
+                                      document_id: str, 
+                                      processed_file_path: str,
+                                      metadata: Dict[str, Any],
+                                      user_id: str = "default") -> bool:
+        """Send workflow ready event directly - no message preparation needed."""
         try:
-            # Create message payload compatible with DocumentProducer
-            kafka_message = {
-                "document_id": document_id,
-                "processed_file_path": processed_file_path,
-                "user_id": user_id,
-                "filename": metadata.get("filename", "unknown"),
-                "page_count": metadata.get("page_count", 0),
-                "content_length": metadata.get("content_length", 0),
-                "file_type": metadata.get("file_type", "pdf"),
-                "processing_timestamp": datetime.now().isoformat(),
-                "status": "processed",
-                "workflow_types": ["rag", "extraction"],  # Ready for both pipelines
-                "message_type": "document_received"
-            }
+            # Send workflow initialized event
+            success = self.kafka.send_workflow_ready(document_id, ["rag", "extraction"])
             
-            self.logger.info(f"Kafka message prepared for document: {document_id}")
+            if success:
+                self.logger.info(f"Processing complete events sent for: {document_id}")
             
-            return {
-                "status": "processed",
-                "kafka_message": kafka_message,
-                "ready_for_producer": True,
-                "message": f"Message ready for DocumentProducer: {document_id}"
-            }
+            return success
             
         except Exception as e:
-            self.logger.error(f"Error preparing Kafka message for {document_id}: {e}")
-            return {
-                "status": "error",
-                "error": str(e),
-                "message": f"Failed to prepare Kafka message: {e}"
-            }
+            self.logger.error(f"Error sending processing events for {document_id}: {e}")
+            return False
     
     def get_document_path_info(self, document_id: str) -> Dict[str, Any]:
         """
