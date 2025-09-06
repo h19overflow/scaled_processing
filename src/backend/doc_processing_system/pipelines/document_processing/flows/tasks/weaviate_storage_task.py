@@ -13,12 +13,12 @@ from chonkie.types import Chunk
 
 @task(name="weaviate-storage", retries=2)
 def weaviate_storage_task(
-    embedded_chunks: List[Chunk],
-    document_id: str,
-    collection_name: str = "rag_documents",
-    weaviate_url: str = None,
-    batch_size: int = 128,
-    user_id: str = "default"
+        embedded_chunks: List[Chunk],
+        document_id: str,
+        collection_name: str = "rag_documents",
+        weaviate_url: str = None,
+        batch_size: int = 128,
+        user_id: str = "default"
 ) -> Dict[str, Any]:
     """
     Store embedded chunks in Weaviate using WeaviateHandshake.
@@ -35,7 +35,7 @@ def weaviate_storage_task(
         Dict containing storage results
     """
     logger = get_run_logger()
-    
+
     if not embedded_chunks:
         logger.error(f"❌ No embedded chunks provided for {document_id}")
         return {
@@ -43,18 +43,18 @@ def weaviate_storage_task(
             "document_id": document_id,
             "error": "No embedded chunks to store"
         }
-    
+
     logger.info(f"📤 Storing {len(embedded_chunks)} chunks in Weaviate for: {document_id}")
-    
+
     try:
         # Initialize Weaviate handshake
         handshake = WeaviateHandshake(
             url=weaviate_url or os.getenv("WEAVIATE_URL", "http://localhost:8080"),
             collection_name=collection_name,
             batch_size=batch_size,
-            embedding_model="nomic-ai/nomic-embed-text-v1.5"  # Match to an embedding pipeline
+            embedding_model="BAAI/bge-small-en-v1.5"  # Match to an embedding pipeline
         )
-        
+
         # Filter chunks that have embeddings
         valid_chunks = []
         for chunk in embedded_chunks:
@@ -69,7 +69,7 @@ def weaviate_storage_task(
                 valid_chunks.append(chunk)
             else:
                 logger.warning(f"Chunk {chunk.metadata.get('chunk_id', 'unknown')} has no embedding, skipping")
-        
+
         if not valid_chunks:
             logger.error(f"❌ No valid embedded chunks found for {document_id}")
             return {
@@ -77,13 +77,13 @@ def weaviate_storage_task(
                 "document_id": document_id,
                 "error": "No valid embedded chunks to store"
             }
-        
+
         # Write chunks to Weaviate
         storage_result = handshake.write(valid_chunks)
-        
+
         logger.info(f"✅ Successfully stored {len(valid_chunks)} chunks in Weaviate for: {document_id}")
         logger.info(f"📊 Collection: {collection_name}, Batch size: {batch_size}")
-        
+
         return {
             "status": "completed",
             "document_id": document_id,
@@ -95,7 +95,7 @@ def weaviate_storage_task(
             "batch_size": batch_size,
             "message": f"Stored {len(valid_chunks)} chunks in collection '{collection_name}'"
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Weaviate storage failed for {document_id}: {e}")
         return {
@@ -108,12 +108,12 @@ def weaviate_storage_task(
 
 @task(name="weaviate-query", retries=1)
 def weaviate_query_task(
-    query_text: str,
-    collection_name: str = "rag_documents",
-    limit: int = 5,
-    weaviate_url: str = None,
-    weaviate_api_key: str = None,
-    user_id: str = "default"
+        query_text: str,
+        collection_name: str = "rag_documents",
+        limit: int = 5,
+        weaviate_url: str = None,
+        weaviate_api_key: str = None,
+        user_id: str = "default"
 ) -> Dict[str, Any]:
     """
     Query Weaviate for similar chunks.
@@ -131,7 +131,7 @@ def weaviate_query_task(
     """
     logger = get_run_logger()
     logger.info(f"🔍 Querying Weaviate for: '{query_text[:50]}...'")
-    
+
     try:
         # Initialize Weaviate handshake for querying
         handshake = WeaviateHandshake(
@@ -140,13 +140,13 @@ def weaviate_query_task(
             collection_name=collection_name,
             embedding_model="model2vec"
         )
-        
+
         # Perform query (assuming handshake has a query method)
         # This is a placeholder - actual implementation depends on WeaviateHandshake API
         query_results = handshake.query(query_text, limit=limit)
-        
+
         logger.info(f"✅ Found {len(query_results) if query_results else 0} results for query")
-        
+
         return {
             "status": "completed",
             "query_text": query_text,
@@ -156,7 +156,7 @@ def weaviate_query_task(
             "user_id": user_id,
             "query_timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Weaviate query failed: {e}")
         return {

@@ -23,7 +23,7 @@ class ChonkieProcessor:
     
     def __init__(self, 
                  enable_vision: bool = True,
-                 embedding_model: str = "BAAI/bge-large-en-v1.5",
+                 embedding_model: str = "BAAI/bge-small-en-v1.5",
                  chunk_size: int = 700,
                  semantic_threshold: float = 0.75,
                  concurrent_agents: int = 10,
@@ -212,7 +212,7 @@ class ChonkieProcessor:
             # Fallback to a smaller, more reliable model
             try:
                 return SentenceTransformerEmbeddings(
-                 "BAAI/bge-small-en-v1.5",
+                    model="BAAI/bge-small-en-v1.5",
                     trust_remote_code=True,
                     device="auto"
                 )

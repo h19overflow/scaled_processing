@@ -38,7 +38,7 @@ class SentenceTransformerEmbeddings(Embeddings):
         except Exception:
             # Fallback to a more standard model
             from sentence_transformers import SentenceTransformer
-            self.model = SentenceTransformer('BAAI/bge-large-en-v1.5')
+            self.model = SentenceTransformer('BAAI/bge-large-en-v1.5',trust_remote_code=True)
     
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs.
@@ -94,7 +94,7 @@ class SemanticChunker:
         try:
             if LANGCHAIN_SEMANTIC_AVAILABLE:
                 # Create embeddings wrapper
-                embeddings = SentenceTransformerEmbeddings('nomic-ai/nomic-embed-text-v1.5')
+                embeddings = SentenceTransformerEmbeddings('BAAI/bge-small-en-v1.5',trust_remote_code=True)
                 
                 # Calculate min_chunk_size based on chunk_size
                 min_chunk_size = max(500, self.chunk_size // 4)

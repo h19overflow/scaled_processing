@@ -153,10 +153,16 @@ class BaseKafkaConsumer(IEventConsumer, ABC):
             self._consumer_thread.join(timeout=10)
             self.logger.info("Stopped background message consumption")
     
+    def is_consuming(self) -> bool:
+        """Check if consumer is actively consuming messages."""
+        return self._consumer_thread is not None and self._consumer_thread.is_alive()
+    
     def _consume_loop(self) -> None:
         """Background consumption loop."""
+        import time
         while not self._stop_event.is_set():
             self.consume_events()
+            time.sleep(0.1)  # Small sleep to prevent busy-waiting
     
     @abstractmethod
     def get_subscribed_topics(self) -> List[str]:

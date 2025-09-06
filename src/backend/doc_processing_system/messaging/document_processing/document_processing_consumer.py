@@ -7,7 +7,7 @@ from .document_producer import DocumentProducer
 
 
 class DocumentProcessingConsumer(BaseKafkaConsumer):
-    def __init__(self, group_id: str = "document_processing_group"):
+    def __init__(self, group_id: str = "document_processing_group_v2"):
         super().__init__(group_id)
         self.document_producer = DocumentProducer()
         self._orchestrator = None
