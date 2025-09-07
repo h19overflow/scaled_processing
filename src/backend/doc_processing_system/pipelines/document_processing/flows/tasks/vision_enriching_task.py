@@ -4,9 +4,13 @@ Processes Docling-extracted markdown with vision enhancement and chunking.
 """
 
 import os
+import re
+import base64
 import tempfile
 from pathlib import Path
 from typing import Dict, Any, Optional
+from io import BytesIO
+from PIL import Image
 
 from prefect import task, get_run_logger
 
@@ -55,19 +59,11 @@ async def markdown_vision_task(
         
         logger.info(f"📄 Read {len(docling_content)} characters from Docling markdown")
         
-        # Step 2: Collect extracted images for vision processing
-        logger.info(f"🖼️ Scanning images in: {extracted_images_dir}")
-        images_dir = Path(extracted_images_dir)
-        extracted_images = {}
+        # Step 2: Extract base64 images from markdown and process them
+        logger.info(f"🖼️ Extracting base64 images from markdown")
+        extracted_images = _extract_base64_images_from_markdown(docling_content, document_id, logger)
         
-        if images_dir.exists():
-            for i, img_file in enumerate(sorted(images_dir.glob("*.png"))):
-                image_id = str(i)  # Sequential numbering to match markdown placeholders
-                extracted_images[image_id] = str(img_file)
-            
-            logger.info(f"Found {len(extracted_images)} images for vision processing")
-        else:
-            logger.warning(f"Images directory not found: {extracted_images_dir}")
+        logger.info(f"Found {len(extracted_images)} images for vision processing")
         
         # Step 3: Initialize vision processor for image enhancement
         vision_config = VisionConfig.from_env()
@@ -75,10 +71,12 @@ async def markdown_vision_task(
         
         # Step 4: Process images with vision AI and enhance markdown
         context = f"Document: {file_info.get('filename', 'unknown')} ({file_info.get('file_type', 'pdf')})"
-        enhanced_content = await vision_processor.process_document_images(
-            extracted_images=extracted_images,
+        enhanced_content = await _process_base64_images_in_markdown(
             content=docling_content,
-            context=context
+            extracted_images=extracted_images,
+            vision_processor=vision_processor,
+            context=context,
+            logger=logger
         )
         
         # Step 5: Save vision-enhanced markdown to new file
@@ -109,3 +107,133 @@ async def markdown_vision_task(
             "error": str(e),
             "message": f"Vision enhancement and chunking failed: {e}"
         }
+
+
+# HELPER FUNCTIONS
+def _extract_base64_images_from_markdown(content: str, document_id: str, logger) -> Dict[str, str]:
+    """Extract base64 images from markdown and save them as temporary files."""
+    
+    # Pattern to match base64 image data in markdown
+    base64_image_pattern = r'!\[([^\]]*)\]\(data:image/([^;]+);base64,([^)]+)\)'
+    
+    matches = list(re.finditer(base64_image_pattern, content))
+    extracted_images = {}
+    
+    # Create temporary directory for images
+    temp_dir = Path(tempfile.gettempdir()) / "vision_images" / document_id
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    
+    for i, match in enumerate(matches):
+        try:
+            alt_text = match.group(1)
+            image_format = match.group(2)  # png, jpg, etc.
+            base64_data = match.group(3)
+            
+            # Decode base64 data
+            image_bytes = base64.b64decode(base64_data)
+            
+            # Create PIL Image and save as temporary file
+            image = Image.open(BytesIO(image_bytes))
+            image_path = temp_dir / f"image_{i}.{image_format}"
+            image.save(image_path)
+            
+            extracted_images[str(i)] = str(image_path)
+            logger.debug(f"Extracted image {i}: {alt_text} -> {image_path}")
+            
+        except Exception as e:
+            logger.warning(f"Failed to extract base64 image {i}: {e}")
+    
+    return extracted_images
+
+
+async def _process_base64_images_in_markdown(content: str, extracted_images: Dict[str, str], 
+                                           vision_processor, context: str, logger) -> str:
+    """Process base64 images with vision AI and enhance markdown."""
+    
+    if not extracted_images:
+        logger.info("No images found to process with vision AI")
+        return content
+    
+    # Process images with vision AI (using existing VisionProcessor)
+    descriptions = {}
+    if extracted_images:
+        # Use the existing vision processor but we need to adapt it for base64 images
+        for img_id, img_path in extracted_images.items():
+            try:
+                # Load the image
+                img_obj = Image.open(img_path)
+                
+                # Use the vision agent directly for description
+                description = await vision_processor.vision_agent.describe_image_async(img_obj, context)
+                
+                descriptions[img_id] = {
+                    'description': description,
+                    'classification': {'action': 'analyze', 'confidence': 1.0},
+                    'image_path': img_path
+                }
+                logger.debug(f"Generated description for image {img_id}: {description[:50]}...")
+                
+            except Exception as e:
+                logger.warning(f"Failed to process image {img_id} with vision AI: {e}")
+    
+    # Enhance the content by replacing base64 images with enhanced versions
+    enhanced_content = _replace_base64_images_with_descriptions(content, descriptions, logger)
+    
+    # Clean up temporary files
+    for img_path in extracted_images.values():
+        try:
+            Path(img_path).unlink()
+        except Exception as e:
+            logger.warning(f"Failed to clean up temp image {img_path}: {e}")
+    
+    return enhanced_content
+
+
+def _replace_base64_images_with_descriptions(content: str, descriptions: Dict[str, Dict], logger) -> str:
+    """Replace base64 images in markdown with enhanced versions including AI descriptions."""
+    
+    # Pattern to match base64 image data in markdown
+    base64_image_pattern = r'!\[([^\]]*)\]\(data:image/([^;]+);base64,([^)]+)\)'
+    
+    def replace_image(match, img_index):
+        alt_text = match.group(1)
+        image_format = match.group(2)
+        base64_data = match.group(3)
+        
+        # Get description for this image
+        img_id = str(img_index)
+        desc_data = descriptions.get(img_id, {})
+        description = desc_data.get('description', '')
+        
+        # Keep the original base64 image
+        original_image = match.group(0)
+        
+        if description and "Failed" not in description:
+            # Add AI description after the image
+            enhanced = f"{original_image}\n\n**AI Analysis**: {description}\n"
+            logger.debug(f"Enhanced image {img_index} with AI description")
+        else:
+            # No valid description, keep original
+            enhanced = original_image
+            logger.debug(f"No valid description for image {img_index}, keeping original")
+        
+        return enhanced
+    
+    # Replace images with enhanced versions
+    enhanced_content = content
+    matches = list(re.finditer(base64_image_pattern, content))
+    
+    # Process matches in reverse order to avoid offset issues
+    for i in reversed(range(len(matches))):
+        match = matches[i]
+        enhanced_text = replace_image(match, i)
+        
+        start, end = match.span()
+        enhanced_content = (
+            enhanced_content[:start] + 
+            enhanced_text + 
+            enhanced_content[end:]
+        )
+    
+    logger.info(f"Enhanced {len(matches)} base64 images with AI descriptions")
+    return enhanced_content

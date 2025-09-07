@@ -15,13 +15,6 @@ from ...pipelines.document_processing.flows.document_processing_flow import docu
 from ..file_ingestion.file_watcher import FileWatcherService
 
 
-# TODO  | INFO    | Task run 'docling-processing-a3d' - 📄 Starting Docling processing for document: Covering Letter - AHMED HAMZA KHALED MAHMOUD
-# 17:50:06.868 | ERROR   | src.backend.doc_processing_system.pipelines.document_processing.utils.docling_processor - ❌ Docling extraction failed: [WinError 3] The system cannot find the path specified: 'data\\temp\\docling\\Covering Letter - AHMED HAMZA KHALED MAHMOUD \\images'
-# 17:50:06.868 | ERROR   | Task run 'docling-processing-a3d' - ❌ Docling processing failed for Covering Letter - AHMED HAMZA KHALED MAHMOUD : Extraction failed
-# 17:50:06.870 | INFO    | Task run 'docling-processing-a3d' - Finished in state Completed()
-# 17:50:07.140 | INFO    | Flow run 'bald-wolverine' - Finished in state Completed()
-# 2025-09-06 17:50:07,141 - __main__ - ERROR - ❌ Failed: Docling processing failed: Extraction failed
-# 17:50:07.141 | ERROR   | __main__ - ❌ Failed: Docling processing failed: Extraction failed
 
 class DocumentProcessor:
     """Processes documents and handles messaging - simple and direct."""
