@@ -345,13 +345,22 @@ class DocumentOutputManager:
                                    user_id: str):
         """Store document record in database using DocumentCRUD."""
         try:
-            # Check if document already exists in database
-            existing_doc = self.document_crud.get_by_id(document_id)
+            # Check if document with this content hash already exists (proper duplicate check)
+            raw_file_path = metadata.get("raw_file_path")
+            if raw_file_path:
+                content_hash = self.document_crud.generate_file_hash(raw_file_path)
+            else:
+                # Fallback to processed content hash if raw path not available
+                content = metadata.get("processed_content", "")
+                content_hash = self.document_crud.generate_content_hash_from_bytes(content.encode('utf-8'))
+            
+            # Check if document with this hash already exists
+            existing_doc = self.document_crud.get_by_hash(content_hash)
             if existing_doc:
-                self.logger.info(f"Document already exists in database: {document_id}")
+                self.logger.info(f"Document with same content hash already exists in database: {existing_doc.get_id()}")
                 return
             
-            # Create Document object
+            # Create Document object (let database generate UUID automatically)
             document = Document(
                 filename=metadata.get("filename", "unknown"),
                 file_type=metadata.get("file_type", "pdf"),
@@ -362,18 +371,10 @@ class DocumentOutputManager:
                 page_count=metadata.get("page_count", 0)
             )
             
-            # Use the raw file path to generate consistent hash (same as duplicate detection)
-            raw_file_path = metadata.get("raw_file_path")
-            if raw_file_path:
-                content_hash = self.document_crud.generate_file_hash(raw_file_path)
-            else:
-                # Fallback to processed content hash if raw path not available
-                content = metadata.get("processed_content", "")
-                content_hash = self.document_crud.generate_content_hash_from_bytes(content.encode('utf-8'))
-            
-            # Store in database
+            # Store in database (database will auto-generate UUID)
             db_document_id = self.document_crud.create(document, content_hash)
-            self.logger.info(f"Document stored in database: {db_document_id}")
+            self.logger.info(f"Document stored in database with generated ID: {db_document_id}")
+            self.logger.info(f"File-based document ID for directory: {document_id}")
             
         except Exception as e:
             self.logger.error(f"Failed to store document in database: {e}")

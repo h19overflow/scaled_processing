@@ -41,9 +41,11 @@ class DocumentProcessor:
         
         # Create multiple consumer instances for scaling
         self.kafka_consumers = []
+        base_group = "document_processing_group"  # Same base group for load balancing
+        
         for i in range(num_consumers):
-            consumer_group = f"document_processing_consumer_{i+1}"
-            kafka = KafkaHandler(consumer_group=consumer_group)
+            # Use same consumer group so Kafka load-balances across instances
+            kafka = KafkaHandler(consumer_group=base_group)
             self.kafka_consumers.append(kafka)
             
         self.file_watcher = FileWatcherService(watch_directory) if watch_directory else None
@@ -73,7 +75,8 @@ class DocumentProcessor:
                 # Add to processing set
                 self._processing_documents.add(absolute_file_path)
             
-            self.logger.info(f"🔄 Processing document: {absolute_file_path}")
+            thread_id = threading.current_thread().name
+            self.logger.info(f"🔄 [{thread_id}] Processing document: {Path(absolute_file_path).name}")
             
             # Verify the file exists
             if not Path(absolute_file_path).exists():
@@ -91,20 +94,20 @@ class DocumentProcessor:
                     "message": "Cannot process document - ML models failed to load at startup"
                 }
             
-            # Use the pre-loaded processor (super fast - no model loading!)
+            # Use the pre-loaded processor
             result = asyncio.run(document_processing_flow(raw_file_path=absolute_file_path))
             
             # Send completion events if successful
             if result.get("status") == "completed":
                 self._send_completion_events(result, absolute_file_path, user_id)
-                self.logger.info(f"✅ Completed: {result.get('document_id')}")
+                self.logger.info(f"✅ [{thread_id}] Completed: {result.get('document_id')}")
             else:
-                self.logger.error(f"❌ Failed: {result.get('message')}")
+                self.logger.error(f"❌ [{thread_id}] Failed: {result.get('message')}")
             
             return result
             
         except Exception as e:
-            self.logger.error(f"Processing failed for {file_path}: {e}")
+            self.logger.error(f"[{threading.current_thread().name}] Processing failed for {file_path}: {e}")
             return {"status": "error", "error": str(e)}
         finally:
             # Clean up processing set with delay to prevent immediate re-processing
@@ -279,7 +282,7 @@ def main():
         num_consumers = args.num_consumers
     else:
         # Check environment variable
-        num_consumers = int(os.getenv('DOC_PROCESSING_CONSUMERS', 1))
+        num_consumers = int(os.getenv('DOC_PROCESSING_CONSUMERS', 3))
     
     print(f"🚀 Starting DocumentProcessor with {num_consumers} consumer(s)")
     print(f"📂 Watching directory: {args.watch_directory}")

@@ -1,6 +1,6 @@
 {
   "document_id": "chonkie_doc",
-  "timestamp": "2025-09-07T09:59:31.022306",
+  "timestamp": "2025-09-07T10:23:24.210955",
   "chunk_count": 7,
   "chunks": [
     {
@@ -12,7 +12,7 @@
       "metadata": {
         "chunk_length": 533,
         "word_count": 109,
-        "created_at": "2025-09-07T09:59:31.022306",
+        "created_at": "2025-09-07T10:23:24.210955",
         "chunking_strategy": "two_stage_semantic"
       }
     },
@@ -25,7 +25,7 @@
       "metadata": {
         "chunk_length": 597,
         "word_count": 97,
-        "created_at": "2025-09-07T09:59:31.022306",
+        "created_at": "2025-09-07T10:23:24.210955",
         "chunking_strategy": "two_stage_semantic"
       }
     },
@@ -38,7 +38,7 @@
       "metadata": {
         "chunk_length": 536,
         "word_count": 90,
-        "created_at": "2025-09-07T09:59:31.022306",
+        "created_at": "2025-09-07T10:23:24.210955",
         "chunking_strategy": "two_stage_semantic"
       }
     },
@@ -51,7 +51,7 @@
       "metadata": {
         "chunk_length": 505,
         "word_count": 86,
-        "created_at": "2025-09-07T09:59:31.022306",
+        "created_at": "2025-09-07T10:23:24.210955",
         "chunking_strategy": "two_stage_semantic"
       }
     },
@@ -64,7 +64,7 @@
       "metadata": {
         "chunk_length": 527,
         "word_count": 93,
-        "created_at": "2025-09-07T09:59:31.022306",
+        "created_at": "2025-09-07T10:23:24.210955",
         "chunking_strategy": "two_stage_semantic"
       }
     },
@@ -77,7 +77,7 @@
       "metadata": {
         "chunk_length": 556,
         "word_count": 98,
-        "created_at": "2025-09-07T09:59:31.022306",
+        "created_at": "2025-09-07T10:23:24.210955",
         "chunking_strategy": "two_stage_semantic"
       }
     },
@@ -90,7 +90,7 @@
       "metadata": {
         "chunk_length": 481,
         "word_count": 76,
-        "created_at": "2025-09-07T09:59:31.022306",
+        "created_at": "2025-09-07T10:23:24.210955",
         "chunking_strategy": "two_stage_semantic"
       }
     }
