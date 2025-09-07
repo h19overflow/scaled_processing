@@ -123,20 +123,28 @@ class ChonkieTwoStageChunker(BaseChunker):
             document_id or "chonkie_doc"
         )
 
+        # Save intermediate result - raw chunk data from TwoStageChunker
+        document_id_safe = document_id or "chonkie_doc"
+        self._save_intermediate_results("01_raw_text_chunks", result["text_chunks"], document_id_safe)
+
         # Convert to Chonkie Chunk format
         chonkie_chunks = []
         for i, chunk_data in enumerate(result["text_chunks"]):
+            # Add metadata after construction - ensure chunk_data["metadata"] is a dict
+            metadata = chunk_data.get("metadata", {})
+            if not isinstance(metadata, dict):
+                metadata = {}
+            
             # Create Chonkie Chunk object (without metadata parameter)
             chunk = Chunk(
                 text=chunk_data["content"],
                 start_index=0,  # We don't track character positions in our chunker
                 end_index=len(chunk_data["content"]),
-                token_count=chunk_data["metadata"]["word_count"]  ,# Approximate
+                token_count=metadata.get("word_count", len(chunk_data["content"].split())),  # Safe fallback
             )
-
-            # Add metadata after construction
+                
             chunk.context = {
-                **chunk_data["metadata"],
+                **metadata,
                 "chunk_id": chunk_data["chunk_id"],
                 "chunk_index": chunk_data["chunk_index"],
                 "document_id": chunk_data["document_id"],
@@ -148,8 +156,14 @@ class ChonkieTwoStageChunker(BaseChunker):
             }
             chonkie_chunks.append(chunk)
 
+        # Save intermediate result - initial Chonkie chunks
+        self._save_intermediate_results("02_initial_chonkie_chunks", chonkie_chunks, document_id_safe)
+
         # Apply OverlapRefinery post-processing
         refined_chunks = self.refinery(chonkie_chunks)
+        
+        # Save intermediate result - refined chunks
+        self._save_intermediate_results("03_refined_chunks", refined_chunks, document_id_safe)
 
         return refined_chunks
 
@@ -162,24 +176,41 @@ class ChonkieTwoStageChunker(BaseChunker):
         Returns:
             List of Chunk objects with embeddings in metadata
         """
-        for chunk in chunks:
+        # Save intermediate result - chunks before embedding
+        self._save_intermediate_results("04_chunks_before_embedding", chunks, "embedding_process")
+        
+        for i, chunk in enumerate(chunks):
             try:
                 # Generate embedding for chunk text
                 vector = self.embeddings.embed(chunk.text)
 
-                # Add embedding to chunk context (initialize if None)
-                if chunk.context is None:
+                # Ensure chunk.context is a dictionary (fix for str assignment error)
+                if chunk.context is None or not isinstance(chunk.context, dict):
+                    # Save problematic context for debugging
+                    if chunk.context is not None:
+                        self._save_problematic_context(chunk.context, i)
                     chunk.context = {}
+                    
                 chunk.context["embedding"] = vector
                 chunk.context["embedding_model"] = self.embedding_model
 
             except Exception as e:
                 # Log error but continue processing other chunks
-                print(f"Failed to generate embedding for chunk {chunk.context.get('chunk_id', 'unknown') if chunk.context else 'unknown'}: {e}")
-                if chunk.context is None:
+                chunk_id = 'unknown'
+                if chunk.context and isinstance(chunk.context, dict):
+                    chunk_id = chunk.context.get('chunk_id', 'unknown')
+                print(f"Failed to generate embedding for chunk {chunk_id}: {e}")
+                
+                # Ensure chunk.context is a dictionary before assignment
+                if chunk.context is None or not isinstance(chunk.context, dict):
+                    if chunk.context is not None:
+                        self._save_problematic_context(chunk.context, i)
                     chunk.context = {}
                 chunk.context["embedding_error"] = str(e)
 
+        # Save intermediate result - final embedded chunks
+        self._save_intermediate_results("05_final_embedded_chunks", chunks, "embedding_process")
+        
         return chunks
 
     async def chunk_with_embeddings(self, text: str, document_id: Optional[str] = None, **kwargs) -> List[Chunk]:
@@ -221,3 +252,71 @@ class ChonkieTwoStageChunker(BaseChunker):
             f"concurrent_agents={self.concurrent_agents}, "
             f"model='{self.model_name}')"
         )
+    
+    # HELPER FUNCTIONS
+    def _save_problematic_context(self, problematic_context, chunk_index: int):
+        """Save problematic context data for debugging."""
+        import json
+        from pathlib import Path
+        from datetime import datetime
+        
+        debug_dir = Path("data/debug/problematic_contexts")
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        debug_file = debug_dir / f"problematic_context_{timestamp}_chunk_{chunk_index}.json"
+        
+        debug_data = {
+            "chunk_index": chunk_index,
+            "context_type": type(problematic_context).__name__,
+            "context_value": str(problematic_context),
+            "context_repr": repr(problematic_context),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        try:
+            with open(debug_file, 'w', encoding='utf-8') as f:
+                json.dump(debug_data, f, indent=2)
+            print(f"🔍 Saved problematic context to: {debug_file}")
+        except Exception as e:
+            print(f"❌ Failed to save problematic context: {e}")
+    
+    def _save_intermediate_results(self, step_name: str, data, document_id: str):
+        """Save intermediate processing results for debugging."""
+        import json
+        from pathlib import Path
+        from datetime import datetime
+        
+        debug_dir = Path("data/debug/intermediate_results")
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        debug_file = debug_dir / f"{document_id}_{step_name}_{timestamp}.json"
+        
+        # Convert data to JSON-serializable format
+        if hasattr(data, '__dict__'):
+            serializable_data = data.__dict__
+        elif isinstance(data, list):
+            serializable_data = []
+            for item in data:
+                if hasattr(item, '__dict__'):
+                    serializable_data.append(item.__dict__)
+                else:
+                    serializable_data.append(str(item))
+        else:
+            serializable_data = str(data)
+        
+        debug_data = {
+            "step": step_name,
+            "document_id": document_id,
+            "data_type": type(data).__name__,
+            "data": serializable_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        try:
+            with open(debug_file, 'w', encoding='utf-8') as f:
+                json.dump(debug_data, f, indent=2, default=str)
+            print(f"🔍 Saved intermediate results to: {debug_file}")
+        except Exception as e:
+            print(f"❌ Failed to save intermediate results: {e}")

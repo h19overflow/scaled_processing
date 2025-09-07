@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import weaviate
 from weaviate.classes.config import Configure, Property, DataType
-
+from .connection_manager import ConnectionManager
 
 class CollectionManager:
     """Manages Weaviate collections with caching, validation, and error recovery."""
@@ -239,3 +239,8 @@ class CollectionManager:
 
 # Global collection manager instance
 collection_manager = CollectionManager(None)
+
+# if __name__ == "__main__":
+#     conncetion_manager = ConnectionManager()
+#     collection_manager = CollectionManager(conncetion_manager)
+#     collection_manager.get_or_create_collection("rag_documents")

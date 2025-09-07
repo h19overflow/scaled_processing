@@ -59,6 +59,7 @@ def document_saving_task(
             "file_type": file_path_obj.suffix.lower().replace('.', '') or 'pdf',
             "file_size": file_path_obj.stat().st_size if file_path_obj.exists() else 0,
             "processed_content": processed_content,
+            "raw_file_path": raw_file_path,  # Add raw file path for consistent hashing
             "vision_processing": True,
             "processing_timestamp": datetime.now().isoformat()
         }

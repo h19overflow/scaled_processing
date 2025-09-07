@@ -240,8 +240,8 @@ def _prepare_chunks(embedded_chunks: List[Chunk],
                    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2") -> List[Chunk]:
     """Add document-level metadata to each chunk."""
     for chunk in embedded_chunks:
-        # Initialize context if None
-        if chunk.context is None:
+        # Initialize context if None or ensure it's a dictionary
+        if chunk.context is None or not isinstance(chunk.context, dict):
             chunk.context = {}
         
         chunk.context.update({

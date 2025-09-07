@@ -345,6 +345,12 @@ class DocumentOutputManager:
                                    user_id: str):
         """Store document record in database using DocumentCRUD."""
         try:
+            # Check if document already exists in database
+            existing_doc = self.document_crud.get_by_id(document_id)
+            if existing_doc:
+                self.logger.info(f"Document already exists in database: {document_id}")
+                return
+            
             # Create Document object
             document = Document(
                 filename=metadata.get("filename", "unknown"),
@@ -356,9 +362,14 @@ class DocumentOutputManager:
                 page_count=metadata.get("page_count", 0)
             )
             
-            # Generate content hash from processed content
-            content = metadata.get("processed_content", "")
-            content_hash = self.document_crud.generate_content_hash_from_bytes(content.encode('utf-8'))
+            # Use the raw file path to generate consistent hash (same as duplicate detection)
+            raw_file_path = metadata.get("raw_file_path")
+            if raw_file_path:
+                content_hash = self.document_crud.generate_file_hash(raw_file_path)
+            else:
+                # Fallback to processed content hash if raw path not available
+                content = metadata.get("processed_content", "")
+                content_hash = self.document_crud.generate_content_hash_from_bytes(content.encode('utf-8'))
             
             # Store in database
             db_document_id = self.document_crud.create(document, content_hash)

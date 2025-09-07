@@ -254,7 +254,7 @@ class WeaviateManager:
 
         try:
             collections = client.collections.list_all()
-            collection_names = [col.name for col in collections]
+            collection_names = [col for col in collections]
 
             if not collection_names:
                 self.logger.info("Database is already empty")
@@ -296,14 +296,17 @@ def main():
     print("=" * 40)
 
     try:
-        manager = WeaviateManager()
-        client = manager.get_client()
-        rag_documents = client.collections.get('rag_documents')
-        print(rag_documents.config.get())
-        objects = rag_documents.query.fetch_objects(limit=2 , return_properties=["content"])
-        
-        print(objects)
-        client.close()
+
+        manager= WeaviateManager()
+        manager.collection_manager.get_or_create_collection("rag_documents")
+        # manager = WeaviateManager()
+        # # manager.reset_database()
+        # client = manager.get_client()
+        # rag_documents = client.collections.get('rag_documents')
+        # objects = rag_documents.query.fetch_objects(limit=500 , return_properties=["content"])
+        #
+        # # print(objects)
+        # # client.close()
     except Exception as e:
         print(f"❌ Error: {e}")
         return False
