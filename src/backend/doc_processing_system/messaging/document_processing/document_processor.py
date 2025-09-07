@@ -6,8 +6,9 @@ Does the actual work without unnecessary abstractions.
 import asyncio
 import logging
 import time
+import threading
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Set
 
 from .kafka_handler import KafkaHandler
 from ...pipelines.document_processing.flows.document_processing_flow import document_processing_flow
@@ -27,6 +28,10 @@ class DocumentProcessor:
     
     def __init__(self, watch_directory: str = None):
         self.logger = self._setup_logging()
+        
+        # Add deduplication tracking
+        self._processing_documents: Set[str] = set()
+        self._processing_lock = threading.Lock()
         
         # EXPENSIVE STUFF - Build models once at startup (following your principle)
         self.logger.info("🔧 Loading ML models (this takes a moment)...")
@@ -51,6 +56,18 @@ class DocumentProcessor:
             # Convert to absolute path to ensure DoclingProcessor can find the file
             from pathlib import Path
             absolute_file_path = str(Path(file_path).resolve())
+            
+            # Check for duplicate processing
+            with self._processing_lock:
+                if absolute_file_path in self._processing_documents:
+                    self.logger.warning(f"🔄 Document already being processed, skipping: {Path(absolute_file_path).name}")
+                    return {
+                        "status": "duplicate_processing",
+                        "message": f"Document already being processed: {Path(absolute_file_path).name}"
+                    }
+                
+                # Add to processing set
+                self._processing_documents.add(absolute_file_path)
             
             self.logger.info(f"🔄 Processing document: {absolute_file_path}")
             
@@ -83,8 +100,16 @@ class DocumentProcessor:
             return result
             
         except Exception as e:
-            self.logger.error(f"Processing failed for {absolute_file_path}: {e}")
+            self.logger.error(f"Processing failed for {file_path}: {e}")
             return {"status": "error", "error": str(e)}
+        finally:
+            # Clean up processing set with delay to prevent immediate re-processing
+            if 'absolute_file_path' in locals():
+                def cleanup():
+                    with self._processing_lock:
+                        self._processing_documents.discard(absolute_file_path)
+                
+                threading.Timer(60.0, cleanup).start()  # 60 second delay
     
     def start_service(self):
         """Start the full service with file watching."""

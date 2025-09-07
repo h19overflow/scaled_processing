@@ -10,13 +10,15 @@ from chonkie.types import Chunk
 
 from ...two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
 
-# TODO 17:43:38.110 | ERROR   | Task run 'chonkie-chunking-bcb' - ❌ Chonkie chunking failed for Attendance System_August: nomic-ai/nomic-bert-2048 You can inspect the repository content at https://hf.co/nomic-ai/nomic-embed-text-v1.5.
-# Please pass the argument `trust_remote_code=True` to allow custom code to be run.
-# 17:43:38.112 | INFO    | Task run 'chonkie-chunking-bcb' - Finished in state Completed()
-# 17:43:38.387 | INFO    | Flow run 'incredible-flounder' - Finished in state Completed()
-# 2025-09-06 17:43:38,389 - __main__ - ERROR - ❌ Failed: Chonkie chunking failed: nomic-ai/nomic-bert-2048 You can inspect the repository content at https://hf.co/nomic-ai/nomic-embed-text-v1.5.
-# Please pass the argument `trust_remote_code=True` to allow custom code to be run.
-# 17:43:38.389 | ERROR   | __main__ - ❌ Failed: Chonkie chunking failed:
+# TODO 19:34:27.907 | ERROR   | Task run 'chonkie-chunking-b3a' - ❌ Chonkie chunking failed for Covering_Letter_-_AHMED_HAMZA_KHALED_MAHMOUD: 'Chunk' object has no attribute 'metadata'
+# 19:34:27.909 | INFO    | Task run 'chonkie-chunking-b3a' - Finished in state Completed()
+# 19:34:28.177 | INFO    | Flow run 'opal-hornet' - Finished in state Completed()
+# 2025-09-06 19:34:28,179 - __main__ - ERROR - ❌ Failed: Chonkie chunking failed: 'Chunk' object has no attribute 'metadata'
+# 19:34:28.179 | ERROR   | __main__ - ❌ Failed: Chonkie chunking failed: 'Chunk' object has no attribute 'metadata'
+# 2025-09-06 19:34:28,182 - SimpleFileConsumer - INFO - Processed and committed 1 messages
+# 19:34:28.182 | INFO    | SimpleFileConsumer - Processed and committed 1 messages
+# 2025-09-06 19:34:28,284 - __main__ - INFO - 🔄 Processing document: C:\Users\User\Projects\scaled_processing\data\documents\raw\Covering Letter - AHMED HAMZA KHALED MAHMOUD .pdf
+
 @task(name="chonkie-chunking", retries=2)
 def chonkie_chunking_task(
     text_content: str,
@@ -238,7 +240,11 @@ def _prepare_chunks(embedded_chunks: List[Chunk],
                    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2") -> List[Chunk]:
     """Add document-level metadata to each chunk."""
     for chunk in embedded_chunks:
-        chunk.metadata.update({
+        # Initialize context if None
+        if chunk.context is None:
+            chunk.context = {}
+        
+        chunk.context.update({
             "document_id": document_id,
             "page_count": page_count,
             "raw_file_path": raw_file_path,

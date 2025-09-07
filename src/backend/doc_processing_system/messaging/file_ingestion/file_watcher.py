@@ -5,6 +5,8 @@ Watches the raw documents directory and publishes file detection events.
 
 import logging
 import asyncio
+import threading
+import time
 from pathlib import Path
 from typing import Set
 from datetime import datetime
@@ -35,7 +37,11 @@ class DocumentFileHandler(FileSystemEventHandler):
     def on_modified(self, event):
         """Handle file modification events (for copy operations)."""
         if not event.is_directory:
-            self._handle_file_event(event.src_path, "modified")
+            # Only process modified events if file is not already in processing set
+            # This prevents duplicate processing of the same file
+            file_key = str(Path(event.src_path).resolve())
+            if file_key not in self.processing_files:
+                self._handle_file_event(event.src_path, "modified")
     
     def _handle_file_event(self, file_path: str, event_type: str):
         """Process file system events for document files."""
@@ -69,9 +75,9 @@ class DocumentFileHandler(FileSystemEventHandler):
         except Exception as e:
             self.logger.error(f"Error handling file event for {file_path}: {e}")
         finally:
-            # Simple cleanup - remove from processing set immediately
+            # Delayed cleanup - keep file in processing set for 30 seconds to prevent duplicates
             if 'file_key' in locals():
-                self.processing_files.discard(file_key)
+                threading.Timer(30.0, lambda: self.processing_files.discard(file_key)).start()
     
     def _publish_file_detected(self, file_path: Path):
         """Publish file detection event to Kafka."""

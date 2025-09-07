@@ -8,6 +8,8 @@ from typing import List, Dict, Any, Optional
 
 from chonkie import BaseChunker, OverlapRefinery, SentenceTransformerEmbeddings
 from chonkie.types import Chunk
+from wandb.sdk.internal.context import Context
+
 from .components.chunking.two_stage_chunker import TwoStageChunker
 
 
@@ -129,11 +131,11 @@ class ChonkieTwoStageChunker(BaseChunker):
                 text=chunk_data["content"],
                 start_index=0,  # We don't track character positions in our chunker
                 end_index=len(chunk_data["content"]),
-                token_count=chunk_data["metadata"]["word_count"]  # Approximate
+                token_count=chunk_data["metadata"]["word_count"]  ,# Approximate
             )
-            
+
             # Add metadata after construction
-            chunk.metadata.update({
+            chunk.context = {
                 **chunk_data["metadata"],
                 "chunk_id": chunk_data["chunk_id"],
                 "chunk_index": chunk_data["chunk_index"],
@@ -143,7 +145,7 @@ class ChonkieTwoStageChunker(BaseChunker):
                 "boundary_context": self.boundary_context,
                 "concurrent_agents": self.concurrent_agents,
                 "model_name": self.model_name
-            })
+            }
             chonkie_chunks.append(chunk)
 
         # Apply OverlapRefinery post-processing
@@ -165,14 +167,18 @@ class ChonkieTwoStageChunker(BaseChunker):
                 # Generate embedding for chunk text
                 vector = self.embeddings.embed(chunk.text)
 
-                # Add embedding to chunk metadata
-                chunk.metadata["embedding"] = vector
-                chunk.metadata["embedding_model"] = self.embedding_model
+                # Add embedding to chunk context (initialize if None)
+                if chunk.context is None:
+                    chunk.context = {}
+                chunk.context["embedding"] = vector
+                chunk.context["embedding_model"] = self.embedding_model
 
             except Exception as e:
                 # Log error but continue processing other chunks
-                print(f"Failed to generate embedding for chunk {chunk.metadata.get('chunk_id', 'unknown')}: {e}")
-                chunk.metadata["embedding_error"] = str(e)
+                print(f"Failed to generate embedding for chunk {chunk.context.get('chunk_id', 'unknown') if chunk.context else 'unknown'}: {e}")
+                if chunk.context is None:
+                    chunk.context = {}
+                chunk.context["embedding_error"] = str(e)
 
         return chunks
 
