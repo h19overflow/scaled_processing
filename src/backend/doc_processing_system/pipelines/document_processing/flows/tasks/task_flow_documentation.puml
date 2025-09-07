@@ -1,0 +1,96 @@
+@startuml Document Processing Task Flow
+title Document Processing Pipeline - Task Flow & Data Exchange
+
+!define TASK_COLOR #E3F2FD
+!define INPUT_COLOR #F3E5F5  
+!define OUTPUT_COLOR #E8F5E8
+!define ERROR_COLOR #FFEBEE
+
+participant "Flow Controller" as FC
+participant "duplicate_detection_task" as DD <<TASK_COLOR>>
+participant "docling_processing_task" as DP <<TASK_COLOR>>
+participant "markdown_vision_task" as MV <<TASK_COLOR>>
+participant "chonkie_chunking_task" as CC <<TASK_COLOR>>
+participant "document_saving_task" as DS <<TASK_COLOR>>
+participant "kafka_message_preparation_task" as KMP <<TASK_COLOR>>
+participant "weaviate_storage_task" as WS <<TASK_COLOR>>
+
+note over FC : **Document Processing Flow**\nAsync flow with concurrent task runner
+
+== Phase 1: Duplicate Detection ==
+
+FC -> DD : **INPUT:**\n• raw_file_path: str\n• user_id: str = "default"
+
+note over DD : 1. Creates ChonkieProcessor(enable_vision=False)\n2. Gets output_manager\n3. Calls check_duplicate_by_raw_file()\n4. Generates document_id if new
+
+DD --> FC : **OUTPUT:**\n{\n  "status": "duplicate" | "ready_for_processing" | "error",\n  "document_id": str,\n  "message": str\n}
+
+alt status == "duplicate"
+    FC --> FC : **EARLY RETURN**\nDocument already exists
+end
+
+== Phase 2: Document Extraction ==
+
+FC -> DP : **INPUT:**\n• raw_file_path: str\n• document_id: str\n• user_id: str = "default"
+
+note over DP : 1. Creates DoclingProcessor()\n2. Calls extract_document()\n3. Extracts markdown + images\n4. Returns file paths
+
+DP --> FC : **OUTPUT:**\n{\n  "status": "completed" | "error",\n  "processed_markdown_path": str,\n  "extracted_images_dir": str,\n  "document_id": str,\n  "file_info": {...}\n}
+
+== Phase 3: Vision Enhancement ==
+
+FC -> MV : **INPUT:**\n• processed_markdown_path: str\n• extracted_images_dir: str\n• document_id: str\n• file_info: dict\n• user_id: str = "default"
+
+note over MV : 1. Creates VisionProcessor()\n2. Enhances markdown with vision\n3. Describes images using LLM\n4. Creates enhanced markdown
+
+MV --> FC : **OUTPUT:**\n{\n  "status": "completed" | "error",\n  "vision_enhanced_markdown_path": str,\n  "content_length": int,\n  "page_count": int,\n  "images_processed": int\n}
+
+== Phase 4: Chunking & Embedding ==
+
+note over FC : Reads enhanced content from file
+
+FC -> CC : **INPUT:**\n• text_content: str\n• document_id: str\n• page_count: int\n• raw_file_path: str\n• chunk_size: int = 700\n• semantic_threshold: float = 0.75
+
+note over CC : 1. Creates ChonkieTwoStageChunker()\n2. Chunks text semantically\n3. Generates embeddings\n4. Adds document metadata
+
+CC --> FC : **OUTPUT:**\n{\n  "status": "completed" | "error",\n  "document_id": str,\n  "embedded_chunks": List[Chunk],\n  "chunk_count": int,\n  "chunking_params": {...}\n}
+
+== Phase 5: Document Saving ==
+
+FC -> DS : **INPUT:**\n• vision_enhanced_markdown_path: str\n• document_id: str\n• content_length: int\n• page_count: int\n• raw_file_path: str\n• user_id: str = "default"
+
+note over DS : **⚠️ ISSUE HERE:**\n1. Creates DocumentOutputManager()\n2. Saves processed content to files\n3. **Stores in database with PROCESSED content hash**\n4. **This can cause duplicate key violations!**
+
+DS --> FC : **OUTPUT:**\n{\n  "status": "completed" | "error",\n  "document_id": str,\n  "save_result": {...},\n  "processed_file_path": str\n}
+
+== Phase 6: Kafka Message Preparation ==
+
+FC -> KMP : **INPUT:**\n• save_result: dict\n• user_id: str = "default"
+
+note over KMP : 1. Prepares Kafka messages\n2. Formats event payloads\n3. Returns message ready for sending
+
+KMP --> FC : **OUTPUT:**\n{\n  "status": "completed" | "error",\n  "kafka_message": {...}\n}
+
+== Phase 7: Vector Storage (Optional) ==
+
+alt enable_weaviate_storage == true && embedded_chunks exist
+
+FC -> WS : **INPUT:**\n• embedded_chunks: List[Chunk]\n• document_id: str\n• collection_name: str = "rag_documents"\n• batch_size: int = 128\n• user_id: str = "default"
+
+note over WS : 1. Creates WeaviateHandshake\n2. Stores chunks with embeddings\n3. Uses batch operations\n4. Returns storage statistics
+
+WS --> FC : **OUTPUT:**\n{\n  "status": "completed" | "error",\n  "document_id": str,\n  "stored_chunks": int,\n  "failed_chunks": int,\n  "collection_name": str\n}
+
+else
+
+FC --> FC : **Weaviate storage skipped**
+
+end
+
+== Final Assembly ==
+
+FC --> FC : **FINAL RETURN:**\n{\n  "status": "completed" | "error",\n  "document_id": str,\n  "processing_steps": {...},\n  "chunking_result": {...},\n  "weaviate_storage": {...},\n  "message": str\n}
+
+note over FC #FFEBEE : **🚨 CRITICAL ISSUE IDENTIFIED:**\n\n**Duplicate Hash Problem:**\n• duplicate_detection_task uses RAW file hash\n• document_saving_task creates DB record with PROCESSED content hash\n• Same document processed multiple times = same processed hash\n• Results in unique constraint violation on content_hash\n\n**Root Cause:**\nTwo different hashing strategies in the pipeline
+
+@enduml
