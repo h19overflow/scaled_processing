@@ -22,7 +22,7 @@ class PreferenceManager:
         self.preferences_crud = PreferencesCRUD(connection_manager)
         self.logger = logging.getLogger(__name__)
 
-    async def get_user_preferences(
+    def get_user_preferences(
             self,
             user_id: str,
             classification: str
@@ -214,15 +214,9 @@ async def main():
         pm = PreferenceManager(conn)
         
         print("Getting all user preferences...")
-        preferences = pm.get_all_user_preferences("test_user")
+        preferences = pm.get_user_preferences('test_user',"invoice")
         
-        if preferences:
-            print("Found preferences:")
-            for classification, prefs in preferences.items():
-                print(f"  {classification}: {prefs}")
-        else:
-            print("No preferences found for user 'test_user'")
-            
+        print(preferences)
         print("✅ PreferenceManager test completed")
         
     except Exception as e:
