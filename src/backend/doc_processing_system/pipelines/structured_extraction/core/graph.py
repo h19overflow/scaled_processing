@@ -3,21 +3,22 @@ Graph orchestrator for multi-agent structured extraction.
 Minimal abstraction LangGraph builder for Prefect integration.
 """
 
-from langgraph.graph import StateGraph, END
 from functools import partial
 
-from .models.state import MultiAgentState
-from .config.settings import Settings
-from .nodes import (
+from langgraph.graph import StateGraph, END
+
+from ..config.settings import Settings
+from ..models.state import MultiAgentState
+from ..nodes import (
     chunk_document,
     sequential_discovery,
     consolidate_schema,
     generate_config,
     extract_data
 )
-from .nodes.classification import classify_document
-from .nodes.context_loading import load_feedback_context
-from .nodes.preference_injection import inject_user_preferences
+from ..nodes.classification import classify_document
+from ..nodes.context_loading import load_feedback_context
+from ..nodes.preference_injection import inject_user_preferences
 
 
 # Flow validated: classification -> feedback -> preferences -> chunking -> discovery -> consolidation -> config -> extraction

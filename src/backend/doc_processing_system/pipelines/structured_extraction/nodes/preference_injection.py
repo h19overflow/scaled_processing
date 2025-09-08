@@ -6,7 +6,7 @@ import logging
 from typing import Dict, Any
 
 from ..models.state import MultiAgentState
-from ..preference_manager import PreferenceManager
+from ..services.preference_manager import PreferenceManager
 from ....core_deps.database.connection_manager import ConnectionManager
 
 
@@ -37,7 +37,7 @@ async def inject_user_preferences(state: MultiAgentState) -> Dict[str, Any]:
             user_id=user_id,
             classification=classification
         )
-
+        # TODO INVESTIGATE - ensure this is working as expected with schema generation
         # Update state with preferences
         updated_state = {
             **state,

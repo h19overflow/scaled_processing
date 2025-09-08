@@ -8,10 +8,10 @@ from typing import Dict, Any
 from uuid import uuid4
 
 from .graph import build_graph, create_initial_state
-from .config.settings import Settings
-from .classification_service import DocumentClassificationService
-from .feedback_context_manager import FeedbackContextManager
-from .preference_manager import PreferenceManager
+from ..config.settings import Settings
+from ..services.classification_service import DocumentClassificationService
+from ..services.feedback_context_manager import FeedbackContextManager
+from ..services.preference_manager import PreferenceManager
 from ...core_deps.database.connection_manager import ConnectionManager
 
 # Sample documents for testing

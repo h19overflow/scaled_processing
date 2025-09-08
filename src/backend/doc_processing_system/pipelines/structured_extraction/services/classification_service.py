@@ -3,9 +3,10 @@ Document classification service for structured extraction.
 Detects document types using LLM and keyword fallback.
 """
 import logging
-from typing import Dict, List, Optional
-import google.generativeai as genai
 import os
+from typing import Dict, List, Optional
+
+import google.generativeai as genai
 
 from ...core_deps.database.CRUD.classification_crud import ClassificationCRUD
 from ...core_deps.database.connection_manager import ConnectionManager
@@ -22,7 +23,7 @@ class DocumentClassificationService:
 
         # Initialize Gemini client
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        self.model = genai.GenerativeModel("gemini-2.0-flash-exp")
+        self.model = genai.GenerativeModel("gemini-2.0-flash")
 
     async def classify_document(
             self,

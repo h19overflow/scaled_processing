@@ -6,7 +6,7 @@ import logging
 from typing import Dict, Any
 
 from ..models.state import MultiAgentState
-from ..classification_service import DocumentClassificationService
+from ..services.classification_service import DocumentClassificationService
 from ....core_deps.database.connection_manager import ConnectionManager
 
 

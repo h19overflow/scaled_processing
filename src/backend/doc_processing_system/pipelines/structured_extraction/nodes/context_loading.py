@@ -6,7 +6,7 @@ import logging
 from typing import Dict, Any
 
 from ..models.state import MultiAgentState
-from ..feedback_context_manager import FeedbackContextManager
+from ..services.feedback_context_manager import FeedbackContextManager
 from ....core_deps.database.connection_manager import ConnectionManager
 
 
