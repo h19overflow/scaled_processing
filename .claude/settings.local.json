@@ -44,7 +44,8 @@
       "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
       "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
       "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
-      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)"
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []

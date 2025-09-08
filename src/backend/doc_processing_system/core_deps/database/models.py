@@ -3,14 +3,12 @@ SQLAlchemy models for the document processing system.
 Defines database tables using SQLAlchemy ORM for PostgreSQL.
 """
 
-from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from uuid import uuid4
-import json
 
 from sqlalchemy import (
     Column, String, Integer, DateTime, Float, Text, Boolean,
-    ForeignKey, JSON, ARRAY, LargeBinary
+    ForeignKey, JSON, ARRAY
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -40,6 +38,9 @@ class DocumentModel(Base):
     # Relationships
     chunks = relationship("ChunkModel", back_populates="document", cascade="all, delete-orphan")
     extraction_results = relationship("ExtractionResultModel", back_populates="document", cascade="all, delete-orphan")
+    feedback = relationship("DocumentFeedbackModel", back_populates="document", cascade="all, delete-orphan")
+    classification = relationship("DocumentClassificationModel", back_populates="document",
+                                  cascade="all, delete-orphan")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
@@ -175,5 +176,96 @@ class QueryResultModel(Base):
             "result_data": self.result_data or {},
             "confidence_score": self.confidence_score,
             "source_documents": self.source_documents or [],
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class DocumentFeedbackModel(Base):
+    """SQLAlchemy model for document feedback table."""
+    __tablename__ = "document_feedback"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    classification = Column(String(100), nullable=False, index=True)
+    feedback_type = Column(String(50), nullable=False)
+    feedback_rating = Column(Integer)
+    user_id = Column(String(255), nullable=False, index=True)
+    feedback_comment = Column(Text)
+    extraction_fields = Column(JSON, default=dict)
+    system_generated = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+
+    # Relationships
+    document = relationship("DocumentModel", back_populates="feedback")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert model to dictionary."""
+        return {
+            "id": str(self.id),
+            "document_id": str(self.document_id),
+            "classification": self.classification,
+            "feedback_type": self.feedback_type,
+            "feedback_rating": self.feedback_rating,
+            "user_id": self.user_id,
+            "feedback_comment": self.feedback_comment,
+            "extraction_fields": self.extraction_fields or {},
+            "system_generated": self.system_generated,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class UserPreferencesModel(Base):
+    """SQLAlchemy model for user preferences table."""
+    __tablename__ = "user_preferences"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    user_id = Column(String(255), nullable=False, index=True)
+    classification = Column(String(100), nullable=False, index=True)
+    field_preferences = Column(JSON, default=dict)
+    extraction_style = Column(JSON, default=dict)
+    prompt_instructions = Column(Text)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert model to dictionary."""
+        return {
+            "id": str(self.id),
+            "user_id": self.user_id,
+            "classification": self.classification,
+            "field_preferences": self.field_preferences or {},
+            "extraction_style": self.extraction_style or {},
+            "prompt_instructions": self.prompt_instructions,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+class DocumentClassificationModel(Base):
+    """SQLAlchemy model for document classifications table."""
+    __tablename__ = "document_classifications"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    classification = Column(String(100), nullable=False, index=True)
+    confidence_score = Column(Float, nullable=False)
+    classification_method = Column(String(50), nullable=False)
+    keywords_found = Column(ARRAY(String))
+    user_id = Column(String(255), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+
+    # Relationships
+    document = relationship("DocumentModel", back_populates="classification")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert model to dictionary."""
+        return {
+            "id": str(self.id),
+            "document_id": str(self.document_id),
+            "classification": self.classification,
+            "confidence_score": self.confidence_score,
+            "classification_method": self.classification_method,
+            "keywords_found": self.keywords_found or [],
+            "user_id": self.user_id,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
