@@ -34,7 +34,17 @@
       "Bash(sed:*)",
       "Bash(pip install:*)",
       "Bash(rm:*)",
-      "Bash(uv remove:*)"
+      "Bash(uv remove:*)",
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
+      "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)"
     ],
     "deny": [],
     "ask": []

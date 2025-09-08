@@ -1,1 +1,0 @@
-# ExtractionAgent - Structured data extraction
