@@ -2,8 +2,8 @@
 Schema-related models for structured extraction.
 """
 
-from typing import List
-from pydantic import BaseModel
+from typing import List, Literal
+from pydantic import BaseModel, Field
 
 
 class FieldSchema(BaseModel):
@@ -30,3 +30,35 @@ class ConsolidatedSchema(BaseModel):
     document_type: str
     optimization_notes: str
     extraction_prompt: str
+
+
+class DocumentClassificationResult(BaseModel):
+    """Document classification result with structured output."""
+
+    classification: Literal[
+        "contract",
+        "invoice",
+        "resume",
+        "legal",
+        "medical",
+        "attendance",
+        "report",
+        "other"
+    ] = Field(
+        description="The document classification category"
+    )
+
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Confidence score between 0.0 and 1.0"
+    )
+
+    reasoning: str = Field(
+        description="Brief explanation of why this classification was chosen"
+    )
+
+    keywords_found: List[str] = Field(
+        default_factory=list,
+        description="Key terms or phrases that influenced the classification"
+    )

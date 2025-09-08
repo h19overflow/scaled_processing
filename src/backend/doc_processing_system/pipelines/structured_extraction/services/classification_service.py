@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 from pydantic_ai import Agent, RunContext
 from pydantic import BaseModel
-from .classification_schema import DocumentClassificationResult
+from ..models.schema import DocumentClassificationResult
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 from dotenv import load_dotenv
 load_dotenv()
@@ -43,13 +43,20 @@ def classification_system_prompt(ctx: RunContext[DocumentClassificationDeps]) ->
 - **report**: Business reports, analysis documents, monthly reports, performance reports
 - **other**: Any document that doesn't fit the above categories
 
+IMPORTANT: The document text below is formatted in three sections to give you comprehensive coverage of the document:
+- [DOCUMENT BEGINNING]: First ~1000 characters from the start
+- [DOCUMENT MIDDLE]: ~1000 characters from the middle section  
+- [DOCUMENT END]: Last ~1000 characters from the end
+
+This format ensures you see the document's structure from beginning to end, including headers, content, and conclusions.
+
 Document text to classify:
 {ctx.deps.text_sample}
 
 Provide:
 1. The most appropriate classification
 2. A confidence score (0.0-1.0) based on how certain you are
-3. Brief reasoning for your decision
+3. Brief reasoning for your decision (consider patterns from all three sections)
 4. Key terms/phrases that influenced your classification
 """
 
@@ -93,8 +100,8 @@ class DocumentClassificationService:
     async def _classify_with_llm(self, document_text: str) -> Dict[str, any]:
         """Classify document using pydantic AI agent."""
         try:
-            # Truncate text to avoid token limits
-            text_sample = document_text[:3000] if len(document_text) > 3000 else document_text
+            # Create comprehensive text sample from beginning, middle, and end
+            text_sample = self._create_comprehensive_sample(document_text)
             
             # Create dependencies
             deps = DocumentClassificationDeps(
@@ -172,6 +179,33 @@ class DocumentClassificationService:
         }
 
     # HELPER FUNCTIONS
+    def _create_comprehensive_sample(self, document_text: str, sample_size: int = 3000) -> str:
+        """Create a comprehensive text sample from beginning, middle, and end of document."""
+        if len(document_text) <= sample_size:
+            return document_text
+        
+        # Calculate section sizes
+        section_size = sample_size // 3
+        total_length = len(document_text)
+        
+        # Extract sections
+        beginning = document_text[:section_size]
+        middle_start = (total_length - section_size) // 2
+        middle = document_text[middle_start:middle_start + section_size]
+        end = document_text[-section_size:]
+        
+        # Create formatted sample with clear section indicators
+        comprehensive_sample = f"""[DOCUMENT BEGINNING - First {section_size} characters]
+{beginning}
+
+[DOCUMENT MIDDLE - {section_size} characters from middle section]  
+{middle}
+
+[DOCUMENT END - Last {section_size} characters]
+{end}"""
+        
+        return comprehensive_sample
+
     def get_user_classification_keywords(self, user_id: str) -> Dict[str, List[str]]:
         """Get user's custom classification keywords from database or use defaults."""
         try:

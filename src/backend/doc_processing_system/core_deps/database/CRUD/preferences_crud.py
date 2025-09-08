@@ -2,7 +2,7 @@
 CRUD operations for user preferences.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
@@ -71,28 +71,56 @@ class PreferencesCRUD(BaseRepository):
             self,
             user_id: str,
             classification: str
-    ) -> Optional[UserPreferencesModel]:
+    ) -> Optional[Dict[str, Any]]:
         """Get user preferences for specific document type."""
         try:
             with self.connection_manager.get_session() as session:
-                return session.query(UserPreferencesModel).filter(
+                record = session.query(UserPreferencesModel).filter(
                     and_(
                         UserPreferencesModel.user_id == user_id,
                         UserPreferencesModel.classification == classification
                     )
                 ).first()
+                
+                if record:
+                    return {
+                        "id": str(record.id),
+                        "user_id": record.user_id,
+                        "classification": record.classification,
+                        "field_preferences": record.field_preferences or {},
+                        "extraction_style": record.extraction_style or {},
+                        "prompt_instructions": record.prompt_instructions,
+                        "created_at": record.created_at.isoformat() if record.created_at else None,
+                        "updated_at": record.updated_at.isoformat() if record.updated_at else None
+                    }
+                return None
 
         except Exception as e:
             self.logger.error(f"Failed to get preferences: {e}")
             return None
 
-    def get_all_user_preferences(self, user_id: str) -> list[UserPreferencesModel]:
+    def get_all_user_preferences(self, user_id: str) -> List[Dict[str, Any]]:
         """Get all preferences for a user."""
         try:
             with self.connection_manager.get_session() as session:
-                return session.query(UserPreferencesModel).filter(
+                records = session.query(UserPreferencesModel).filter(
                     UserPreferencesModel.user_id == user_id
                 ).all()
+                
+                result = []
+                for record in records:
+                    result.append({
+                        "id": str(record.id),
+                        "user_id": record.user_id,
+                        "classification": record.classification,
+                        "field_preferences": record.field_preferences or {},
+                        "extraction_style": record.extraction_style or {},
+                        "prompt_instructions": record.prompt_instructions,
+                        "created_at": record.created_at.isoformat() if record.created_at else None,
+                        "updated_at": record.updated_at.isoformat() if record.updated_at else None
+                    })
+                
+                return result
 
         except Exception as e:
             self.logger.error(f"Failed to get all user preferences: {e}")

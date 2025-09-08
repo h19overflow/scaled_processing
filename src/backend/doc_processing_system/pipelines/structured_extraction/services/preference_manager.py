@@ -36,9 +36,9 @@ class PreferenceManager:
 
             if preferences_record:
                 return {
-                    "field_preferences": preferences_record.field_preferences,
-                    "extraction_style": preferences_record.extraction_style,
-                    "prompt_instructions": preferences_record.prompt_instructions
+                    "field_preferences": preferences_record["field_preferences"],
+                    "extraction_style": preferences_record["extraction_style"],
+                    "prompt_instructions": preferences_record["prompt_instructions"]
                 }
             else:
                 # Return default preferences
@@ -192,11 +192,11 @@ class PreferenceManager:
 
             result = {}
             for record in preferences_records:
-                result[record.classification] = {
-                    "field_preferences": record.field_preferences,
-                    "extraction_style": record.extraction_style,
-                    "prompt_instructions": record.prompt_instructions,
-                    "updated_at": record.updated_at.isoformat() if record.updated_at else None
+                result[record["classification"]] = {
+                    "field_preferences": record["field_preferences"],
+                    "extraction_style": record["extraction_style"],
+                    "prompt_instructions": record["prompt_instructions"],
+                    "updated_at": record["updated_at"]
                 }
 
             return result
@@ -204,3 +204,32 @@ class PreferenceManager:
         except Exception as e:
             self.logger.error(f"Failed to get all user preferences: {e}")
             return {}
+
+async def main():
+    """Test the preference manager functionality."""
+    print("Testing PreferenceManager...")
+    
+    try:
+        conn = ConnectionManager()
+        pm = PreferenceManager(conn)
+        
+        print("Getting all user preferences...")
+        preferences = pm.get_all_user_preferences("test_user")
+        
+        if preferences:
+            print("Found preferences:")
+            for classification, prefs in preferences.items():
+                print(f"  {classification}: {prefs}")
+        else:
+            print("No preferences found for user 'test_user'")
+            
+        print("✅ PreferenceManager test completed")
+        
+    except Exception as e:
+        print(f"❌ Error testing PreferenceManager: {e}")
+        import traceback
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
