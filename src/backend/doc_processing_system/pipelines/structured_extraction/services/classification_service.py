@@ -5,11 +5,11 @@ Detects document types using LLM and keyword fallback.
 import logging
 import os
 from typing import Dict, List, Optional
+from uuid import UUID, uuid4
 
 from pydantic_ai import Agent, RunContext
 from pydantic import BaseModel
 from .classification_schema import DocumentClassificationResult
-from src.backend.doc_processing_system.core_deps.database.CRUD.classification_crud import ClassificationCRUD
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 from dotenv import load_dotenv
 load_dotenv()
@@ -60,16 +60,10 @@ class DocumentClassificationService:
     def __init__(self, connection_manager: ConnectionManager):
         """Initialize classification service."""
         self.connection_manager = connection_manager
-        self.classification_crud = ClassificationCRUD(connection_manager)
         self.logger = logging.getLogger(__name__)
         
         # Set up API key
-    async def classify_document(
-            self,
-            document_text: str,
-            document_id: str,
-            user_id: str
-    ) -> Dict[str, any]:
+    async def classify_document(self, document_text: str) -> Dict[str, any]:
         """Classify document using LLM with keyword fallback."""
         try:
             # Try LLM classification first
@@ -83,16 +77,6 @@ class DocumentClassificationService:
                 keyword_result = self._classify_with_keywords(document_text)
                 classification_result = keyword_result
                 classification_result["method"] = "keyword"
-
-            # Store classification in database
-            self.classification_crud.create_classification(
-                document_id=document_id,
-                user_id=user_id,
-                classification=classification_result["classification"],
-                confidence_score=classification_result["confidence"],
-                classification_method=classification_result["method"],
-                keywords_found=classification_result.get("keywords", [])
-            )
 
             return classification_result
 
@@ -187,21 +171,13 @@ class DocumentClassificationService:
             "report": ["report", "analysis", "summary", "findings", "monthly", "quarterly", "performance", "status"]
         }
 
-    def get_document_classification(self, document_id: str) -> Optional[Dict[str, any]]:
-        """Get existing classification for document."""
+    # HELPER FUNCTIONS
+    def get_user_classification_keywords(self, user_id: str) -> Dict[str, List[str]]:
+        """Get user's custom classification keywords from database or use defaults."""
         try:
-            classification = self.classification_crud.get_document_classification(document_id)
-
-            if classification:
-                return {
-                    "classification": classification.classification,
-                    "confidence": classification.confidence_score,
-                    "method": classification.classification_method,
-                    "keywords": classification.keywords_found
-                }
-
-            return None
-
+            # TODO: Implement database lookup for user's custom keywords
+            # For now, return default keywords
+            return self.get_classification_keywords()
         except Exception as e:
-            self.logger.error(f"Failed to get classification: {e}")
-            return None
+            self.logger.error(f"Failed to get user classification keywords: {e}")
+            return self.get_classification_keywords()

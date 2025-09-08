@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from sqlalchemy import (
     Column, String, Integer, DateTime, Float, Text, Boolean,
-    ForeignKey, JSON, ARRAY
+    ForeignKey, JSON, ARRAY, UniqueConstraint
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -39,8 +39,6 @@ class DocumentModel(Base):
     chunks = relationship("ChunkModel", back_populates="document", cascade="all, delete-orphan")
     extraction_results = relationship("ExtractionResultModel", back_populates="document", cascade="all, delete-orphan")
     feedback = relationship("DocumentFeedbackModel", back_populates="document", cascade="all, delete-orphan")
-    classification = relationship("DocumentClassificationModel", back_populates="document",
-                                  cascade="all, delete-orphan")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
@@ -241,31 +239,58 @@ class UserPreferencesModel(Base):
         }
 
 
-class DocumentClassificationModel(Base):
-    """SQLAlchemy model for document classifications table."""
-    __tablename__ = "document_classifications"
+class ClassificationPreferencesModel(Base):
+    """SQLAlchemy model for user classification preferences."""
+    __tablename__ = "classification_preferences"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
-    classification = Column(String(100), nullable=False, index=True)
-    confidence_score = Column(Float, nullable=False)
-    classification_method = Column(String(50), nullable=False)
-    keywords_found = Column(ARRAY(String))
     user_id = Column(String(255), nullable=False, index=True)
+    classification_type = Column(String(100), nullable=False, index=True)
+    keywords = Column(ARRAY(String), nullable=False)
+    enabled = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=func.now())
-
-    # Relationships
-    document = relationship("DocumentModel", back_populates="classification")
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    
+    # Unique constraint to prevent duplicate classification types per user
+    __table_args__ = (
+        UniqueConstraint('user_id', 'classification_type', name='unique_user_classification'),
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
         return {
             "id": str(self.id),
-            "document_id": str(self.document_id),
-            "classification": self.classification,
-            "confidence_score": self.confidence_score,
-            "classification_method": self.classification_method,
-            "keywords_found": self.keywords_found or [],
             "user_id": self.user_id,
+            "classification_type": self.classification_type,
+            "keywords": self.keywords or [],
+            "enabled": self.enabled,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+class ClassificationFeedbackModel(Base):
+    """SQLAlchemy model for classification feedback."""
+    __tablename__ = "classification_feedback"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    user_id = Column(String(255), nullable=False, index=True)
+    classification_type = Column(String(100), nullable=False, index=True)
+    feedback_type = Column(String(50), nullable=False)  # "correct", "incorrect", "suggestion"
+    feedback_comment = Column(Text)
+    suggested_keywords = Column(ARRAY(String))
+    feedback_rating = Column(Integer)  # 1-5 rating
+    created_at = Column(DateTime(timezone=True), default=func.now())
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert model to dictionary."""
+        return {
+            "id": str(self.id),
+            "user_id": self.user_id,
+            "classification_type": self.classification_type,
+            "feedback_type": self.feedback_type,
+            "feedback_comment": self.feedback_comment,
+            "suggested_keywords": self.suggested_keywords or [],
+            "feedback_rating": self.feedback_rating,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
