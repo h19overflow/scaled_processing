@@ -4,18 +4,23 @@ Sequential schema discovery node.
 
 from typing import List
 import os
+import logging
 
 from ..models.state import MultiAgentState
 from ..models.schema import FieldSchema, ProgressiveSchema
 from ..config.settings import Settings
 from ..agents.discovery import create_discovery_agent, SequentialDiscoveryDeps
-
-
+# TODO EXAMINE DISCOVERY AGENT's OUTPUTS , ENSURE IT ADHERES TO THE STATE SPECIFICATIONS
 async def sequential_discovery(state: MultiAgentState, settings: Settings) -> MultiAgentState:
     """Process chunks sequentially to discover schemas."""
+    logger = logging.getLogger(__name__)
+    
     try:
-        # Set API key
-        os.environ.setdefault("OPENAI_API_KEY", settings.models.openai_api_key)
+        # Get context from state (populated by preference_injection and context_loading nodes)
+        user_preferences = state.get("user_preferences", {})
+        feedback_context = state.get("feedback_context", {})
+        user_id = state.get("user_id", "default_user")
+        classification = state.get("classification", "unknown")
 
         # Create agent
         agent = create_discovery_agent(settings.models.discovery_model)
@@ -25,12 +30,18 @@ async def sequential_discovery(state: MultiAgentState, settings: Settings) -> Mu
         discovered_fields: List[FieldSchema] = []
         document_type = settings.extraction.document_type
 
+        logger.info(f"Starting discovery with preferences: {bool(user_preferences)} and feedback: {bool(feedback_context.get('relevant_feedback'))}")
+
         for chunk in state["chunks"]:
             deps = SequentialDiscoveryDeps(
                 chunk_text=chunk.text,
                 chunk_id=chunk.chunk_id,
                 previous_discoveries=discovered_fields.copy(),
-                document_type=document_type
+                document_type=document_type,
+                user_preferences=user_preferences,
+                feedback_context=feedback_context,
+                user_id=user_id,
+                classification=classification
             )
 
             result = await agent.run(
@@ -43,6 +54,7 @@ async def sequential_discovery(state: MultiAgentState, settings: Settings) -> Mu
             document_type = progressive_schema.document_type
             progressive_results.append(progressive_schema)
 
+        logger.info(f"Discovery completed with {len(discovered_fields)} total fields discovered")
         return {
             **state,
             "progressive_results": progressive_results,
@@ -50,6 +62,7 @@ async def sequential_discovery(state: MultiAgentState, settings: Settings) -> Mu
         }
 
     except Exception as e:
+        logger.error(f"Sequential discovery failed: {e}")
         # Fallback with basic fields
         fallback_results = _create_fallback_schema(state["chunks"])
 
