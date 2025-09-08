@@ -6,6 +6,7 @@ Applies user preferences to extraction schemas and prompts.
 import logging
 from typing import Dict, Any, Optional
 
+from src.backend.doc_processing_system.core_deps.database.CRUD.preferences_crud import PreferencesCRUD
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 
 

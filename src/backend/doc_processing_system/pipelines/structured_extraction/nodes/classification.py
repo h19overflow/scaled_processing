@@ -43,7 +43,6 @@ async def classify_document(state: MultiAgentState) -> Dict[str, Any]:
 
         # Update state with classification results
         updated_state = {
-            **state,
             "classification": classification_result["classification"],
             "classification_confidence": classification_result["confidence"],
             "status": "classified"

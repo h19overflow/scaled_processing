@@ -10,14 +10,7 @@ from chonkie.types import Chunk
 
 from ...two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
 
-# TODO 19:34:27.907 | ERROR   | Task run 'chonkie-chunking-b3a' - ❌ Chonkie chunking failed for Covering_Letter_-_AHMED_HAMZA_KHALED_MAHMOUD: 'Chunk' object has no attribute 'metadata'
-# 19:34:27.909 | INFO    | Task run 'chonkie-chunking-b3a' - Finished in state Completed()
-# 19:34:28.177 | INFO    | Flow run 'opal-hornet' - Finished in state Completed()
-# 2025-09-06 19:34:28,179 - __main__ - ERROR - ❌ Failed: Chonkie chunking failed: 'Chunk' object has no attribute 'metadata'
-# 19:34:28.179 | ERROR   | __main__ - ❌ Failed: Chonkie chunking failed: 'Chunk' object has no attribute 'metadata'
-# 2025-09-06 19:34:28,182 - SimpleFileConsumer - INFO - Processed and committed 1 messages
-# 19:34:28.182 | INFO    | SimpleFileConsumer - Processed and committed 1 messages
-# 2025-09-06 19:34:28,284 - __main__ - INFO - 🔄 Processing document: C:\Users\User\Projects\scaled_processing\data\documents\raw\Covering Letter - AHMED HAMZA KHALED MAHMOUD .pdf
+
 
 @task(name="chonkie-chunking", retries=2)
 def chonkie_chunking_task(
