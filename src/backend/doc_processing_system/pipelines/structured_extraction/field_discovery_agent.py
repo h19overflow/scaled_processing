@@ -1,1 +1,0 @@
-# FieldDiscoveryAgent - Auto-detect extractable fields
