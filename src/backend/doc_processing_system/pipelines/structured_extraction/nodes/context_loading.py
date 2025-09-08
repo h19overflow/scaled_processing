@@ -41,7 +41,6 @@ async def load_feedback_context(state: MultiAgentState) -> Dict[str, Any]:
 
         # Update state with feedback context
         updated_state = {
-            **state,
             "feedback_context": feedback_context,
             "status": "context_loaded"
         }
@@ -59,3 +58,4 @@ async def load_feedback_context(state: MultiAgentState) -> Dict[str, Any]:
             "status": "context_loading_failed",
             "error": str(e)
         }
+

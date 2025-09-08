@@ -37,10 +37,7 @@ async def inject_user_preferences(state: MultiAgentState) -> Dict[str, Any]:
             user_id=user_id,
             classification=classification
         )
-        # TODO INVESTIGATE - ensure this is working as expected with schema generation
-        # Update state with preferences
         updated_state = {
-            **state,
             "user_preferences": user_preferences,
             "status": "preferences_loaded"
         }

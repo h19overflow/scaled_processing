@@ -24,7 +24,7 @@ class FeedbackCRUD(BaseRepository):
             feedback_comment: Optional[str] = None,
             extraction_fields: Optional[Dict[str, Any]] = None,
             system_generated: bool = False
-    ) -> Optional[DocumentFeedbackModel]:
+    ) -> Optional[Dict[str, Any]]:
         """Create new document feedback."""
         try:
             with self.connection_manager.get_session() as session:
@@ -44,7 +44,18 @@ class FeedbackCRUD(BaseRepository):
                 session.refresh(feedback)
 
                 self._log_operation("Created feedback", str(feedback.id))
-                return feedback
+                return {
+                    "id": str(feedback.id),
+                    "document_id": str(feedback.document_id),
+                    "user_id": feedback.user_id,
+                    "classification": feedback.classification,
+                    "feedback_type": feedback.feedback_type,
+                    "feedback_rating": feedback.feedback_rating,
+                    "feedback_comment": feedback.feedback_comment,
+                    "extraction_fields": feedback.extraction_fields or {},
+                    "system_generated": feedback.system_generated,
+                    "created_at": feedback.created_at.isoformat() if feedback.created_at else None
+                }
 
         except Exception as e:
             self.logger.error(f"Failed to create feedback: {e}")
@@ -54,7 +65,7 @@ class FeedbackCRUD(BaseRepository):
             self,
             document_id: str,
             user_id: Optional[str] = None
-    ) -> List[DocumentFeedbackModel]:
+    ) -> List[Dict[str, Any]]:
         """Get feedback for a specific document."""
         try:
             with self.connection_manager.get_session() as session:
@@ -65,7 +76,24 @@ class FeedbackCRUD(BaseRepository):
                 if user_id:
                     query = query.filter(DocumentFeedbackModel.user_id == user_id)
 
-                return query.order_by(desc(DocumentFeedbackModel.created_at)).all()
+                records = query.order_by(desc(DocumentFeedbackModel.created_at)).all()
+                
+                result = []
+                for record in records:
+                    result.append({
+                        "id": str(record.id),
+                        "document_id": str(record.document_id),
+                        "user_id": record.user_id,
+                        "classification": record.classification,
+                        "feedback_type": record.feedback_type,
+                        "feedback_rating": record.feedback_rating,
+                        "feedback_comment": record.feedback_comment,
+                        "extraction_fields": record.extraction_fields or {},
+                        "system_generated": record.system_generated,
+                        "created_at": record.created_at.isoformat() if record.created_at else None
+                    })
+                
+                return result
 
         except Exception as e:
             self.logger.error(f"Failed to get feedback by document: {e}")
@@ -76,11 +104,11 @@ class FeedbackCRUD(BaseRepository):
             classification: str,
             user_id: str,
             limit: int = 10
-    ) -> List[DocumentFeedbackModel]:
+    ) -> List[Dict[str, Any]]:
         """Get top-rated feedback for document classification."""
         try:
             with self.connection_manager.get_session() as session:
-                return session.query(DocumentFeedbackModel).filter(
+                records = session.query(DocumentFeedbackModel).filter(
                     and_(
                         DocumentFeedbackModel.classification == classification,
                         DocumentFeedbackModel.user_id == user_id,
@@ -90,6 +118,23 @@ class FeedbackCRUD(BaseRepository):
                     desc(DocumentFeedbackModel.feedback_rating),
                     desc(DocumentFeedbackModel.created_at)
                 ).limit(limit).all()
+                
+                result = []
+                for record in records:
+                    result.append({
+                        "id": str(record.id),
+                        "document_id": str(record.document_id),
+                        "user_id": record.user_id,
+                        "classification": record.classification,
+                        "feedback_type": record.feedback_type,
+                        "feedback_rating": record.feedback_rating,
+                        "feedback_comment": record.feedback_comment,
+                        "extraction_fields": record.extraction_fields or {},
+                        "system_generated": record.system_generated,
+                        "created_at": record.created_at.isoformat() if record.created_at else None
+                    })
+                
+                return result
 
         except Exception as e:
             self.logger.error(f"Failed to get feedback by classification: {e}")

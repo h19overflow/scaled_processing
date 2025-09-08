@@ -19,7 +19,7 @@ class FeedbackContextManager:
         self.feedback_crud = FeedbackCRUD(connection_manager)
         self.logger = logging.getLogger(__name__)
 
-    async def get_feedback_context(
+    def get_feedback_context(
             self,
             classification: str,
             user_id: str,
@@ -49,24 +49,24 @@ class FeedbackContextManager:
 
             for feedback in feedback_records:
                 feedback_data = {
-                    "rating": feedback.feedback_rating,
-                    "comment": feedback.feedback_comment,
-                    "fields": feedback.extraction_fields,
-                    "type": feedback.feedback_type
+                    "rating": feedback["feedback_rating"],
+                    "comment": feedback["feedback_comment"],
+                    "fields": feedback["extraction_fields"],
+                    "type": feedback["feedback_type"]
                 }
                 relevant_feedback.append(feedback_data)
 
                 # Collect field corrections
-                if feedback.extraction_fields:
-                    for field_name, field_data in feedback.extraction_fields.items():
+                if feedback["extraction_fields"]:
+                    for field_name, field_data in feedback["extraction_fields"].items():
                         if isinstance(field_data, dict) and "correction" in field_data:
                             if field_name not in field_corrections:
                                 field_corrections[field_name] = []
                             field_corrections[field_name].append(field_data["correction"])
 
                 # Collect common issues
-                if feedback.feedback_comment:
-                    common_issues.append(feedback.feedback_comment)
+                if feedback["feedback_comment"]:
+                    common_issues.append(feedback["feedback_comment"])
 
             # Build context prompt
             context_prompt = self.build_enhancement_prompt(relevant_feedback, field_corrections)
@@ -171,3 +171,8 @@ class FeedbackContextManager:
         except Exception as e:
             self.logger.error(f"Failed to get document feedback: {e}")
             return []
+
+if __name__ == "__main__":
+    # Example usage
+    manager = FeedbackContextManager(ConnectionManager())
+    print(manager.get_feedback_context("invoice", "test_user",limit=5))
