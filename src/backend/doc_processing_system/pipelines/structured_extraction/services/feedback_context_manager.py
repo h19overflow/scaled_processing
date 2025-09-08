@@ -6,8 +6,8 @@ Loads and applies user feedback to improve extractions.
 import logging
 from typing import Dict, List, Any
 
-from ...core_deps.database.CRUD.feedback_crud import FeedbackCRUD
-from ...core_deps.database.connection_manager import ConnectionManager
+from src.backend.doc_processing_system.core_deps.database.CRUD.feedback_crud import FeedbackCRUD
+from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 
 
 class FeedbackContextManager:

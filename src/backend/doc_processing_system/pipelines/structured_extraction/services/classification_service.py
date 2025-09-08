@@ -8,8 +8,8 @@ from typing import Dict, List, Optional
 
 import google.generativeai as genai
 
-from ...core_deps.database.CRUD.classification_crud import ClassificationCRUD
-from ...core_deps.database.connection_manager import ConnectionManager
+from src.backend.doc_processing_system.core_deps.database.CRUD.classification_crud import ClassificationCRUD
+from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 
 
 class DocumentClassificationService:
