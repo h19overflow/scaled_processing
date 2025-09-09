@@ -15,8 +15,6 @@ from ..agents.consolidation import create_consolidation_agent, ConsolidationDeps
 async def consolidate_schema(state: MultiAgentState, settings: Settings) -> MultiAgentState:
     """Consolidate discovered schemas into final optimized schema."""
     try:
-        # Set API key
-        os.environ.setdefault("OPENAI_API_KEY", settings.models.openai_api_key)
 
         # Collect all discovered fields
         all_fields = []
