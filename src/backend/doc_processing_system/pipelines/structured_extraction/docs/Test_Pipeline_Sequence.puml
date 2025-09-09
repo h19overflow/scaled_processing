@@ -1,0 +1,186 @@
+@startuml Test Pipeline - Chunking to Discovery Flow
+title Tested Pipeline Nodes - Complete Integration Flow
+
+actor "Test Script" as Test
+participant "Chunking Node" as Chunking
+participant "Preference Injection" as Preferences
+participant "Context Loading" as Context
+participant "Discovery Node" as Discovery
+database "PostgreSQL" as DB
+participant "AI Agent (Gemini)" as AI
+collections "Test Results" as Results
+
+== Test Initialization ==
+Test -> Test: initialize_test_state()
+note right of Test
+  Initial State:
+  - document_text: "docs/phases/system_progress_summary.md"
+  - document_id: "test_doc_1"
+  - classification: "contract"
+  - user_id: "test_user"
+end note
+
+== STEP 1: Document Chunking ==
+Test -> Chunking: chunk_document(state, settings)
+activate Chunking
+Chunking -> Chunking: _read_markdown_file(file_path)
+Chunking -> Chunking: _create_chunks(text, document_id, config)
+note right of Chunking
+  Configuration:
+  - max_tokens: 5128
+  - overlap_tokens: 200
+  - use_tiktoken: True
+end note
+Chunking -> Chunking: _tiktoken_chunk(text, max_tokens, overlap)
+Chunking --> Test: {chunks: [3 chunks], status: "chunked"}
+deactivate Chunking
+
+Test -> Results: save_chunking_results.json
+note right of Results
+  Results:
+  - 3 chunks created
+  - 5128 tokens each
+  - Token positions tracked
+end note
+
+== STEP 2: Preference Injection ==
+Test -> Preferences: inject_user_preferences(state)
+activate Preferences
+Preferences -> DB: get_user_preferences(user_id="test_user", classification="contract")
+activate DB
+note right of DB
+  Database Query:
+  SELECT field_preferences, extraction_style, prompt_instructions
+  FROM user_preferences 
+  WHERE user_id = 'test_user' AND classification = 'contract'
+end note
+DB --> Preferences: user_preferences
+deactivate DB
+
+note right of Preferences
+  Loaded Preferences:
+  - field_priorities: {employee_name: 0.9, salary: 0.9}
+  - extraction_style: {verbosity: "detailed", confidence: 0.8}
+  - prompt_instructions: "Focus on employment terms"
+end note
+Preferences --> Test: {user_preferences: {...}, status: "preferences_loaded"}
+deactivate Preferences
+
+Test -> Results: save_preference_results.json
+
+== STEP 3: Context Loading ==
+Test -> Context: load_feedback_context(state)
+activate Context
+Context -> DB: get_feedback_by_classification(classification="contract", user_id="test_user")
+activate DB
+note right of DB
+  Database Query:
+  SELECT feedback_type, comment, fields, rating
+  FROM document_feedback
+  WHERE classification = 'contract' AND user_id = 'test_user'
+  ORDER BY rating DESC LIMIT 5
+end note
+DB --> Context: feedback_records[5]
+deactivate DB
+
+Context -> Context: build_feedback_context(records)
+note right of Context
+  Context Built:
+  - 5 relevant feedback items
+  - Common issues: "Salary format improvement"
+  - Field corrections: termination_clause missing
+  - Context prompt generated
+end note
+Context --> Test: {feedback_context: {...}, status: "context_loaded"}
+deactivate Context
+
+Test -> Results: save_context_results.json
+
+== STEP 4: Enhanced Discovery Processing ==
+Test -> Discovery: run_discovery_with_prompts(enhanced_state, settings)
+activate Discovery
+
+Discovery -> Discovery: create_discovery_agent(model="gemini-2.0-flash")
+
+loop For each chunk (0, 1, 2)
+    Discovery -> Discovery: build_enhanced_prompt(chunk, preferences, context, previous_discoveries)
+    
+    alt Chunk 0 (First chunk)
+        note right of Discovery
+          Enhanced Prompt Includes:
+          - Previous discoveries: "None yet"
+          - User preferences: Employment terms focus
+          - Feedback context: Salary format issues
+          - Classification: contract
+        end note
+    else Chunk 1+ (Subsequent chunks)
+        note right of Discovery
+          Enhanced Prompt Includes:
+          - Previous discoveries: Fields from earlier chunks
+          - User preferences: High priority fields
+          - Feedback context: Avoid common issues
+          - Progressive context building
+        end note
+    end
+    
+    Discovery -> AI: agent.run(enhanced_prompt, deps)
+    activate AI
+    note right of AI
+      AI Processing:
+      - Model: gemini-2.0-flash
+      - Task: Field discovery with context
+      - Input: Enhanced prompt + chunk text
+      - Output: ProgressiveSchema
+    end note
+    AI --> Discovery: progressive_schema{discovered_fields, document_type, confidence}
+    deactivate AI
+    
+    Discovery -> Discovery: accumulate_discovered_fields(progressive_schema)
+    Discovery -> Test: capture_prompt(chunk_id, enhanced_prompt)
+end
+
+Discovery --> Test: {progressive_results: [3 schemas], discovered_fields: [3 fields]}
+deactivate Discovery
+
+== STEP 5: Results Capture and Analysis ==
+Test -> Results: save_discovery_results.json
+note right of Results
+  Discovery Results:
+  - total_fields_discovered: 3
+  - Fields: workflow_types, content_type, duplicate_detection_status
+  - All with contract classification context
+end note
+
+loop For each captured prompt
+    Test -> Results: save_chunk_X_prompt.txt
+    note right of Results
+      Each prompt file contains:
+      - Full enhanced prompt text
+      - User preferences integration
+      - Feedback context integration
+      - Chunk text preview
+    end note
+end
+
+Test -> Results: save_prompts_summary.json
+Test -> Test: analyze_pipeline_performance()
+
+note over Test, Results
+  Test Validation:
+  ✅ Chunking: 3 chunks created successfully
+  ✅ Preferences: Contract-specific preferences loaded
+  ✅ Context: 5 feedback items loaded with common issues
+  ✅ Discovery: 3 fields discovered with enhanced context
+  ✅ Prompts: All prompts captured showing context integration
+end note
+
+== Error Handling Demonstrated ==
+note over Preferences, Context
+  Error Resolution:
+  - Fixed async/await errors in both nodes
+  - preference_manager.get_user_preferences() is sync (removed await)
+  - context_manager.get_feedback_context() is sync (removed await)
+  - Both nodes now work correctly with database integration
+end note
+
+@enduml

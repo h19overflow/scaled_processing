@@ -1,0 +1,36 @@
+{
+  "status": "discovery_complete",
+  "error": null,
+  "classification": "contract",
+  "user_id": "test_user",
+  "preference_injection_status": "preferences_loaded",
+  "context_loading_status": "context_loaded",
+  "user_preferences_loaded": true,
+  "feedback_context_loaded": true,
+  "progressive_results_count": 3,
+  "total_fields_discovered": 0,
+  "discovered_fields": [],
+  "progressive_schemas": [
+    {
+      "chunk_id": 0,
+      "document_type": "technical report",
+      "confidence_level": "high",
+      "chunk_coverage": 1,
+      "fields_count": 0
+    },
+    {
+      "chunk_id": 1,
+      "document_type": "technical report",
+      "confidence_level": "high",
+      "chunk_coverage": 1,
+      "fields_count": 0
+    },
+    {
+      "chunk_id": 2,
+      "document_type": "technical report",
+      "confidence_level": "high",
+      "chunk_coverage": 2,
+      "fields_count": 0
+    }
+  ]
+}

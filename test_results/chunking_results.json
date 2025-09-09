@@ -1,0 +1,27 @@
+{
+  "status": "chunked",
+  "chunk_count": 3,
+  "chunks": [
+    {
+      "chunk_id": 0,
+      "token_count": 5128,
+      "text_preview": "# System Progress Summary: Foundation to Messaging Infrastructure\n\n## \ud83c\udfaf Overall Progress: Sprint 0 & 1 Complete \u2705\n\nWe have successfully built the complete foundation and messaging infrastructure for t",
+      "start_char": 0,
+      "end_char": 23216
+    },
+    {
+      "chunk_id": 1,
+      "token_count": 5128,
+      "text_preview": " errors/                   # Error and exception logs\n\u2514\u2500\u2500 monitoring/                   # System monitoring data\n    \u251c\u2500\u2500 metrics/                  # Performance metrics\n    \u2514\u2500\u2500 health/                ",
+      "start_char": 22279,
+      "end_char": 45924
+    },
+    {
+      "chunk_id": 2,
+      "token_count": 5066,
+      "text_preview": "_manager.save_processed_document(document_id, parsed_document.content, metadata, user_id)\n        \n        # Step 4: Prepare Kafka message for downstream processing\n        message_result = self.outpu",
+      "start_char": 45024,
+      "end_char": 68538
+    }
+  ]
+}

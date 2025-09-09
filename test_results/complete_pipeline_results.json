@@ -1,0 +1,31 @@
+{
+  "pipeline_status": "completed",
+  "final_status": "consolidated",
+  "error": null,
+  "classification": "unknown",
+  "user_id": "unknown",
+  "chunk_count": 3,
+  "progressive_results_count": 3,
+  "final_fields_count": 8,
+  "chunking": {
+    "status": "completed",
+    "chunks": 3
+  },
+  "preference_injection": {
+    "status": "failed",
+    "preferences_loaded": false
+  },
+  "context_loading": {
+    "status": "failed",
+    "context_loaded": false
+  },
+  "discovery": {
+    "status": "completed",
+    "progressive_results": 3,
+    "total_fields_discovered": 12
+  },
+  "consolidation": {
+    "status": "completed",
+    "final_fields": 8
+  }
+}

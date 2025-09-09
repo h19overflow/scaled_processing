@@ -1,0 +1,23 @@
+{
+  "total_chunks": 3,
+  "prompts": [
+    {
+      "chunk_id": 0,
+      "prompt_length": 24877,
+      "chunk_preview_length": 303,
+      "filename": "chunk_0_prompt.txt"
+    },
+    {
+      "chunk_id": 1,
+      "prompt_length": 25314,
+      "chunk_preview_length": 303,
+      "filename": "chunk_1_prompt.txt"
+    },
+    {
+      "chunk_id": 2,
+      "prompt_length": 25183,
+      "chunk_preview_length": 303,
+      "filename": "chunk_2_prompt.txt"
+    }
+  ]
+}

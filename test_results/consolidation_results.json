@@ -1,0 +1,13 @@
+{
+  "status": "consolidated",
+  "error": "Schema consolidation failed: No fields discovered to consolidate",
+  "consolidated_schema": {
+    "final_fields_count": 0,
+    "document_type": "document",
+    "optimization_notes": "Fallback consolidation: basic deduplication applied",
+    "extraction_prompt": "Extract structured information from this document document",
+    "final_fields": []
+  },
+  "input_fields_count": 0,
+  "max_fields_setting": 8
+}

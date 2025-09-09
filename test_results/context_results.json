@@ -1,0 +1,72 @@
+{
+  "status": "context_loaded",
+  "error": null,
+  "feedback_context": {
+    "relevant_feedback": [
+      {
+        "rating": 3,
+        "comment": "Salary format needs improvement. Extract salary as structured amount with currency",
+        "fields": {
+          "salary": {
+            "format_issue": true,
+            "suggestions": "Extract salary as structured amount with currency"
+          }
+        },
+        "type": "field_format"
+      },
+      {
+        "rating": 3,
+        "comment": "Missing termination clause information. Please extract termination conditions when available",
+        "fields": {
+          "termination_clause": {
+            "missing": true,
+            "suggestions": "Extract termination conditions when available"
+          }
+        },
+        "type": "field_missing"
+      },
+      {
+        "rating": 3,
+        "comment": "Salary format needs improvement. Extract salary as structured amount with currency",
+        "fields": {
+          "salary": {
+            "format_issue": true,
+            "suggestions": "Extract salary as structured amount with currency"
+          }
+        },
+        "type": "field_format"
+      },
+      {
+        "rating": 3,
+        "comment": "Missing termination clause information. Please extract termination conditions when available",
+        "fields": {
+          "termination_clause": {
+            "missing": true,
+            "suggestions": "Extract termination conditions when available"
+          }
+        },
+        "type": "field_missing"
+      },
+      {
+        "rating": 3,
+        "comment": "Salary format needs improvement. Extract salary as structured amount with currency",
+        "fields": {
+          "salary": {
+            "format_issue": true,
+            "suggestions": "Extract salary as structured amount with currency"
+          }
+        },
+        "type": "field_format"
+      }
+    ],
+    "context_prompt": "Based on previous user feedback, please pay special attention to:",
+    "field_corrections": {},
+    "common_issues": [
+      "Salary format needs improvement. Extract salary as structured amount with currency",
+      "Missing termination clause information. Please extract termination conditions when available",
+      "Salary format needs improvement. Extract salary as structured amount with currency"
+    ]
+  },
+  "classification": "unknown",
+  "user_id": "unknown"
+}
