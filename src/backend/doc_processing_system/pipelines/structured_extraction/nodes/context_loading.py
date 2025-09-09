@@ -33,7 +33,7 @@ async def load_feedback_context(state: MultiAgentState) -> Dict[str, Any]:
 
         # Load feedback context
         logger.info(f"Loading feedback context for {classification}")
-        feedback_context = await context_manager.get_feedback_context(
+        feedback_context = context_manager.get_feedback_context(
             classification=classification,
             user_id=user_id,
             limit=5

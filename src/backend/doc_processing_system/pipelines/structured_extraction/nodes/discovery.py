@@ -11,9 +11,6 @@ from ..models.schema import FieldSchema, ProgressiveSchema
 from ..models.state import MultiAgentState
 
 
-# TODO EXAMINE DISCOVERY AGENT's OUTPUTS , ENSURE IT ADHERES TO THE STATE SPECIFICATIONS
-# TODO Two approaches can be done here : 1- make another agent to aggregate the preference and the feedback and reformat it
-# TODO 2- modify the output such that it's strucured so well in the prompt and coherent enough.
 
 async def sequential_discovery(state: MultiAgentState, settings: Settings) -> MultiAgentState:
     """Process chunks sequentially to discover schemas."""
@@ -52,6 +49,7 @@ async def sequential_discovery(state: MultiAgentState, settings: Settings) -> Mu
                 f"Analyze chunk {chunk.chunk_id} and find new extractable fields",
                 deps=deps
             )
+            print()
 
             progressive_schema = result.data
             discovered_fields.extend(progressive_schema.discovered_fields)

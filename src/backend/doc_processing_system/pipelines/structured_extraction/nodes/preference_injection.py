@@ -33,7 +33,7 @@ async def inject_user_preferences(state: MultiAgentState) -> Dict[str, Any]:
 
         # Load user preferences
         logger.info(f"Loading preferences for {classification}")
-        user_preferences = await preference_manager.get_user_preferences(
+        user_preferences = preference_manager.get_user_preferences(
             user_id=user_id,
             classification=classification
         )
