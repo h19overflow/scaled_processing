@@ -25,3 +25,9 @@ class DocumentSchema(BaseModel):
     document_type: str
     extraction_classes: List["FieldSchema"]
     extraction_prompt: str
+
+
+# Rebuild the model to resolve forward references
+# Import FieldSchema and provide it in the global namespace for model_rebuild
+from .schema import FieldSchema
+DocumentSchema.model_rebuild()
