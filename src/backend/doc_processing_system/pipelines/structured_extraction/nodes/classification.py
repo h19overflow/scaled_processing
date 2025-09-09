@@ -37,8 +37,6 @@ async def classify_document(state: MultiAgentState) -> Dict[str, Any]:
         logger.info(f"Classifying document {document_id}")
         classification_result = await classification_service.classify_document(
             document_text=document_text,
-            document_id=document_id,
-            user_id=user_id
         )
 
         # Update state with classification results

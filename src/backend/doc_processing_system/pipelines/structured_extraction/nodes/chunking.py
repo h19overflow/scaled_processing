@@ -26,16 +26,16 @@ def chunk_document(state: MultiAgentState, settings: Settings) -> MultiAgentStat
             document_id=state["document_id"],
             config=settings.chunking
         )
+        print(
+            f"Created {len(chunks)} chunks from document {state['document_id']}, each with up to {settings.chunking.max_tokens} tokens.,Type{type(chunks)}")
 
         return {
-            **state,
             "chunks": chunks,
             "status": "chunked"
         }
 
     except Exception as e:
         return {
-            **state,
             "error": f"Document chunking failed: {str(e)}",
             "status": "error"
         }

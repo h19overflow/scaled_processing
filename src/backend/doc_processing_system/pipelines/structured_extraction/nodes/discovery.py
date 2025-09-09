@@ -2,15 +2,19 @@
 Sequential schema discovery node.
 """
 
-from typing import List
-import os
 import logging
+from typing import List
 
-from ..models.state import MultiAgentState
-from ..models.schema import FieldSchema, ProgressiveSchema
-from ..config.settings import Settings
 from ..agents.discovery import create_discovery_agent, SequentialDiscoveryDeps
+from ..config.settings import Settings
+from ..models.schema import FieldSchema, ProgressiveSchema
+from ..models.state import MultiAgentState
+
+
 # TODO EXAMINE DISCOVERY AGENT's OUTPUTS , ENSURE IT ADHERES TO THE STATE SPECIFICATIONS
+# TODO Two approaches can be done here : 1- make another agent to aggregate the preference and the feedback and reformat it
+# TODO 2- modify the output such that it's strucured so well in the prompt and coherent enough.
+
 async def sequential_discovery(state: MultiAgentState, settings: Settings) -> MultiAgentState:
     """Process chunks sequentially to discover schemas."""
     logger = logging.getLogger(__name__)
