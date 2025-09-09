@@ -15,11 +15,17 @@ from ..models.state import MultiAgentState
 def chunk_document(state: MultiAgentState, settings: Settings) -> MultiAgentState:
     """Chunk document into processing batches."""
     try:
-        markdown_file_path = state["document_text"]
-        if not markdown_file_path:
-            raise ValueError("No markdown file path provided")
+        document_input = state["document_text"]
+        if not document_input:
+            raise ValueError("No document text or file path provided")
 
-        text = _read_markdown_file(markdown_file_path)
+        # Check if input is a file path or actual content
+        if document_input.startswith(('docs/', '/', './', '../')) or document_input.endswith('.md'):
+            # It's a file path - read the file
+            text = _read_markdown_file(document_input)
+        else:
+            # It's actual document content
+            text = document_input
         
         chunks = _create_chunks(
             text=text,
@@ -31,6 +37,7 @@ def chunk_document(state: MultiAgentState, settings: Settings) -> MultiAgentStat
 
         return {
             "chunks": chunks,
+            "document_text": text,  # Include actual document content for downstream nodes
             "status": "chunked"
         }
 
