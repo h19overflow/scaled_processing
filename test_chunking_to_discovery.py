@@ -74,33 +74,51 @@ async def test_chunking_to_discovery():
     print("=" * 60)
     print("PIPELINE TEST: Using Existing Nodes Only")
     print("=" * 60)
-    
+    print("Current_ID:",initial_state.get('document_id'))
     # STEP 1: Chunking
     print("\nSTEP 1: Chunking Node")
     print("-" * 30)
     
-    current_state = chunk_document(initial_state, settings)
-    print(f"Chunking Status: {current_state.get('status')}")
-    if current_state.get('error'):
-        print(f"Chunking Error: {current_state['error']}")
+    chunking_result = chunk_document(initial_state, settings)
+    print(f"Chunking Status: {chunking_result.get('status')}")
+    if chunking_result.get('error'):
+        print(f"Chunking Error: {chunking_result['error']}")
         return
+    
+    # Manually merge state since chunking node doesn't preserve it
+    current_state = {**initial_state, **chunking_result}
     
     chunks = current_state.get('chunks', [])
     print(f"Number of chunks created: {len(chunks)}")
-    print("doc id:", current_state.get('document_id'))
-    current_state = await classify_document(current_state)
+    print("doc id after chunking:", current_state.get('document_id'))
+    
+    # STEP 1.5: Classification
+    print("\nSTEP 1.5: Classification Node")
+    print("-" * 35)
+    
+    classification_result = await classify_document(current_state)
+    print(f"Classification Status: {classification_result.get('status')}")
+    
+    # Manually merge state since classification node doesn't preserve it on success
+    current_state = {**current_state, **classification_result}
+    print("doc id after classification:", current_state.get('document_id'))
+    print("classification:", current_state.get('classification'))
     # STEP 2: Preference Injection
     print("\nSTEP 2: Preference Injection Node")
     print("-" * 35)
     
     try:
-        current_state = await inject_user_preferences(current_state)
-        print(f"Preference Status: {current_state.get('status')}")
-        if current_state.get('error'):
-            print(f"Preference Error: {current_state['error']}")
-        else:
-            user_prefs = current_state.get('user_preferences', {})
-            print(f"User preferences loaded: {bool(user_prefs)}")
+        preference_result = await inject_user_preferences(current_state)
+        print(f"Preference Status: {preference_result.get('status')}")
+        if preference_result.get('error'):
+            print(f"Preference Error: {preference_result['error']}")
+        
+        # Manually merge state since preference node doesn't preserve it
+        current_state = {**current_state, **preference_result}
+        
+        user_prefs = current_state.get('user_preferences', {})
+        print(f"User preferences loaded: {bool(user_prefs)}")
+        print("doc id after preferences:", current_state.get('document_id'))
     except Exception as e:
         print(f"Preference injection failed: {e}")
         current_state['error'] = str(e)
@@ -111,16 +129,20 @@ async def test_chunking_to_discovery():
     print("-" * 30)
     
     try:
-        current_state = await load_feedback_context(current_state)
-        print(f"Context Status: {current_state.get('status')}")
-        if current_state.get('error'):
-            print(f"Context Error: {current_state['error']}")
-        else:
-            feedback_ctx = current_state.get('feedback_context', {})
-            print(f"Feedback context loaded: {bool(feedback_ctx)}")
-            if feedback_ctx:
-                relevant_feedback = feedback_ctx.get('relevant_feedback', [])
-                print(f"  Relevant feedback items: {len(relevant_feedback)}")
+        context_result = await load_feedback_context(current_state)
+        print(f"Context Status: {context_result.get('status')}")
+        if context_result.get('error'):
+            print(f"Context Error: {context_result['error']}")
+        
+        # Manually merge state since context node doesn't preserve it
+        current_state = {**current_state, **context_result}
+        
+        feedback_ctx = current_state.get('feedback_context', {})
+        print(f"Feedback context loaded: {bool(feedback_ctx)}")
+        if feedback_ctx:
+            relevant_feedback = feedback_ctx.get('relevant_feedback', [])
+            print(f"  Relevant feedback items: {len(relevant_feedback)}")
+        print("doc id after context:", current_state.get('document_id'))
     except Exception as e:
         print(f"Context loading failed: {e}")
         current_state['error'] = str(e)
@@ -131,6 +153,7 @@ async def test_chunking_to_discovery():
     print("-" * 25)
     
     try:
+        # Discovery preserves state, so we can use it directly
         current_state = await sequential_discovery(current_state, settings)
         print(f"Discovery Status: {current_state.get('status')}")
         if current_state.get('error'):
@@ -148,6 +171,7 @@ async def test_chunking_to_discovery():
             # Show first few fields
             for i, field in enumerate(all_fields[:3]):
                 print(f"  Field {i+1}: {field.field_name} ({field.field_type})")
+            print("doc id after discovery:", current_state.get('document_id'))
     except Exception as e:
         print(f"Discovery failed: {e}")
         current_state['error'] = str(e)
@@ -158,6 +182,7 @@ async def test_chunking_to_discovery():
     print("-" * 30)
     
     try:
+        # Consolidation preserves state, so we can use it directly
         current_state = await consolidate_schema(current_state, settings)
         print(f"Consolidation Status: {current_state.get('status')}")
         if current_state.get('error'):
@@ -171,6 +196,7 @@ async def test_chunking_to_discovery():
                 # Show first few consolidated fields
                 for i, field in enumerate(consolidated_schema.final_fields[:3]):
                     print(f"  Final Field {i+1}: {field.field_name} ({field.field_type})")
+            print("doc id after consolidation:", current_state.get('document_id'))
     except Exception as e:
         print(f"Consolidation failed: {e}")
         current_state['error'] = str(e)

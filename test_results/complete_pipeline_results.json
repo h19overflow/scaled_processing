@@ -2,8 +2,8 @@
   "pipeline_status": "completed",
   "final_status": "consolidated",
   "error": null,
-  "classification": "unknown",
-  "user_id": "unknown",
+  "classification": "report",
+  "user_id": "test_user",
   "chunk_count": 3,
   "progressive_results_count": 3,
   "final_fields_count": 8,
@@ -12,17 +12,17 @@
     "chunks": 3
   },
   "preference_injection": {
-    "status": "failed",
-    "preferences_loaded": false
+    "status": "completed",
+    "preferences_loaded": true
   },
   "context_loading": {
-    "status": "failed",
-    "context_loaded": false
+    "status": "completed",
+    "context_loaded": true
   },
   "discovery": {
     "status": "completed",
     "progressive_results": 3,
-    "total_fields_discovered": 12
+    "total_fields_discovered": 13
   },
   "consolidation": {
     "status": "completed",

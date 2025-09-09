@@ -22,7 +22,6 @@ async def load_feedback_context(state: MultiAgentState) -> Dict[str, Any]:
         if classification == "unknown":
             logger.warning("No classification available for context loading")
             return {
-                **state,
                 "feedback_context": {},
                 "status": "context_loading_skipped"
             }

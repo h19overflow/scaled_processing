@@ -23,7 +23,7 @@ async def classify_document(state: MultiAgentState) -> Dict[str, Any]:
         if not document_text or not document_id:
             logger.warning("Missing document text or ID for classification")
             return {
-                **state,
+                "document_id": document_id,
                 "classification": "unknown",
                 "classification_confidence": 0.0,
                 "status": "classification_failed"

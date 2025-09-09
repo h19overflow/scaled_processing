@@ -22,7 +22,6 @@ async def inject_user_preferences(state: MultiAgentState) -> Dict[str, Any]:
         if classification == "unknown":
             logger.warning("No classification available for preference injection")
             return {
-                **state,
                 "user_preferences": {},
                 "status": "preference_injection_skipped"
             }
@@ -50,7 +49,6 @@ async def inject_user_preferences(state: MultiAgentState) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Preference injection failed: {e}")
         return {
-            **state,
             "user_preferences": {},
             "status": "preference_injection_failed",
             "error": str(e)

@@ -22,12 +22,42 @@
       "end_char": 68538
     }
   ],
-  "user_preferences": {},
-  "feedback_context": {},
+  "user_preferences": {
+    "field_preferences": {
+      "field_priorities": {},
+      "field_mappings": {},
+      "extraction_rules": {
+        "dates_format": "YYYY-MM-DD",
+        "currency_format": "USD",
+        "name_format": "full_legal_name"
+      }
+    },
+    "extraction_style": {
+      "verbosity": "standard",
+      "format_preference": "structured",
+      "language": "en",
+      "confidence_threshold": 0.7,
+      "context_awareness": true,
+      "cross_reference": true,
+      "fallback_behavior": "skip",
+      "output_formatting": {
+        "dates": "ISO_8601",
+        "numbers": "with_separators",
+        "addresses": "single_line",
+        "phone_numbers": "international_format"
+      }
+    }
+  },
+  "feedback_context": {
+    "relevant_feedback": [],
+    "context_prompt": "",
+    "field_corrections": {},
+    "common_issues": []
+  },
   "progressive_results": [
     {
       "chunk_id": 0,
-      "document_type": "Project Report",
+      "document_type": "report",
       "confidence_level": "high",
       "chunk_coverage": 1,
       "fields_count": 5,
@@ -35,149 +65,155 @@
         {
           "field_name": "Sprint Number",
           "field_type": "INTEGER",
-          "description": "The number of the sprint completed.",
+          "description": "The number of the sprint being summarized.",
           "category": "Project Management"
         },
         {
-          "field_name": "Completion Status",
+          "field_name": "Sprint Status",
           "field_type": "TEXT",
-          "description": "Status of completion for a specific sprint or task.",
+          "description": "Overall status of the sprint (e.g., Complete).",
           "category": "Project Management"
         },
         {
-          "field_name": "Kafka Topic",
+          "field_name": "Component Name",
           "field_type": "TEXT",
-          "description": "Name of the Kafka topic used for message streaming.",
-          "category": "Infrastructure"
+          "description": "Name of the component being described (e.g., Configuration Management, Data Models Architecture).",
+          "category": "System Architecture"
         },
         {
-          "field_name": "Number of Partitions",
-          "field_type": "INTEGER",
-          "description": "Number of partitions for a Kafka topic, indicating parallelism.",
-          "category": "Infrastructure"
+          "field_name": "Technology Used",
+          "field_type": "TEXT",
+          "description": "Technology or tool used for a specific component (e.g., Pydantic, Docker).",
+          "category": "Technology Stack"
         },
         {
-          "field_name": "Technology/Service Used",
+          "field_name": "Topic Name",
           "field_type": "TEXT",
-          "description": "Technology or service used in the system.",
-          "category": "Technology"
+          "description": "Name of a Kafka topic.",
+          "category": "Messaging Infrastructure"
         }
       ]
     },
     {
       "chunk_id": 1,
-      "document_type": "Project Report",
+      "document_type": "report",
       "confidence_level": "high",
       "chunk_coverage": 1,
-      "fields_count": 3,
+      "fields_count": 4,
       "discovered_fields": [
         {
-          "field_name": "Document ID",
-          "field_type": "UUID",
-          "description": "Unique identifier assigned to each processed document.",
-          "category": "Metadata"
+          "field_name": "File Path",
+          "field_type": "string",
+          "description": "Absolute path to the document file.",
+          "category": "File System"
         },
         {
-          "field_name": "Processing Status",
-          "field_type": "TEXT",
-          "description": "Status of the document processing pipeline (e.g., completed, duplicate, error).",
-          "category": "Process Tracking"
+          "field_name": "Filename",
+          "field_type": "string",
+          "description": "Name of the document file.",
+          "category": "File System"
         },
         {
-          "field_name": "Processed File Path",
-          "field_type": "FILE_PATH",
-          "description": "Absolute or relative path to the processed document (e.g., markdown file).",
-          "category": "File Management"
+          "field_name": "File Size",
+          "field_type": "integer",
+          "description": "Size of the document file in bytes.",
+          "category": "File System"
+        },
+        {
+          "field_name": "File Extension",
+          "field_type": "string",
+          "description": "Extension of the document file.",
+          "category": "File System"
         }
       ]
     },
     {
       "chunk_id": 2,
-      "document_type": "Project Report",
+      "document_type": "report",
       "confidence_level": "high",
       "chunk_coverage": 2,
       "fields_count": 4,
       "discovered_fields": [
         {
-          "field_name": "Workflow Type",
+          "field_name": "Duplicate Detection Status",
           "field_type": "string",
-          "description": "Type of workflow that the document is processed for (e.g., RAG, extraction).",
+          "description": "Indicates whether a document is a duplicate of a previously processed document.",
+          "category": "Document Status"
+        },
+        {
+          "field_name": "Processing Status",
+          "field_type": "string",
+          "description": "Overall status of the document processing workflow (e.g., completed, duplicate).",
           "category": "Workflow"
         },
         {
-          "field_name": "Content Type",
-          "field_type": "string",
-          "description": "Type of content after vision enhancement (e.g., vision_enhanced_markdown, docling_structured_content).",
-          "category": "Content"
+          "field_name": "Workflow Type",
+          "field_type": "list",
+          "description": "The type of workflow applied to the document (e.g., RAG, extraction).",
+          "category": "Workflow"
         },
         {
           "field_name": "Prefect Flow Name",
           "field_type": "string",
-          "description": "Name of the Prefect flow used for document processing.",
+          "description": "Name of the Prefect flow used to orchestrate the document processing.",
           "category": "Workflow"
-        },
-        {
-          "field_name": "Pipeline Status",
-          "field_type": "string",
-          "description": "Status of the overall document processing pipeline (e.g., complete, duplicate).",
-          "category": "Status"
         }
       ]
     }
   ],
   "consolidated_schema": {
-    "document_type": "Project Report",
+    "document_type": "Report Document",
     "final_fields_count": 8,
-    "optimization_notes": "Consolidated similar fields like Pipeline Status and Completion Status into Processing Status. Combined Kafka Topic and Number of Partitions. Removed Sprint Number as it was deemed less valuable. Prioritized key metadata and processing information.",
-    "extraction_prompt": "Extract key information related to document processing, including document identifiers, workflow details, processing status, content types, and technologies used. Focus on capturing specific values for each field as described.",
+    "optimization_notes": "Consolidated file metadata, component details, and sprint information. Removed redundant fields like file path and extension, focusing on key information for extraction.  Combined similar fields (e.g., 'Component Name' to 'Component'). Limited to 8 most valuable fields.",
+    "extraction_prompt": "Extract key information about the sprint, system components, and file processing status. Capture the sprint number, sprint status, component name, technology used, Kafka topic, file name, file size, and processing status from the document.",
     "final_fields": [
       {
-        "field_name": "Document ID",
-        "field_type": "UUID",
-        "description": "Unique identifier of the processed document.",
+        "field_name": "Sprint Number",
+        "field_type": "INTEGER",
+        "description": "The number of the sprint being summarized.",
+        "category": "Sprint Details"
+      },
+      {
+        "field_name": "Sprint Status",
+        "field_type": "TEXT",
+        "description": "Overall status of the sprint (e.g., Complete, In Progress).",
+        "category": "Sprint Details"
+      },
+      {
+        "field_name": "Component",
+        "field_type": "TEXT",
+        "description": "Name of the software component or module.",
+        "category": "System Architecture"
+      },
+      {
+        "field_name": "Technology",
+        "field_type": "TEXT",
+        "description": "Technology or tool used for the component.",
+        "category": "System Architecture"
+      },
+      {
+        "field_name": "Kafka Topic",
+        "field_type": "TEXT",
+        "description": "Name of a Kafka topic used in the system.",
+        "category": "System Architecture"
+      },
+      {
+        "field_name": "File Name",
+        "field_type": "TEXT",
+        "description": "Name of the document file.",
         "category": "Document Metadata"
       },
       {
-        "field_name": "Workflow Type",
-        "field_type": "TEXT",
-        "description": "Type of workflow the document is processed for (e.g., RAG, extraction).",
-        "category": "Workflow"
+        "field_name": "File Size",
+        "field_type": "INTEGER",
+        "description": "Size of the document file in bytes.",
+        "category": "Document Metadata"
       },
       {
         "field_name": "Processing Status",
         "field_type": "TEXT",
-        "description": "Status of the document processing pipeline (e.g., completed, duplicate, error).",
-        "category": "Processing"
-      },
-      {
-        "field_name": "Content Type",
-        "field_type": "TEXT",
-        "description": "Type of content after processing (e.g., vision_enhanced_markdown, docling_structured_content).",
-        "category": "Content"
-      },
-      {
-        "field_name": "Prefect Flow Name",
-        "field_type": "TEXT",
-        "description": "Name of the Prefect flow used for document processing.",
-        "category": "Processing"
-      },
-      {
-        "field_name": "Technology/Service Used",
-        "field_type": "TEXT",
-        "description": "Technology or service used in the system.",
-        "category": "Technology"
-      },
-      {
-        "field_name": "Kafka Topic Configuration",
-        "field_type": "TEXT",
-        "description": "Name of the Kafka topic used for message streaming, and the number of partitions for the topic.",
-        "category": "Technology"
-      },
-      {
-        "field_name": "File Path",
-        "field_type": "FILE_PATH",
-        "description": "Absolute or relative path to the processed document.",
-        "category": "Document Metadata"
+        "description": "Overall status of the document processing workflow.",
+        "category": "Document Processing"
       }
     ]
   }
