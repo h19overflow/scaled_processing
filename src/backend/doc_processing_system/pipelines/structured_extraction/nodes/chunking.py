@@ -2,25 +2,27 @@
 Document chunking node.
 """
 
-from typing import List, Dict, Any
+from pathlib import Path
+from typing import List
 
-try:
-    import tiktoken
+import tiktoken
 
-    TIKTOKEN_AVAILABLE = True
-except ImportError:
-    TIKTOKEN_AVAILABLE = False
-
-from ..models.state import MultiAgentState
-from ..models.document import DocumentChunk
 from ..config.settings import Settings
+from ..models.document import DocumentChunk
+from ..models.state import MultiAgentState
 
 
 def chunk_document(state: MultiAgentState, settings: Settings) -> MultiAgentState:
     """Chunk document into processing batches."""
     try:
+        markdown_file_path = state["document_text"]
+        if not markdown_file_path:
+            raise ValueError("No markdown file path provided")
+
+        text = _read_markdown_file(markdown_file_path)
+        
         chunks = _create_chunks(
-            text=state["document_text"],
+            text=text,
             document_id=state["document_id"],
             config=settings.chunking
         )
@@ -39,15 +41,28 @@ def chunk_document(state: MultiAgentState, settings: Settings) -> MultiAgentStat
         }
 
 
+def _read_markdown_file(file_path: str) -> str:
+    """Read content from markdown file."""
+    try:
+        path = Path(file_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Markdown file not found: {file_path}")
+
+        if not path.suffix.lower() == '.md':
+            raise ValueError(f"File is not a markdown file: {file_path}")
+
+        return path.read_text(encoding='utf-8')
+
+    except Exception as e:
+        raise ValueError(f"Failed to read markdown file {file_path}: {str(e)}")
+
+
 def _create_chunks(text: str, document_id: str, config) -> List[DocumentChunk]:
     """Create document chunks based on configuration."""
     max_tokens = config.max_tokens
     overlap_tokens = config.overlap_tokens
 
-    if config.use_tiktoken and TIKTOKEN_AVAILABLE:
-        return _tiktoken_chunk(text, max_tokens, overlap_tokens)
-    else:
-        return _simple_chunk(text, max_tokens, overlap_tokens)
+    return _tiktoken_chunk(text, max_tokens, overlap_tokens)
 
 
 def _tiktoken_chunk(text: str, max_tokens: int, overlap_tokens: int) -> List[DocumentChunk]:
@@ -95,59 +110,10 @@ def _tiktoken_chunk(text: str, max_tokens: int, overlap_tokens: int) -> List[Doc
             chunk_id += 1
 
         return chunks
+    except Exception as e:
+        raise ValueError(f"Failed to chunk text: {str(e)}")
 
-    except Exception:
-        return _simple_chunk(text, max_tokens, overlap_tokens)
 
-
-def _simple_chunk(text: str, max_tokens: int, overlap_tokens: int) -> List[DocumentChunk]:
-    """Simple character-based chunking fallback."""
-    max_chars = max_tokens * 4
-    overlap_chars = overlap_tokens * 4
-    total_chars = len(text)
-
-    if total_chars <= max_chars:
-        return [DocumentChunk(
-            chunk_id=0,
-            text=text,
-            start_char=0,
-            end_char=total_chars,
-            token_count=total_chars // 4
-        )]
-
-    chunks = []
-    chunk_id = 0
-    start_char = 0
-
-    while start_char < total_chars:
-        end_char = min(start_char + max_chars, total_chars)
-
-        # Try to break at word boundaries
-        if end_char < total_chars:
-            for i in range(min(100, end_char - start_char)):
-                if text[end_char - i - 1] == ' ':
-                    end_char = end_char - i
-                    break
-
-        chunk_text = text[start_char:end_char]
-        estimated_tokens = len(chunk_text) // 4
-
-        chunk = DocumentChunk(
-            chunk_id=chunk_id,
-            text=chunk_text,
-            start_char=start_char,
-            end_char=end_char,
-            token_count=estimated_tokens
-        )
-        chunks.append(chunk)
-
-        if end_char >= total_chars:
-            break
-
-        start_char = max(start_char + 1, end_char - overlap_chars)
-        chunk_id += 1
-
-    return chunks
 
 
 def _token_to_char_position(text: str, tokens: List[int], token_index: int, encoding) -> int:
@@ -160,3 +126,50 @@ def _token_to_char_position(text: str, tokens: List[int], token_index: int, enco
     partial_tokens = tokens[:token_index]
     partial_text = encoding.decode(partial_tokens)
     return len(partial_text)
+
+
+def test_chunking_with_markdown():
+    """Test chunking with markdown file."""
+
+    class MockChunkingConfig:
+        max_tokens = 5128
+        overlap_tokens = 200
+        use_tiktoken = True
+
+    class MockSettings:
+        chunking = MockChunkingConfig()
+
+    state: MultiAgentState = {
+        "document_text": "docs/phases/system_progress_summary.md",
+        "document_id": "test_doc_1",
+        "chunks": None,
+        "progressive_results": None,
+        "consolidated_schema": None,
+        "final_schema": None,
+        "config": None,
+        "extractions": None,
+        "status": None,
+        "error": None,
+        "classification": None,
+        "classification_confidence": None,
+        "user_id": None,
+        "feedback_context": None,
+        "user_preferences": None
+    }
+
+    settings = MockSettings()
+    result = chunk_document(state, settings)
+
+    print(f"Status: {result['status']}")
+    if result.get('error'):
+        print(f"Error: {result['error']}")
+    else:
+        print(f"Number of chunks created: {len(result['chunks'])}")
+        for i, chunk in enumerate(result['chunks'][:3]):
+            print(f"\nChunk {i}:")
+            print(f"  Token count: {chunk.token_count}")
+            print(f"  Text preview: {chunk.text[:200]}...")
+
+
+if __name__ == "__main__":
+    test_chunking_with_markdown()

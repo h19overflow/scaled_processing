@@ -3,8 +3,7 @@ CRUD operations for document feedback.
 """
 
 from typing import List, Optional, Dict, Any
-from uuid import UUID
-from sqlalchemy.orm import Session
+
 from sqlalchemy import and_, desc
 
 from .base_repository import BaseRepository

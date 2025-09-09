@@ -10,9 +10,6 @@ from src.backend.doc_processing_system.core_deps.database.CRUD.preferences_crud 
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 
 
-# Integration with LLM prompt templates verified - using generate_preference_prompt_injection()
-# Field enhancement automation handled through apply_preferences_to_schema() method
-
 class PreferenceManager:
     """Core logic for user preference management."""
 
