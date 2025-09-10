@@ -104,7 +104,7 @@ async def test_proper_pipeline():
         results_dir = Path("test_results")
         results_dir.mkdir(exist_ok=True)
         
-        # Convert result to JSON-serializable format
+        # Convert result to JSON-serializable format for main results
         json_result = {
             "document_id": result.get('document_id'),
             "user_id": result.get('user_id'), 
@@ -120,9 +120,64 @@ async def test_proper_pipeline():
         
         with open(results_dir / "proper_pipeline_results.json", "w") as f:
             json.dump(json_result, f, indent=2)
+            
+        # Save detailed intermediate results for debugging
+        intermediate_results = {
+            "document_metadata": {
+                "document_id": result.get('document_id'),
+                "user_id": result.get('user_id'),
+                "document_length": len(document_content)
+            },
+            "classification_details": result.get('classification', {}),
+            "chunking_details": {
+                "chunk_count": len(result.get('chunks', [])),
+            },
+            "discovery_details": {
+                "progressive_results": []
+            },
+            "consolidation_details": {
+                "has_consolidated_schema": result.get('consolidated_schema') is not None,
+                "final_field_count": len(result.get('consolidated_schema', {}).final_fields) if result.get('consolidated_schema') else 0
+            },
+            "extraction_details": {
+                "extraction_count": len(result.get('extractions', [])),
+                "extractions": result.get('extractions', [])
+            }
+        }
+        
+        # Add progressive results details
+        for i, prog_result in enumerate(result.get('progressive_results', [])):
+            intermediate_results["discovery_details"]["progressive_results"].append({
+                "chunk_index": i,
+                "discovered_field_count": len(prog_result.discovered_fields),
+                "discovered_fields": [
+                    {
+                        "field_name": field.field_name,
+                        "field_type": field.field_type,
+                        "description": field.description,
+                    }
+                    for field in prog_result.discovered_fields
+                ]
+            })
+        
+        # Add consolidated schema details
+        if result.get('consolidated_schema'):
+            consolidated_schema = result.get('consolidated_schema')
+            intermediate_results["consolidation_details"]["final_fields"] = [
+                {
+                    "field_name": field.field_name,
+                    "field_type": field.field_type,
+                    "description": field.description,
+                }
+                for field in consolidated_schema.final_fields
+            ]
+        
+        with open(results_dir / "intermediate_results.json", "w") as f:
+            json.dump(intermediate_results, f, indent=2)
         
         print(f"\n✅ Pipeline completed successfully!")
         print(f"✅ Results saved to: proper_pipeline_results.json")
+        print(f"✅ Intermediate results saved to: intermediate_results.json")
         
     except Exception as e:
         print(f"❌ Pipeline failed: {e}")

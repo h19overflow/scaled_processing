@@ -13,7 +13,7 @@ class ConsolidationDeps(BaseModel):
     """Dependencies for schema consolidation."""
     discovered_fields: List[FieldSchema]
     document_type: str
-    max_fields: int = 8
+    max_fields: int = 20
 
 
 def create_consolidation_agent(model_name: str) -> Agent:

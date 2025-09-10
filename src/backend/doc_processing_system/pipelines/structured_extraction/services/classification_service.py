@@ -20,22 +20,36 @@ class DocumentClassificationService:
     async def classify_document(self, document_text: str) -> Dict[str, any]:
         """Classify document using LLM with keyword fallback."""
         try:
+            self.logger.info("=== CLASSIFICATION SERVICE STARTING ===")
+            self.logger.info(f"Document text length: {len(document_text)}")
+            
             # Try LLM classification first
+            self.logger.info("Attempting LLM classification...")
             llm_result = await self.classification_agent.classify_document(document_text)
+            
+            self.logger.info(f"LLM classification result: {llm_result}")
+            self.logger.info(f"LLM confidence: {llm_result.get('confidence', 0.0)}")
 
             if llm_result["confidence"] >= 0.7:
+                self.logger.info("Using LLM result (confidence >= 0.7)")
                 classification_result = llm_result
                 classification_result["method"] = "llm"
             else:
                 # Fall back to keyword-based classification
+                self.logger.info(f"LLM confidence too low ({llm_result['confidence']}), falling back to keywords...")
                 keyword_result = self._classify_with_keywords(document_text)
+                self.logger.info(f"Keyword classification result: {keyword_result}")
                 classification_result = keyword_result
                 classification_result["method"] = "keyword"
 
+            self.logger.info(f"Final classification: {classification_result}")
+            self.logger.info("=== CLASSIFICATION SERVICE COMPLETE ===")
             return classification_result
 
         except Exception as e:
             self.logger.error(f"Classification failed: {e}")
+            import traceback
+            self.logger.error(f"Full traceback: {traceback.format_exc()}")
             # Return default classification
             return {
                 "classification": "other",
