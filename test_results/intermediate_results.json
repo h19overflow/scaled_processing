@@ -1,0 +1,354 @@
+{
+  "document_metadata": {
+    "document_id": "test_doc_1",
+    "user_id": "test_user",
+    "document_length": 68538
+  },
+  "classification_details": "report",
+  "chunking_details": {
+    "chunk_count": 3
+  },
+  "discovery_details": {
+    "progressive_results": [
+      {
+        "chunk_index": 0,
+        "discovered_field_count": 4,
+        "discovered_fields": [
+          {
+            "field_name": "Sprint Number",
+            "field_type": "INTEGER",
+            "description": "The sprint number that was completed."
+          },
+          {
+            "field_name": "Sprint Completion Status",
+            "field_type": "ENUM",
+            "description": "The completion status of a sprint. Values are: Complete, In Progress, Planned."
+          },
+          {
+            "field_name": "Technology Stack",
+            "field_type": "LIST",
+            "description": "A list of technologies used in the system."
+          },
+          {
+            "field_name": "API Endpoint",
+            "field_type": "TEXT",
+            "description": "API endpoint that is available for external use."
+          }
+        ]
+      },
+      {
+        "chunk_index": 1,
+        "discovered_field_count": 4,
+        "discovered_fields": [
+          {
+            "field_name": "Document Processing Status",
+            "field_type": "TEXT",
+            "description": "Status of document processing (e.g., completed, duplicate, error)."
+          },
+          {
+            "field_name": "Document ID",
+            "field_type": "ID",
+            "description": "Unique identifier for each document in the system."
+          },
+          {
+            "field_name": "Processed File Path",
+            "field_type": "FILE_PATH",
+            "description": "File system path to the processed document (e.g., markdown file)."
+          },
+          {
+            "field_name": "Event Type",
+            "field_type": "TEXT",
+            "description": "Type of event published to Kafka (e.g., file-detected, document-received)."
+          }
+        ]
+      },
+      {
+        "chunk_index": 2,
+        "discovered_field_count": 4,
+        "discovered_fields": [
+          {
+            "field_name": "Duplicate Detection Status",
+            "field_type": "string",
+            "description": "Status indicating whether a document is a duplicate."
+          },
+          {
+            "field_name": "Processing Status",
+            "field_type": "string",
+            "description": "Overall processing status of the document (e.g., completed, ready_for_processing)."
+          },
+          {
+            "field_name": "Workflow Type",
+            "field_type": "list",
+            "description": "List of workflow types the document is prepared for (e.g., rag, extraction)."
+          },
+          {
+            "field_name": "Prefect Flow Name",
+            "field_type": "string",
+            "description": "Name of the Prefect flow used for document processing."
+          }
+        ]
+      }
+    ]
+  },
+  "extraction_details": {
+    "extraction_count": 32,
+    "extractions": [
+      {
+        "extraction_class": "Sprint Completion Status",
+        "extraction_text": "Complete",
+        "attributes": {
+          "category": "Project Management",
+          "subcategory": "Sprint"
+        }
+      },
+      {
+        "extraction_class": "Sprint Completion Status",
+        "extraction_text": "Complete",
+        "attributes": {
+          "category": "Project Management",
+          "subcategory": "Sprint"
+        }
+      },
+      {
+        "extraction_class": "Sprint Completion Status",
+        "extraction_text": "Complete",
+        "attributes": {
+          "category": "Project Management",
+          "subcategory": "Sprint"
+        }
+      },
+      {
+        "extraction_class": "API Endpoint",
+        "extraction_text": "/upload",
+        "attributes": {
+          "category": "Technology",
+          "subcategory": "API"
+        }
+      },
+      {
+        "extraction_class": "API Endpoint",
+        "extraction_text": "/api/v1/upload",
+        "attributes": {
+          "category": "Technology",
+          "subcategory": "API"
+        }
+      },
+      {
+        "extraction_class": "API Endpoint",
+        "extraction_text": "/api/v1/status/{document_id}",
+        "attributes": {
+          "category": "Technology",
+          "subcategory": "API"
+        }
+      },
+      {
+        "extraction_class": "API Endpoint",
+        "extraction_text": "/api/v1/topics",
+        "attributes": {
+          "category": "Technology",
+          "subcategory": "API"
+        }
+      },
+      {
+        "extraction_class": "Document Processing Status",
+        "extraction_text": "uploaded",
+        "attributes": {
+          "category": "Status",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document ID",
+        "extraction_text": "fdad2b5f-d670-4343-9ea9-9490fca8894e",
+        "attributes": {
+          "category": "Metadata",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Event Type",
+        "extraction_text": "document-received",
+        "attributes": {
+          "category": "Event",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Sprint Completion Status",
+        "extraction_text": "COMPLETED",
+        "attributes": {
+          "category": "Project Management",
+          "subcategory": "Sprint"
+        }
+      },
+      {
+        "extraction_class": "Sprint Completion Status",
+        "extraction_text": "Planned",
+        "attributes": {
+          "category": "Project Management",
+          "subcategory": "Sprint"
+        }
+      },
+      {
+        "extraction_class": "Sprint Completion Status",
+        "extraction_text": "COMPLETED",
+        "attributes": {
+          "category": "Project Management",
+          "subcategory": "Sprint"
+        }
+      },
+      {
+        "extraction_class": "Event Type",
+        "extraction_text": "file-detected",
+        "attributes": {
+          "category": "Event",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Event Type",
+        "extraction_text": "file-detected",
+        "attributes": {
+          "category": "Event",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Event Type",
+        "extraction_text": "document-received",
+        "attributes": {
+          "category": "Event",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Event Type",
+        "extraction_text": "workflow-initialized",
+        "attributes": {
+          "category": "Event",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Event Type",
+        "extraction_text": "file-detected",
+        "attributes": {
+          "category": "Event",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Event Type",
+        "extraction_text": "document-received",
+        "attributes": {
+          "category": "Event",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document Processing Status",
+        "extraction_text": "completed",
+        "attributes": {
+          "category": "Status",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document ID",
+        "extraction_text": "doc_20250831_143025_a1b2c3d4",
+        "attributes": {
+          "category": "Metadata",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Processed File Path",
+        "extraction_text": "data/documents/processed/doc_20250831_143025_a1b2c3d4/doc_20250831_143025_a1b2c3d4_processed.md",
+        "attributes": {
+          "category": "Location",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document Processing Status",
+        "extraction_text": "duplicate",
+        "attributes": {
+          "category": "Status",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document ID",
+        "extraction_text": "existing_doc_id",
+        "attributes": {
+          "category": "Metadata",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Sprint Completion Status",
+        "extraction_text": "COMPLETED",
+        "attributes": {
+          "category": "Project Management",
+          "subcategory": "Sprint"
+        }
+      },
+      {
+        "extraction_class": "Document Processing Status",
+        "extraction_text": "Document processed",
+        "attributes": {
+          "category": "Status",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document ID",
+        "extraction_text": "84727c0d-16a8-4ae8-bad4-dd0c0be9e30c",
+        "attributes": {
+          "category": "Metadata",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document Processing Status",
+        "extraction_text": "Duplicate correctly detected",
+        "attributes": {
+          "category": "Status",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document Processing Status",
+        "extraction_text": "Document is duplicate",
+        "attributes": {
+          "category": "Status",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document ID",
+        "extraction_text": "84727c0d-16a8-4ae8-bad4-dd0c0be9e30c",
+        "attributes": {
+          "category": "Metadata",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document Processing Status",
+        "extraction_text": "Duplicate detected",
+        "attributes": {
+          "category": "Status",
+          "subcategory": "general"
+        }
+      },
+      {
+        "extraction_class": "Document ID",
+        "extraction_text": "84727c0d-16a8-4ae8-bad4-dd0c0be9e30c",
+        "attributes": {
+          "category": "Metadata",
+          "subcategory": "general"
+        }
+      }
+    ]
+  }
+}
