@@ -25,3 +25,5 @@ class MultiAgentState(TypedDict):
     user_id: Optional[str]
     feedback_context: Optional[Dict[str, Any]]
     user_preferences: Optional[Dict[str, Any]]
+    # Monitoring fields
+    task_execution_log: Optional[List[Dict[str, Any]]]
