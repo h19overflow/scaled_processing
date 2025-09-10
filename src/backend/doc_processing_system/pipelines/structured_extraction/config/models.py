@@ -16,7 +16,6 @@ class ChunkingConfig(BaseModel):
 class ModelConfig(BaseModel):
     """Configuration for AI models."""
     discovery_model: str = "gemini-2.0-flash"
-    consolidation_model: str = "gemini-2.0-flash"
     extraction_model: str = "gemini-2.0-flash"
     openai_api_key: Optional[str] = None
 

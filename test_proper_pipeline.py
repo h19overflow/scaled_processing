@@ -22,7 +22,6 @@ async def test_proper_pipeline():
 
     class MockModelConfig:
         discovery_model = "gemini-2.0-flash"
-        consolidation_model = "gemini-2.0-flash"  
         extraction_model = "gemini-2.0-flash"
         openai_api_key = None
 
