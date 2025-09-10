@@ -1,67 +1,40 @@
 """
 Graph orchestrator for multi-agent structured extraction.
-Minimal abstraction LangGraph builder for Prefect integration.
+Migrated from LangGraph to Prefect for workflow orchestration.
 """
 
-from functools import partial
-
-from langgraph.graph import StateGraph, END
-
 from ..config.settings import Settings
-from ..models.state import MultiAgentState
-from ..nodes import (
-    chunk_document,
-    sequential_discovery,
-    generate_config,
-    extract_data
-)
-from ..nodes.classification import classify_document
-from ..nodes.context_loading import load_feedback_context
-from ..nodes.preference_injection import inject_user_preferences
+from ..models.state import MultiAgentState, PipelineState
+from .prefect_tasks import structured_extraction_flow
 
 
 # Flow simplified: classification -> feedback -> preferences -> chunking -> discovery -> config -> extraction
 def build_graph(settings: Settings):
-    """Build and compile the multi-agent extraction graph."""
-
-    # Create workflow with state type
-    workflow = StateGraph(MultiAgentState)
-
-    # Create node functions with settings bound
-    chunk_node = partial(chunk_document, settings=settings)
-    discovery_node = partial(sequential_discovery, settings=settings)
-    config_node = partial(generate_config, settings=settings)
-    extraction_node = partial(extract_data, settings=settings)
-
-    # Add enhancement nodes
-    workflow.add_node("classify_document", classify_document)
-    workflow.add_node("load_feedback_context", load_feedback_context)
-    workflow.add_node("inject_user_preferences", inject_user_preferences)
-
-    # Add original nodes
-    workflow.add_node("chunk_document", chunk_node)
-    workflow.add_node("sequential_discovery", discovery_node)
-    workflow.add_node("generate_config", config_node)
-    workflow.add_node("extract_data", extraction_node)
-
-    # Define workflow edges - enhancement steps first
-    workflow.set_entry_point("classify_document")
-    workflow.add_edge("classify_document", "load_feedback_context")
-    workflow.add_edge("load_feedback_context", "inject_user_preferences")
-    workflow.add_edge("inject_user_preferences", "chunk_document")
-
-    # Simplified workflow continues - skip consolidation
-    workflow.add_edge("chunk_document", "sequential_discovery")
-    workflow.add_edge("sequential_discovery", "generate_config")
-    workflow.add_edge("generate_config", "extract_data")
-    workflow.add_edge("extract_data", END)
-
-    # Compile and return
-    return workflow.compile()
+    """Build and return the Prefect flow for structured extraction."""
+    # Return the Prefect flow function with settings bound
+    async def flow_wrapper(document_text: str, document_id: str, user_id: str = "default_user"):
+        return await structured_extraction_flow(document_text, document_id, settings, user_id)
+    
+    return flow_wrapper
 
 
-def create_initial_state(document_text: str, document_id: str, user_id: str = "default_user") -> MultiAgentState:
-    """Create initial state for the enhanced workflow."""
+def create_flow(settings: Settings):
+    """Create Prefect flow for structured extraction pipeline."""
+    return build_graph(settings)
+
+
+def create_initial_state(document_text: str, document_id: str, user_id: str = "default_user") -> PipelineState:
+    """Create initial state for the Prefect workflow."""
+    return PipelineState(
+        document_text=document_text,
+        document_id=document_id,
+        user_id=user_id,
+        status="started"
+    )
+
+
+def create_initial_state_legacy(document_text: str, document_id: str, user_id: str = "default_user") -> MultiAgentState:
+    """Create initial state for legacy LangGraph compatibility."""
     return MultiAgentState(
         document_text=document_text,
         document_id=document_id,
