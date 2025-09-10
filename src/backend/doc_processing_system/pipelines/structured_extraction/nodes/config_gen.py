@@ -31,12 +31,29 @@ from ..config.settings import Settings
 
 
 def generate_config(state: MultiAgentState, settings: Settings) -> MultiAgentState:
-    """Generate langextract configuration from final schema."""
+    """Generate langextract configuration directly from discovery results."""
     try:
-        schema = state["final_schema"]
+        # Get all discovered fields from progressive results
+        all_fields = []
+        for result in state["progressive_results"]:
+            all_fields.extend(result.discovered_fields)
+        
+        if not all_fields:
+            raise ValueError("No fields discovered to generate config")
+        
+        # Limit to max fields and remove duplicates
+        seen_names = set()
+        unique_fields = []
+        for field in all_fields:
+            if field.field_name.lower() not in seen_names:
+                seen_names.add(field.field_name.lower())
+                unique_fields.append(field)
+                
+                if len(unique_fields) >= settings.extraction.max_fields:
+                    break
+        
         sample_text = state["document_text"][:1000]
-
-        config = _create_config(schema, sample_text, settings.models.extraction_model)
+        config = _create_config_from_fields(unique_fields, sample_text, settings.models.extraction_model)
 
         return {
             **state,
@@ -50,6 +67,35 @@ def generate_config(state: MultiAgentState, settings: Settings) -> MultiAgentSta
             "error": f"Config generation failed: {str(e)}",
             "status": "error"
         }
+
+
+def _create_config_from_fields(fields: List[FieldSchema], sample_text: str, model_id: str) -> Dict[str, Any]:
+    """Create langextract configuration directly from discovered fields."""
+
+    # Create extraction prompt
+    prompt = textwrap.dedent(f"""
+        Extract structured information from this document.
+        
+        Extract the following types of information:
+        {_format_field_list(fields)}
+        
+        IMPORTANT RULES:
+        - Use exact text from the document for extractions
+        - Only extract information that actually exists in the document
+        - If information is not found, skip that extraction class
+        - Provide meaningful attributes for context
+        - Do not create empty or duplicate extractions
+    """).strip()
+
+    # Create example data
+    examples = _create_examples(fields, sample_text)
+
+    return {
+        "prompt": prompt,
+        "examples": examples,
+        "model_id": model_id,
+        "extraction_classes": [field.field_name for field in fields]
+    }
 
 
 def _create_config(schema, sample_text: str, model_id: str) -> Dict[str, Any]:
@@ -79,6 +125,14 @@ def _create_config(schema, sample_text: str, model_id: str) -> Dict[str, Any]:
         "model_id": model_id,
         "extraction_classes": [field.field_name for field in schema.extraction_classes]
     }
+
+
+def _format_field_list(fields: List[FieldSchema]) -> str:
+    """Format field list for prompt."""
+    formatted = []
+    for field in fields:
+        formatted.append(f"- {field.field_name}: {field.description}")
+    return "\n".join(formatted)
 
 
 def _format_extraction_classes(classes: List[FieldSchema]) -> str:

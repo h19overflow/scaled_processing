@@ -78,7 +78,6 @@ async def test_proper_pipeline():
         print(f"✅ Status: {result.get('status')}")
         print(f"✅ Chunks: {len(result.get('chunks', []))}")
         print(f"✅ Progressive Results: {len(result.get('progressive_results', []))}")
-        print(f"✅ Final Schema Available: {result.get('consolidated_schema') is not None}")
         print(f"✅ Config Generated: {result.get('config') is not None}")
         print(f"✅ Extractions: {len(result.get('extractions', []))}")
         
@@ -93,12 +92,6 @@ async def test_proper_pipeline():
             for i, field in enumerate(all_fields[:5]):
                 print(f"  {i+1}. {field.field_name} ({field.field_type})")
         
-        # Show consolidated fields
-        consolidated_schema = result.get('consolidated_schema')
-        if consolidated_schema:
-            print(f"\nConsolidated Fields: {len(consolidated_schema.final_fields)}")
-            for i, field in enumerate(consolidated_schema.final_fields[:5]):
-                print(f"  {i+1}. {field.field_name} ({field.field_type})")
         
         # Save results
         results_dir = Path("test_results")
@@ -112,7 +105,6 @@ async def test_proper_pipeline():
             "status": result.get('status'),
             "chunk_count": len(result.get('chunks', [])),
             "progressive_results_count": len(result.get('progressive_results', [])),
-            "consolidated_fields_count": len(result.get('consolidated_schema', {}).final_fields) if result.get('consolidated_schema') else 0,
             "extractions_count": len(result.get('extractions', [])),
             "has_config": result.get('config') is not None,
             "pipeline_complete": True
@@ -135,10 +127,6 @@ async def test_proper_pipeline():
             "discovery_details": {
                 "progressive_results": []
             },
-            "consolidation_details": {
-                "has_consolidated_schema": result.get('consolidated_schema') is not None,
-                "final_field_count": len(result.get('consolidated_schema', {}).final_fields) if result.get('consolidated_schema') else 0
-            },
             "extraction_details": {
                 "extraction_count": len(result.get('extractions', [])),
                 "extractions": result.get('extractions', [])
@@ -160,17 +148,6 @@ async def test_proper_pipeline():
                 ]
             })
         
-        # Add consolidated schema details
-        if result.get('consolidated_schema'):
-            consolidated_schema = result.get('consolidated_schema')
-            intermediate_results["consolidation_details"]["final_fields"] = [
-                {
-                    "field_name": field.field_name,
-                    "field_type": field.field_type,
-                    "description": field.description,
-                }
-                for field in consolidated_schema.final_fields
-            ]
         
         with open(results_dir / "intermediate_results.json", "w") as f:
             json.dump(intermediate_results, f, indent=2)

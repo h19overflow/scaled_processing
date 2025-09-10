@@ -81,12 +81,16 @@ def _extract_with_langextract(state: MultiAgentState) -> List[Dict[str, Any]]:
 def _mock_extractions(state: MultiAgentState) -> List[Dict[str, Any]]:
     """Create mock extractions when LangExtract is not available."""
     extractions = []
-    schema = state["final_schema"]
+    
+    # Get fields directly from discovery results
+    all_fields = []
+    for result in state["progressive_results"]:
+        all_fields.extend(result.discovered_fields)
 
-    for field in schema.extraction_classes[:3]:  # Limit to first 3 for mock
+    for field in all_fields[:3]:  # Limit to first 3 for mock
         extractions.append({
             "extraction_class": field.field_name,
-            "extraction_text": field.example_text,
+            "extraction_text": field.sample_values[0] if field.sample_values else f"Sample {field.field_name}",
             "attributes": {"category": field.category, "subcategory": field.subcategory}
         })
 

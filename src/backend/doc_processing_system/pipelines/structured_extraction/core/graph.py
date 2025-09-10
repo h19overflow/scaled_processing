@@ -12,7 +12,6 @@ from ..models.state import MultiAgentState
 from ..nodes import (
     chunk_document,
     sequential_discovery,
-    consolidate_schema,
     generate_config,
     extract_data
 )
@@ -21,7 +20,7 @@ from ..nodes.context_loading import load_feedback_context
 from ..nodes.preference_injection import inject_user_preferences
 
 
-# Flow validated: classification -> feedback -> preferences -> chunking -> discovery -> consolidation -> config -> extraction
+# Flow simplified: classification -> feedback -> preferences -> chunking -> discovery -> config -> extraction
 def build_graph(settings: Settings):
     """Build and compile the multi-agent extraction graph."""
 
@@ -31,7 +30,6 @@ def build_graph(settings: Settings):
     # Create node functions with settings bound
     chunk_node = partial(chunk_document, settings=settings)
     discovery_node = partial(sequential_discovery, settings=settings)
-    consolidation_node = partial(consolidate_schema, settings=settings)
     config_node = partial(generate_config, settings=settings)
     extraction_node = partial(extract_data, settings=settings)
 
@@ -43,7 +41,6 @@ def build_graph(settings: Settings):
     # Add original nodes
     workflow.add_node("chunk_document", chunk_node)
     workflow.add_node("sequential_discovery", discovery_node)
-    workflow.add_node("consolidate_schema", consolidation_node)
     workflow.add_node("generate_config", config_node)
     workflow.add_node("extract_data", extraction_node)
 
@@ -53,10 +50,9 @@ def build_graph(settings: Settings):
     workflow.add_edge("load_feedback_context", "inject_user_preferences")
     workflow.add_edge("inject_user_preferences", "chunk_document")
 
-    # Original workflow continues
+    # Simplified workflow continues - skip consolidation
     workflow.add_edge("chunk_document", "sequential_discovery")
-    workflow.add_edge("sequential_discovery", "consolidate_schema")
-    workflow.add_edge("consolidate_schema", "generate_config")
+    workflow.add_edge("sequential_discovery", "generate_config")
     workflow.add_edge("generate_config", "extract_data")
     workflow.add_edge("extract_data", END)
 
@@ -72,8 +68,6 @@ def create_initial_state(document_text: str, document_id: str, user_id: str = "d
         user_id=user_id,
         chunks=[],
         progressive_results=[],
-        consolidated_schema=None,
-        final_schema=None,
         config=None,
         extractions=[],
         status="started",

@@ -5,8 +5,8 @@ State models for the multi-agent workflow.
 from typing import Dict, Any, List
 from typing_extensions import TypedDict, Optional
 
-from .document import DocumentChunk, DocumentSchema
-from .schema import ProgressiveSchema, ConsolidatedSchema
+from .document import DocumentChunk
+from .schema import ProgressiveSchema
 
 
 class MultiAgentState(TypedDict):
@@ -15,8 +15,6 @@ class MultiAgentState(TypedDict):
     document_id: Optional[str]
     chunks: Optional[List[DocumentChunk]]
     progressive_results: Optional[List[ProgressiveSchema]]
-    consolidated_schema: Optional[ConsolidatedSchema]
-    final_schema: Optional[DocumentSchema]
     config: Optional[Dict[str, Any]]
     extractions: Optional[List[Dict[str, Any]]]
     status: Optional[str]
