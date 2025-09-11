@@ -4,13 +4,12 @@ Converts LangGraph nodes to Prefect tasks with proper state management.
 """
 
 import logging
-from typing import Dict, Any
-from prefect import task, flow
+from typing import Dict, Any, Callable, Union, Optional
+from functools import wraps
+from prefect import task, flow, get_run_logger
 
 from ..config.settings import Settings
 from ..models.state import PipelineState
-from ..models.document import DocumentChunk
-from ..models.schema import ProgressiveSchema, FieldSchema
 from ..nodes.chunking import chunk_document as _chunk_document
 from ..nodes.classification import classify_document as _classify_document
 from ..nodes.context_loading import load_feedback_context as _load_feedback_context
@@ -20,327 +19,115 @@ from ..nodes.config_gen import generate_config as _generate_config
 from ..nodes.extraction import extract_data as _extract_data
 
 
-def _convert_state_to_langgraph(state: PipelineState) -> Dict[str, Any]:
-    """Convert PipelineState to LangGraph-compatible dict format."""
-    import logging
-    logger = logging.getLogger(__name__)
+def create_pipeline_task(
+    func: Callable,
+    task_name: str,
+    is_async: bool = True,
+    critical: bool = False
+):
+    """Generic task wrapper to reduce boilerplate and standardize task patterns.
     
-    langgraph_state = state.model_dump()
-    
-    # Debug logging
-    logger.debug(f"Converting state - progressive_results type: {type(langgraph_state.get('progressive_results'))}")
-    if langgraph_state.get("progressive_results"):
-        logger.debug(f"Progressive results count: {len(langgraph_state['progressive_results'])}")
-        for i, result in enumerate(langgraph_state['progressive_results']):
-            logger.debug(f"Result {i} type: {type(result)}, keys: {result.keys() if isinstance(result, dict) else 'N/A'}")
-    
-    # Ensure chunks are proper DocumentChunk objects
-    if langgraph_state.get("chunks") and len(langgraph_state["chunks"]) > 0:
-        chunks = []
-        for chunk_data in langgraph_state["chunks"]:
-            if isinstance(chunk_data, dict):
-                chunks.append(DocumentChunk(**chunk_data))
-            else:
-                chunks.append(chunk_data)
-        langgraph_state["chunks"] = chunks
-    
-    # Ensure progressive_results are proper ProgressiveSchema objects
-    if langgraph_state.get("progressive_results") and len(langgraph_state["progressive_results"]) > 0:
-        progressive_results = []
-        for i, result_data in enumerate(langgraph_state["progressive_results"]):
-            logger.debug(f"Processing result {i}: type={type(result_data)}")
+    Args:
+        func: The underlying function to call (LangGraph node)
+        task_name: Name of the task for logging and monitoring
+        is_async: Whether the underlying function is async
+        critical: Whether failure should stop the pipeline
+    """
+    def task_decorator(prefect_task_func):
+        @wraps(prefect_task_func)
+        async def wrapper(state: PipelineState, *args, **kwargs) -> PipelineState:
+            logger = get_run_logger()
             
-            if isinstance(result_data, dict):
-                # Convert discovered_fields if they're dicts
-                if "discovered_fields" in result_data and result_data["discovered_fields"]:
-                    fields = []
-                    for field_data in result_data["discovered_fields"]:
-                        if isinstance(field_data, dict):
-                            fields.append(FieldSchema(**field_data))
-                        else:
-                            fields.append(field_data)
-                    result_data["discovered_fields"] = fields
+            try:
+                logger.info(f"Starting {task_name}")
+                state.log_task_execution(task_name, "started")
                 
-                try:
-                    progressive_schema = ProgressiveSchema(**result_data)
-                    progressive_results.append(progressive_schema)
-                    logger.debug(f"Successfully created ProgressiveSchema {i} with {len(progressive_schema.discovered_fields)} fields")
-                except Exception as e:
-                    logger.error(f"Failed to create ProgressiveSchema from {result_data}: {e}")
-                    progressive_results.append(result_data)  # Fallback to original
-            else:
-                progressive_results.append(result_data)
+                # Convert to LangGraph format using centralized method
+                langgraph_state = state.to_langgraph()
                 
-        langgraph_state["progressive_results"] = progressive_results
-        logger.debug(f"Final progressive_results count: {len(progressive_results)}")
-    
-    return langgraph_state
-
-
-def _update_state_from_result(state: PipelineState, result: Dict[str, Any]) -> PipelineState:
-    """Update PipelineState with results from LangGraph node functions."""
-    # Handle chunks specially to maintain DocumentChunk objects
-    if result.get("chunks"):
-        chunks = []
-        for chunk in result["chunks"]:
-            if isinstance(chunk, DocumentChunk):
-                chunks.append(chunk)
-            elif isinstance(chunk, dict):
-                chunks.append(DocumentChunk(**chunk))
-            else:
-                chunks.append(chunk)
-        state.chunks = chunks
-    
-    # Handle progressive_results specially to maintain ProgressiveSchema objects
-    if result.get("progressive_results"):
-        progressive_results = []
-        for result_item in result["progressive_results"]:
-            if isinstance(result_item, ProgressiveSchema):
-                progressive_results.append(result_item)
-            elif isinstance(result_item, dict):
-                # Convert discovered_fields if they're dicts
-                if "discovered_fields" in result_item and result_item["discovered_fields"]:
-                    fields = []
-                    for field_data in result_item["discovered_fields"]:
-                        if isinstance(field_data, FieldSchema):
-                            fields.append(field_data)
-                        elif isinstance(field_data, dict):
-                            fields.append(FieldSchema(**field_data))
-                        else:
-                            fields.append(field_data)
-                    result_item["discovered_fields"] = fields
-                progressive_results.append(ProgressiveSchema(**result_item))
-            else:
-                progressive_results.append(result_item)
-        state.progressive_results = progressive_results
-    if result.get("config"):
-        state.config = result["config"]
-    if result.get("extractions"):
-        state.extractions = result["extractions"]
-    if result.get("document_text"):
-        state.document_text = result["document_text"]
-    if result.get("classification"):
-        state.classification = result["classification"]
-    if result.get("classification_confidence") is not None:
-        state.classification_confidence = result["classification_confidence"]
-    if result.get("feedback_context"):
-        state.feedback_context = result["feedback_context"]
-    if result.get("user_preferences"):
-        state.user_preferences = result["user_preferences"]
-    
-    # Always update status and error
-    state.status = result.get("status", state.status)
-    if result.get("error"):
-        state.error = result["error"]
-    
-    return state
+                # Call the underlying function
+                if is_async:
+                    result = await func(langgraph_state, *args, **kwargs)
+                else:
+                    result = func(langgraph_state, *args, **kwargs)
+                
+                # Update state using centralized method
+                state.update_from_langgraph(result)
+                
+                # Log success
+                state.log_task_execution(task_name, "completed")
+                logger.info(f"{task_name} completed successfully")
+                
+                return state
+                
+            except Exception as e:
+                error_msg = f"{task_name} failed: {e}"
+                logger.error(error_msg)
+                
+                # Use centralized error handling
+                state.fail(
+                    error_msg, 
+                    f"{task_name.lower().replace(' ', '_')}_failed"
+                )
+                state.log_task_execution(task_name, "failed", error=str(e))
+                
+                # Re-raise if critical, otherwise continue
+                if critical:
+                    raise
+                
+                return state
+                
+        return wrapper
+    return task_decorator
 
 
 @task
+@create_pipeline_task(_classify_document, "Document Classification", is_async=True, critical=False)
 async def classify_document_task(state: PipelineState) -> PipelineState:
     """Classify document type using classification service."""
-    logger = logging.getLogger(__name__)
-    
-    try:
-        # Convert to LangGraph format for compatibility
-        langgraph_state = _convert_state_to_langgraph(state)
-        
-        # Call original classification function
-        result = await _classify_document(langgraph_state)
-        
-        # Update state with results using helper
-        state = _update_state_from_result(state, result)
-            
-        logger.info(f"Document classified as '{state.classification}' with confidence {state.classification_confidence}")
-        return state
-        
-    except Exception as e:
-        logger.error(f"Classification task failed: {e}")
-        state.classification = "unknown"
-        state.classification_confidence = 0.0
-        state.status = "classification_failed"
-        state.error = str(e)
-        return state
+    pass  # Implementation handled by decorator
 
 
 @task
+@create_pipeline_task(_load_feedback_context, "Context Loading", is_async=True, critical=False)
 async def load_feedback_context_task(state: PipelineState) -> PipelineState:
     """Load user feedback context for enhanced extraction."""
-    logger = logging.getLogger(__name__)
-    
-    try:
-        # Convert to LangGraph format for compatibility
-        langgraph_state = _convert_state_to_langgraph(state)
-        
-        # Call original context loading function
-        result = await _load_feedback_context(langgraph_state)
-        
-        # Update state with results using helper
-        state = _update_state_from_result(state, result)
-            
-        logger.info(f"Loaded feedback context: {bool(state.feedback_context)}")
-        return state
-        
-    except Exception as e:
-        logger.error(f"Context loading task failed: {e}")
-        state.status = "context_loading_failed"
-        state.error = str(e)
-        return state
+    pass  # Implementation handled by decorator
 
 
-@task  
+@task
+@create_pipeline_task(_inject_user_preferences, "Preference Injection", is_async=True, critical=False)
 async def inject_user_preferences_task(state: PipelineState) -> PipelineState:
     """Inject user preferences into the extraction pipeline."""
-    logger = logging.getLogger(__name__)
-    
-    try:
-        # Convert to LangGraph format for compatibility
-        langgraph_state = _convert_state_to_langgraph(state)
-        
-        # Call original preference injection function
-        result = await _inject_user_preferences(langgraph_state)
-        
-        # Update state with results using helper
-        state = _update_state_from_result(state, result)
-            
-        logger.info(f"Injected user preferences: {bool(state.user_preferences)}")
-        return state
-        
-    except Exception as e:
-        logger.error(f"Preference injection task failed: {e}")
-        state.status = "preference_injection_failed"
-        state.error = str(e)
-        return state
+    pass  # Implementation handled by decorator
 
 
 @task
-def chunk_document_task(state: PipelineState, settings: Settings) -> PipelineState:
+@create_pipeline_task(_chunk_document, "Document Chunking", is_async=False, critical=True)
+async def chunk_document_task(state: PipelineState, settings: Settings) -> PipelineState:
     """Chunk document into processing batches."""
-    logger = logging.getLogger(__name__)
-    
-    try:
-        # Convert to LangGraph format for compatibility
-        langgraph_state = _convert_state_to_langgraph(state)
-        
-        # Call original chunking function
-        result = _chunk_document(langgraph_state, settings)
-        
-        # Update state with results using helper
-        state = _update_state_from_result(state, result)
-            
-        logger.info(f"Created {len(state.chunks or [])} chunks")
-        return state
-        
-    except Exception as e:
-        logger.error(f"Chunking task failed: {e}")
-        state.status = "chunking_failed"
-        state.error = str(e)
-        return state
+    pass  # Implementation handled by decorator
 
 
 @task
+@create_pipeline_task(_sequential_discovery, "Sequential Discovery", is_async=True, critical=True)
 async def sequential_discovery_task(state: PipelineState, settings: Settings) -> PipelineState:
     """Process chunks sequentially to discover schemas."""
-    logger = logging.getLogger(__name__)
-    
-    try:
-        # Convert to LangGraph format for compatibility
-        langgraph_state = _convert_state_to_langgraph(state)
-        
-        # Call original discovery function
-        result = await _sequential_discovery(langgraph_state, settings)
-        
-        # Update state with results using helper
-        state = _update_state_from_result(state, result)
-            
-        logger.info(f"Discovery completed with {len(state.progressive_results or [])} results")
-        return state
-        
-    except Exception as e:
-        logger.error(f"Discovery task failed: {e}")
-        state.status = "discovery_failed"
-        state.error = str(e)
-        return state
+    pass  # Implementation handled by decorator
 
 
 @task
-def generate_config_task(state: PipelineState, settings: Settings) -> PipelineState:
+@create_pipeline_task(_generate_config, "Config Generation", is_async=False, critical=True)
+async def generate_config_task(state: PipelineState, settings: Settings) -> PipelineState:
     """Generate extraction configuration from discovered schemas."""
-    logger = logging.getLogger(__name__)
-    
-    try:
-        # Convert to LangGraph format for compatibility
-        langgraph_state = _convert_state_to_langgraph(state)
-        
-        # Call original config generation function (synchronous)
-        result = _generate_config(langgraph_state, settings)
-        
-        # Update state with results using helper
-        state = _update_state_from_result(state, result)
-            
-        logger.info(f"Generated extraction config: {bool(state.config)}")
-        return state
-        
-    except Exception as e:
-        logger.error(f"Config generation task failed: {e}")
-        state.status = "config_generation_failed"
-        state.error = str(e)
-        return state
+    pass  # Implementation handled by decorator
 
 
 @task
-def extract_data_task(state: PipelineState, settings: Settings) -> PipelineState:
+@create_pipeline_task(_extract_data, "Data Extraction", is_async=False, critical=True)
+async def extract_data_task(state: PipelineState, settings: Settings) -> PipelineState:
     """Extract structured data using generated configuration."""
-    logger = logging.getLogger(__name__)
-    
-    try:
-        logger.debug("Starting extraction task")
-        
-        # Convert to LangGraph format for compatibility
-        logger.debug("Converting state to LangGraph format")
-        langgraph_state = _convert_state_to_langgraph(state)
-        
-        # Log state details for debugging
-        logger.debug(f"State has progressive_results: {bool(langgraph_state.get('progressive_results'))}")
-        if langgraph_state.get("progressive_results"):
-            logger.debug(f"Progressive results count: {len(langgraph_state['progressive_results'])}")
-            for i, result in enumerate(langgraph_state['progressive_results']):
-                logger.debug(f"Result {i} type: {type(result)}")
-        
-        # Call original extraction function (synchronous)
-        logger.debug("Calling extraction function")
-        result = _extract_data(langgraph_state, settings)
-        logger.debug(f"Extraction function returned: {type(result)}")
-        
-        # Update state with results using helper
-        logger.debug("Updating state with results")
-        state = _update_state_from_result(state, result)
-            
-        logger.info(f"Extracted {len(state.extractions or [])} data items")
-        
-        # Ensure we have some result even if extraction partially failed
-        if not state.extractions:
-            logger.warning("No extractions found, but task completed")
-            
-        return state
-        
-    except Exception as e:
-        logger.error(f"Extraction task failed: {e}")
-        
-        # Add detailed error context
-        logger.error(f"State details - progressive_results: {bool(state.progressive_results)}")
-        if state.progressive_results:
-            logger.error(f"Progressive results count: {len(state.progressive_results)}")
-            for i, result in enumerate(state.progressive_results):
-                logger.error(f"Result {i} type: {type(result)}")
-        
-        # Log stack trace for debugging
-        import traceback
-        logger.error(f"Full traceback: {traceback.format_exc()}")
-        
-        state.status = "extraction_failed"
-        state.error = str(e)
-        return state
+    pass  # Implementation handled by decorator
 
 
 @flow(name="structured-extraction-pipeline")
@@ -356,7 +143,7 @@ async def structured_extraction_flow(
     Replaces the LangGraph workflow with sequential Prefect task execution.
     Maintains the same processing order as the original workflow.
     """
-    logger = logging.getLogger(__name__)
+    logger = get_run_logger()
     
     # Create initial state
     state = PipelineState(
@@ -369,47 +156,33 @@ async def structured_extraction_flow(
     logger.info(f"Starting structured extraction pipeline for document {document_id}")
     
     try:
-        # Step 1: Document Classification
+        # Step 1: Document Classification (non-critical)
         state = await classify_document_task(state)
-        if state.error:
-            logger.warning(f"Classification failed but continuing: {state.error}")
         
-        # Step 2: Load Feedback Context
+        # Step 2: Load Feedback Context (non-critical)
         state = await load_feedback_context_task(state)
-        if state.error:
-            logger.warning(f"Context loading failed but continuing: {state.error}")
         
-        # Step 3: Inject User Preferences
+        # Step 3: Inject User Preferences (non-critical)
         state = await inject_user_preferences_task(state)
-        if state.error:
-            logger.warning(f"Preference injection failed but continuing: {state.error}")
         
-        # Step 4: Document Chunking
-        state = chunk_document_task(state, settings)
-        if state.error:
-            logger.error(f"Chunking failed: {state.error}")
-            state.status = "failed"
+        # Step 4: Document Chunking (critical)
+        state = await chunk_document_task(state, settings)
+        if state.status.endswith("_failed"):
             return state
         
-        # Step 5: Sequential Discovery
+        # Step 5: Sequential Discovery (critical)
         state = await sequential_discovery_task(state, settings)
-        if state.error:
-            logger.error(f"Discovery failed: {state.error}")
-            state.status = "failed"
+        if state.status.endswith("_failed"):
             return state
         
-        # Step 6: Generate Config
-        state = generate_config_task(state, settings)
-        if state.error:
-            logger.error(f"Config generation failed: {state.error}")
-            state.status = "failed"
+        # Step 6: Generate Config (critical)
+        state = await generate_config_task(state, settings)
+        if state.status.endswith("_failed"):
             return state
         
-        # Step 7: Extract Data
-        state = extract_data_task(state, settings)
-        if state.error:
-            logger.error(f"Data extraction failed: {state.error}")
-            state.status = "failed"
+        # Step 7: Extract Data (critical)
+        state = await extract_data_task(state, settings)
+        if state.status.endswith("_failed"):
             return state
         
         # Mark as completed
@@ -420,9 +193,7 @@ async def structured_extraction_flow(
         
     except Exception as e:
         logger.error(f"Pipeline failed with unexpected error: {e}")
-        state.error = str(e)
-        state.status = "failed"
-        return state
+        return state.fail(str(e), "pipeline_failed")
 
 
 def create_initial_state(document_text: str, document_id: str, user_id: str = "default_user") -> PipelineState:
