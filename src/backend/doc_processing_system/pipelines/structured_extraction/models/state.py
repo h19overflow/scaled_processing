@@ -47,6 +47,8 @@ class PipelineState(BaseModel):
     user_id: str = "default_user"
     feedback_context: Optional[Dict[str, Any]] = None
     user_preferences: Optional[Dict[str, Any]] = None
+    # Discovery tracking
+    discovery_method: Optional[str] = None  # "template_based" or "sequential"
     # Monitoring fields
     task_execution_log: List[Dict[str, Any]] = Field(default_factory=list)
     
@@ -160,6 +162,8 @@ class PipelineState(BaseModel):
             self.feedback_context = result["feedback_context"]
         if result.get("user_preferences"):
             self.user_preferences = result["user_preferences"]
+        if result.get("discovery_method"):
+            self.discovery_method = result["discovery_method"]
         
         # Always update status and error
         self.status = result.get("status", self.status)

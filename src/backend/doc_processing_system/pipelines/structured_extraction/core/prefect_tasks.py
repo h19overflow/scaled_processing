@@ -28,7 +28,9 @@ Converts LangGraph nodes to Prefect tasks with proper state management.
     2. Context Loading (non-critical) 
     3. Preference Injection (non-critical)
     4. Document Chunking (critical)
-    5. Sequential Discovery (critical)
+    5. Discovery Phase (critical):
+       a. Template Check → Template Discovery (fast path) OR
+       b. No Template → Sequential Discovery (slow path)
     6. Config Generation (critical)
     7. Data Extraction (critical)
 
@@ -147,11 +149,15 @@ async def chunk_document_task(state: PipelineState, settings: Settings) -> Pipel
     pass  # Implementation handled by decorator
 
 
-async def _template_based_discovery(state: PipelineState, settings: Settings) -> PipelineState:
+@task
+async def template_discovery_task(state: PipelineState, settings: Settings) -> PipelineState:
     """Create schema from user template, bypassing Sequential Discovery."""
     logger = get_run_logger()
     
     try:
+        logger.info("⚡ Starting Template Discovery (fast path)")
+        state.log_task_execution("Template Discovery", "started")
+        
         user_id = state.user_id
         classification = getattr(state, "classification", "unknown")
         chunks = getattr(state, "chunks", [])
@@ -168,55 +174,36 @@ async def _template_based_discovery(state: PipelineState, settings: Settings) ->
         )
         
         if progressive_results:
-            logger.info(f"Generated schema from template with {len(progressive_results[0].discovered_fields)} fields")
-            return {
-                **state.to_langgraph(),
-                "progressive_results": progressive_results,
-                "status": "discovery_complete",
-                "discovery_method": "template_based"
-            }
+            logger.info(f"✅ Generated schema from template with {len(progressive_results[0].discovered_fields)} fields")
+            # Update state directly
+            state.progressive_results = progressive_results
+            state.status = "discovery_complete"
+            state.discovery_method = "template_based"
+            state.log_task_execution("Template Discovery", "completed")
+            return state
         else:
-            logger.warning("Failed to generate schema from template, falling back to sequential discovery")
-            # Fall back to sequential discovery
-            return await _sequential_discovery(state.to_langgraph(), settings)
+            logger.warning("❌ Failed to generate schema from template")
+            state.fail("Template discovery failed - no results generated", "template_discovery_failed")
+            state.log_task_execution("Template Discovery", "failed", error="No results generated")
+            return state
             
     except Exception as e:
-        logger.error(f"Template-based discovery failed: {e}, falling back to sequential discovery")
-        # Fall back to sequential discovery
-        return await _sequential_discovery(state.to_langgraph(), settings)
+        logger.error(f"❌ Template-based discovery failed: {e}")
+        state.fail(f"Template discovery error: {e}", "template_discovery_failed")
+        state.log_task_execution("Template Discovery", "failed", error=str(e))
+        return state
 
 
 @task
 @create_pipeline_task(_sequential_discovery, "Sequential Discovery", is_async=True, critical=True)
 async def sequential_discovery_task(state: PipelineState, settings: Settings) -> PipelineState:
-    """Process chunks sequentially to discover schemas or use template if available."""
+    """Process chunks sequentially to discover schemas using AI discovery."""
     logger = get_run_logger()
-    
-    # Check if user has a template for this classification
-    try:
-        user_id = state.user_id
-        classification = getattr(state, "classification", "unknown")
-        
-        logger.info(f"🔍 Template check: user_id={user_id}, classification={classification}")
-        
-        if classification != "unknown":
-            connection_manager = ConnectionManager()
-            template_manager = FieldTemplateManager(connection_manager)
-            
-            has_template = template_manager.has_template(user_id, classification)
-            logger.info(f"🔍 Has template for {user_id}/{classification}: {has_template}")
-            
-            if has_template:
-                logger.info(f"✅ Using field template for {classification}, bypassing Sequential Discovery")
-                return await _template_based_discovery(state, settings)
-        
-        logger.info("❌ No template found, proceeding with Sequential Discovery")
-    except Exception as e:
-        logger.warning(f"❌ Template check failed: {e}, proceeding with Sequential Discovery")
-        import traceback
-        traceback.print_exc()
-    
-    # Original sequential discovery implementation handled by decorator
+    logger.info("🧭 Starting AI-powered sequential discovery (slow path)")
+    # Set discovery method after successful completion
+    if not state.status.endswith("_failed"):
+        state.discovery_method = "sequential"
+    # Implementation handled by decorator - calls _sequential_discovery
     pass
 
 
@@ -274,8 +261,24 @@ async def structured_extraction_flow(
         if state.status.endswith("_failed"):
             return state
         
-        # Step 5: Sequential Discovery (critical)
-        state = await sequential_discovery_task(state, settings)
+        # Step 5: Discovery Phase - Template Check (critical)
+        logger.info("🔍 Checking for field templates...")
+        logger.info(f"🔍 Debug: user_id={state.user_id}, classification={getattr(state, 'classification', 'unknown')}")
+        has_template = check_has_template(state)
+        
+        if has_template:
+            logger.info("✅ Field template found - using fast path (Template Discovery)")
+            state = await template_discovery_task(state, settings)
+            
+            # If template discovery fails, fall back to sequential discovery
+            if state.status.endswith("_failed"):
+                logger.warning("❌ Template discovery failed, falling back to Sequential Discovery")
+                state = await sequential_discovery_task(state, settings)
+                
+        else:
+            logger.info("❌ No field template found - using slow path (Sequential Discovery)")
+            state = await sequential_discovery_task(state, settings)
+        
         if state.status.endswith("_failed"):
             return state
         
@@ -308,3 +311,30 @@ def create_initial_state(document_text: str, document_id: str, user_id: str = "d
         user_id=user_id,
         status="started"
     )
+
+
+def check_has_template(state: PipelineState) -> bool:
+    """Check if user has a field template for the classification."""
+    try:
+        user_id = state.user_id
+        classification = getattr(state, "classification", "unknown")
+        
+        logger = logging.getLogger(__name__)
+        logger.info(f"🔍 Template check details: user_id={user_id}, classification={classification}")
+        
+        if classification == "unknown":
+            logger.warning("❌ Classification is unknown, cannot check for templates")
+            return False
+            
+        connection_manager = ConnectionManager()
+        template_manager = FieldTemplateManager(connection_manager)
+        
+        has_template = template_manager.has_template(user_id, classification)
+        logger.info(f"🔍 Template result: {user_id}/{classification} = {has_template}")
+        
+        return has_template
+        
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Template check failed: {e}")
+        return False
