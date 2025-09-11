@@ -21,7 +21,7 @@ def generate_config(state: PipelineState) -> dict[str, Any] | None:
     """Generate langextract configuration using config_router based on document classification."""
     try:
         # Get document classification
-        classification = state.get("classification", "unknown")
+        classification = getattr(state, "classification", "unknown")
         
         if classification == "unknown":
             raise ValueError("Document classification is unknown - cannot generate appropriate config")
@@ -34,12 +34,14 @@ def generate_config(state: PipelineState) -> dict[str, Any] | None:
             prompt = "Extract structured information from this document. Use exact text from the document for extractions."
             examples = []
 
-        if state.get('document_text') and LANGEXTRACT_AVAILABLE:
-            results = process_document(state.get('document_text'), prompt)
+        if getattr(state, 'document_text', None) and LANGEXTRACT_AVAILABLE:
+            results = process_document(getattr(state, 'document_text'), prompt)
 
 
             return {'results':results}
 
     except Exception as e:
-        state.logger.error(f"Error generating configuration: {e}")
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error generating configuration: {e}")
 

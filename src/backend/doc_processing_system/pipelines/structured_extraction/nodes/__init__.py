@@ -4,13 +4,11 @@ Contains LangGraph node functions.
 """
 
 from .chunking import chunk_document
-from .discovery import sequential_discovery
+from .classification import classify_document
 from .config_gen import generate_config
-from .extraction import extract_data
 
 __all__ = [
     "chunk_document",
-    "sequential_discovery",
-    "generate_config",
-    "extract_data"
+    "classify_document", 
+    "generate_config"
 ]

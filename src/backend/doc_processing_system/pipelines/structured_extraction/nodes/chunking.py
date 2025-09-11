@@ -21,7 +21,7 @@ from prefect import task
 def chunk_document(state: PipelineState, settings: Settings) -> Dict[str, Any] :
     """Chunk document into processing batches."""
     try:
-        document_input = state["document_text"]
+        document_input = state.document_text
         if not document_input:
             raise ValueError("No document text or file path provided")
 
@@ -35,11 +35,11 @@ def chunk_document(state: PipelineState, settings: Settings) -> Dict[str, Any] :
         
         chunks = _create_chunks(
             text=text,
-            document_id=state["document_id"],
+            document_id=state.document_id,
             config=settings.chunking
         )
         print(
-            f"Created {len(chunks)} chunks from document {state['document_id']}, each with up to {settings.chunking.max_tokens} tokens.,Type{type(chunks)}")
+            f"Created {len(chunks)} chunks from document {state.document_id}, each with up to {settings.chunking.max_tokens} tokens.,Type{type(chunks)}")
 
         return {
             "chunks": chunks,

@@ -23,8 +23,8 @@ async def classify_document(state: PipelineState) -> Dict[str, Any]:
 
     try:
         # Get required state
-        document_text = state.get("document_text", "")
-        document_id = state.get("document_id", "")
+        document_text = getattr(state, "document_text", "") or ""
+        document_id = getattr(state, "document_id", "") or ""
 
         if not document_text or not document_id:
             logger.warning("Missing document text or ID for classification")
@@ -62,7 +62,6 @@ async def classify_document(state: PipelineState) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Classification failed: {e}")
         return {
-            **state,
             "classification": "unknown",
             "classification_confidence": 0.0,
             "status": "classification_failed",

@@ -5,7 +5,7 @@ Contains all Pydantic models and data structures.
 
 from .document import DocumentChunk, DocumentSchema
 from .schema import FieldSchema, ProgressiveSchema, ConsolidatedSchema
-from .state import MultiAgentState
+from .state import PipelineState
 
 __all__ = [
     "DocumentChunk",
@@ -13,5 +13,5 @@ __all__ = [
     "FieldSchema",
     "ProgressiveSchema",
     "ConsolidatedSchema",
-    "MultiAgentState"
+    "PipelineState"
 ]
