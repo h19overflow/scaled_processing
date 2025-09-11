@@ -160,7 +160,7 @@ async def run_demo_pipeline():
             
             if result.extractions:
                 print("📈 Sample Extractions:")
-                for i, extraction in enumerate(result.extractions[]):
+                for i, extraction in enumerate(result.extractions[:3]):
                     print(f"   {i+1}. {extraction}")
             
         except Exception as e:
