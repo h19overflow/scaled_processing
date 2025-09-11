@@ -36,7 +36,7 @@ class DoclingProcessor:
         
         self.logger.info("DoclingProcessor initialized with adaptive pipelines")
     
-    def extract_document(self, raw_file_path: str, document_id: str, user_id: str = "default") -> Dict[str, Any]:
+    def extract_document(self, raw_file_path: str, document_id: str) -> Dict[str, Any]:
         """Extract document to markdown and images with path-based output.
         
         Args:
