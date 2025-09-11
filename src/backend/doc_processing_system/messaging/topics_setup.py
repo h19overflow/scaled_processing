@@ -23,6 +23,7 @@ def create_topics(topic_configs: dict):
 if __name__ == "__main__":
     topics = {
 
+
         "document_pipeline_completed": {
             "num_partitions": 6,
             "replication_factor": 1,
@@ -53,7 +54,17 @@ if __name__ == "__main__":
                 "retention.ms": "604800000"
             }
         }
-
+    ,
+        "file_detected": {
+            "num_partitions": 6,
+            "replication_factor": 1,
+            "config": {
+                "cleanup.policy": "compact",
+                "compression.type": "lz4",
+                "retention.ms": "604800000"
+            }
+        }
     }
+
     create_topics(topics)
 
