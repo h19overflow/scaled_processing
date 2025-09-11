@@ -1,6 +1,42 @@
 """
 Prefect tasks for structured extraction pipeline.
 Converts LangGraph nodes to Prefect tasks with proper state management.
+
+🚀 DEMO COMMANDS:
+    # Quick demo (single document, ~30 seconds):
+    python -m src.backend.doc_processing_system.pipelines.structured_extraction.core.quick_demo
+    
+    # Full demo (3 document types, ~2 minutes):
+    python -m src.backend.doc_processing_system.pipelines.structured_extraction.core.demo_pipeline
+
+📁 RESULTS LOCATION:
+    demo_results/ (created automatically)
+    - Contains JSON files with intermediate results for each step
+    - Detailed task execution logs and processing stats
+
+✨ FEATURES SHOWCASED:
+    • Generic task wrapper reducing boilerplate from ~20 lines to 3 lines per task
+    • Centralized state management in PipelineState model
+    • Prefect native logging with get_run_logger()
+    • Async standardization across all tasks
+    • Critical vs non-critical task distinction
+    • Enhanced error handling and monitoring
+    • Task execution logging for debugging
+
+📊 PIPELINE STEPS:
+    1. Document Classification (non-critical)
+    2. Context Loading (non-critical) 
+    3. Preference Injection (non-critical)
+    4. Document Chunking (critical)
+    5. Sequential Discovery (critical)
+    6. Config Generation (critical)
+    7. Data Extraction (critical)
+
+💡 ARCHITECTURE IMPROVEMENTS:
+    • Eliminated redundant helper functions (_convert_state_to_langgraph, _update_state_from_result)
+    • Moved state transformation logic to model methods (to_langgraph(), update_from_langgraph())
+    • Added standardized error handling with state.fail() method
+    • Implemented task execution monitoring with log_task_execution()
 """
 
 import logging

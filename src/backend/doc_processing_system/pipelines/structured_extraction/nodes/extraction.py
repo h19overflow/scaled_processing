@@ -31,7 +31,11 @@ def extract_data(state: MultiAgentState, settings: Settings) -> MultiAgentState:
                 extractions = _extract_with_langextract(state)
                 logger.debug(f"LangExtract successful: {len(extractions)} extractions")
             except Exception as e:
-                logger.warning(f"LangExtract failed: {e}, falling back to mock extraction")
+                # Check if it's a JSON parsing error from the AI model
+                if "JSONDecodeError" in str(e) or "Failed to parse content" in str(e):
+                    logger.warning(f"LangExtract JSON parsing failed (AI model response malformed): {e}, falling back to mock extraction")
+                else:
+                    logger.warning(f"LangExtract failed: {e}, falling back to mock extraction")
                 extractions = None
         
         # If LangExtract failed or unavailable, use mock extraction
@@ -122,12 +126,20 @@ def _extract_with_langextract(state: MultiAgentState) -> List[Dict[str, Any]]:
         )
         examples.append(example_data)
 
-    result = lx.extract(
-        text_or_documents=state["document_text"],
-        prompt_description=state["config"]["prompt"],
-        examples=examples,
-        model_id=state["config"]["model_id"]
-    )
+    # Wrap LangExtract call with additional error handling
+    try:
+        result = lx.extract(
+            text_or_documents=state["document_text"],
+            prompt_description=state["config"]["prompt"],
+            examples=examples,
+            model_id=state["config"]["model_id"]
+        )
+    except Exception as e:
+        # Handle JSON parsing errors specifically
+        if any(keyword in str(e) for keyword in ["JSONDecodeError", "Failed to parse content", "Expecting", "delimiter"]):
+            raise ValueError(f"AI model returned malformed JSON response: {str(e)[:100]}...")
+        else:
+            raise e
 
     if not result or not hasattr(result, 'extractions'):
         raise ValueError("LangExtract returned invalid result")
