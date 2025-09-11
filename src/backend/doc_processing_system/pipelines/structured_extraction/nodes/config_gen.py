@@ -26,16 +26,9 @@ def generate_config(state: PipelineState) -> dict[str, Any] | None:
         if classification == "unknown":
             raise ValueError("Document classification is unknown - cannot generate appropriate config")
         
-        # Use config_router to get appropriate prompt and examples
-        prompt, examples = route_classification(classification)
-        
-        if prompt == "Unknown classification":
-            # Fallback to general extraction
-            prompt = "Extract structured information from this document. Use exact text from the document for extractions."
-            examples = []
-
         if getattr(state, 'document_text', None) and LANGEXTRACT_AVAILABLE:
-            results = process_document(getattr(state, 'document_text'), prompt)
+            # Pass classification directly to process_document - it will handle routing internally
+            results = process_document(getattr(state, 'document_text'), classification)
 
 
             return {'results':results}
