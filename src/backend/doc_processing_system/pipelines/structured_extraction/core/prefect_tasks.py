@@ -226,7 +226,7 @@ async def structured_extraction_flow(
     document_text: str, 
     document_id: str, 
     settings: Settings,
-    user_id: str = "default_user"
+    user_id: str = "test_user"
 ) -> PipelineState:
     """
     Prefect flow for structured extraction pipeline.

@@ -231,7 +231,7 @@ async def main():
         }
         
         print("Creating template...")
-        success = template_manager.create_template(
+        success = await template_manager.create_template(
             user_id="test_user",
             classification="contract",
             fields=test_fields
