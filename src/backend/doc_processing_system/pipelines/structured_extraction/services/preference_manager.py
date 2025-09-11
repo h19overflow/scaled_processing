@@ -46,7 +46,6 @@ class PreferenceManager:
             self.logger.error(f"Failed to get user preferences: {e}")
             return self.preferences_crud.get_default_preferences()
 
-    # TODO investigate behaviour with schema generation.
     async def apply_preferences_to_schema(
             self,
             schema: Dict[str, Any],

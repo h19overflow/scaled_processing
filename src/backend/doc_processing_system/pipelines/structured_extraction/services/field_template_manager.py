@@ -91,10 +91,21 @@ class FieldTemplateManager:
             self.logger.error(f"Failed to create template: {e}")
             return False
 
-    def has_template(self, user_id: str, classification: str) -> bool:
-        """Check if user has a field template for the classification."""
+    def has_template(self, user_id: str, classification: str, user_preferences: Optional[Dict[str, Any]] = None) -> bool:
+        """Check if user has a field template for the classification.
+        
+        Args:
+            user_id: User identifier
+            classification: Document classification
+            user_preferences: Pre-loaded user preferences (optional, avoids DB call)
+        """
         try:
-            preferences = self.preference_manager.get_user_preferences(user_id, classification)
+            # Use provided preferences or fetch them
+            if user_preferences is not None:
+                preferences = user_preferences
+            else:
+                preferences = self.preference_manager.get_user_preferences(user_id, classification)
+                
             field_prefs = preferences.get("field_preferences", {})
             
             # Check for template mode flag and field priorities

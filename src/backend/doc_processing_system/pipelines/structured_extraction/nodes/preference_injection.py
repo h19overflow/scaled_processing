@@ -18,7 +18,7 @@ async def inject_user_preferences(state: MultiAgentState) -> Dict[str, Any]:
     try:
         # Get required state
         classification = state.get("classification", "unknown")
-        user_id = state.get("user_id", "default_user")
+        user_id = state.get("user_id", "test_user")
 
         if classification == "unknown":
             logger.warning("No classification available for preference injection")
@@ -39,8 +39,8 @@ async def inject_user_preferences(state: MultiAgentState) -> Dict[str, Any]:
             classification=classification
         )
         
-        # Check if user has field template
-        has_template = template_manager.has_template(user_id, classification)
+        # Check if user has field template (using already-loaded preferences)
+        has_template = template_manager.has_template(user_id, classification, user_preferences)
         
         updated_state = {
             "user_preferences": user_preferences,
