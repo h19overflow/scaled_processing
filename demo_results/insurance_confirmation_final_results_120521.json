@@ -1,0 +1,86 @@
+{
+  "step": "insurance_confirmation_final_results",
+  "timestamp": "2025-09-11T12:05:21.730863",
+  "status": "completed",
+  "error": "",
+  "document_id": "demo_insurance_confirmation_20250911_120304",
+  "user_id": "test_user",
+  "classification": "resume",
+  "classification_confidence": 0.5,
+  "chunks_count": 22,
+  "progressive_results_count": 22,
+  "config_available": true,
+  "extractions_count": 8,
+  "task_execution_log": [
+    {
+      "task_name": "Document Classification",
+      "status": "started",
+      "timestamp": 1757563385.9213483
+    },
+    {
+      "task_name": "Document Classification",
+      "status": "completed",
+      "timestamp": 1757563388.3383267
+    },
+    {
+      "task_name": "Context Loading",
+      "status": "started",
+      "timestamp": 1757563388.3438368
+    },
+    {
+      "task_name": "Context Loading",
+      "status": "completed",
+      "timestamp": 1757563388.3811576
+    },
+    {
+      "task_name": "Preference Injection",
+      "status": "started",
+      "timestamp": 1757563388.3846714
+    },
+    {
+      "task_name": "Preference Injection",
+      "status": "completed",
+      "timestamp": 1757563388.4239435
+    },
+    {
+      "task_name": "Document Chunking",
+      "status": "started",
+      "timestamp": 1757563388.4294922
+    },
+    {
+      "task_name": "Document Chunking",
+      "status": "completed",
+      "timestamp": 1757563388.5364873
+    },
+    {
+      "task_name": "Sequential Discovery",
+      "status": "started",
+      "timestamp": 1757563388.5436876
+    },
+    {
+      "task_name": "Sequential Discovery",
+      "status": "completed",
+      "timestamp": 1757563456.5974665
+    },
+    {
+      "task_name": "Config Generation",
+      "status": "started",
+      "timestamp": 1757563456.6100633
+    },
+    {
+      "task_name": "Config Generation",
+      "status": "completed",
+      "timestamp": 1757563456.6110623
+    },
+    {
+      "task_name": "Data Extraction",
+      "status": "started",
+      "timestamp": 1757563456.6261756
+    },
+    {
+      "task_name": "Data Extraction",
+      "status": "completed",
+      "timestamp": 1757563521.458104
+    }
+  ]
+}

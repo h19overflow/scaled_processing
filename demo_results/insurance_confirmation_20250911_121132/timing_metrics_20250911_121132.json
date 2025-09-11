@@ -1,0 +1,105 @@
+{
+  "document_id": "demo_insurance_confirmation_20250911_120948",
+  "timestamp": "20250911_121132",
+  "execution_timeline": [
+    {
+      "task": "Document Classification",
+      "status": "started",
+      "timestamp": 1757563789.7134364,
+      "datetime": "2025-09-11T12:09:49.713436"
+    },
+    {
+      "task": "Document Classification",
+      "status": "completed",
+      "timestamp": 1757563791.0991318,
+      "datetime": "2025-09-11T12:09:51.099132"
+    },
+    {
+      "task": "Context Loading",
+      "status": "started",
+      "timestamp": 1757563791.1072237,
+      "datetime": "2025-09-11T12:09:51.107224"
+    },
+    {
+      "task": "Context Loading",
+      "status": "completed",
+      "timestamp": 1757563791.1418672,
+      "datetime": "2025-09-11T12:09:51.141867"
+    },
+    {
+      "task": "Preference Injection",
+      "status": "started",
+      "timestamp": 1757563791.1493788,
+      "datetime": "2025-09-11T12:09:51.149379"
+    },
+    {
+      "task": "Preference Injection",
+      "status": "completed",
+      "timestamp": 1757563791.1738396,
+      "datetime": "2025-09-11T12:09:51.173840"
+    },
+    {
+      "task": "Document Chunking",
+      "status": "started",
+      "timestamp": 1757563791.183347,
+      "datetime": "2025-09-11T12:09:51.183347"
+    },
+    {
+      "task": "Document Chunking",
+      "status": "completed",
+      "timestamp": 1757563791.3172164,
+      "datetime": "2025-09-11T12:09:51.317216"
+    },
+    {
+      "task": "Sequential Discovery",
+      "status": "started",
+      "timestamp": 1757563791.3249636,
+      "datetime": "2025-09-11T12:09:51.324964"
+    },
+    {
+      "task": "Sequential Discovery",
+      "status": "completed",
+      "timestamp": 1757563859.7144392,
+      "datetime": "2025-09-11T12:10:59.714439"
+    },
+    {
+      "task": "Config Generation",
+      "status": "started",
+      "timestamp": 1757563859.7300293,
+      "datetime": "2025-09-11T12:10:59.730029"
+    },
+    {
+      "task": "Config Generation",
+      "status": "completed",
+      "timestamp": 1757563859.731229,
+      "datetime": "2025-09-11T12:10:59.731229"
+    },
+    {
+      "task": "Data Extraction",
+      "status": "started",
+      "timestamp": 1757563859.7468903,
+      "datetime": "2025-09-11T12:10:59.746890"
+    },
+    {
+      "task": "Data Extraction",
+      "status": "completed",
+      "timestamp": 1757563892.44956,
+      "datetime": "2025-09-11T12:11:32.449560"
+    }
+  ],
+  "performance_summary": {
+    "total_pipeline_time": 102.67201399803162,
+    "slowest_task": "Sequential Discovery",
+    "fastest_task": "Config Generation",
+    "average_task_time": 14.667430571147374,
+    "task_durations": {
+      "Document Classification": 1.385695457458496,
+      "Context Loading": 0.03464341163635254,
+      "Preference Injection": 0.024460792541503906,
+      "Document Chunking": 0.13386940956115723,
+      "Sequential Discovery": 68.38947558403015,
+      "Config Generation": 0.0011997222900390625,
+      "Data Extraction": 32.702669620513916
+    }
+  }
+}

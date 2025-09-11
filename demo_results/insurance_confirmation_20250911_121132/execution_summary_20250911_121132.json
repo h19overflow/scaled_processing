@@ -1,0 +1,18 @@
+{
+  "document_info": {
+    "document_id": "demo_insurance_confirmation_20250911_120948",
+    "document_type": "insurance_confirmation",
+    "classification": "resume",
+    "classification_confidence": 0.5,
+    "user_id": "test_user"
+  },
+  "processing_results": {
+    "status": "completed",
+    "error": "",
+    "chunks_processed": 22,
+    "fields_discovered": 22,
+    "extractions_count": 6
+  },
+  "key_metrics": {},
+  "recommendations": []
+}

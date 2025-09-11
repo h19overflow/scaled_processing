@@ -25,13 +25,239 @@ def create_demo_results_dir():
     return results_dir
 
 
+def save_comprehensive_observability(state, doc_type, results_dir):
+    """Save comprehensive observability files for full pipeline tracking."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    doc_id = state.document_id
+    
+    # Create document-specific subdirectory
+    doc_dir = results_dir / f"{doc_type}_{timestamp}"
+    doc_dir.mkdir(exist_ok=True)
+    
+    # 1. DISCOVERED FIELDS FILE
+    save_discovered_fields(state, doc_dir, doc_id, timestamp)
+    
+    # 2. EXTRACTIONS FILE  
+    save_extractions_file(state, doc_dir, doc_id, timestamp)
+    
+    # 3. TIMING METRICS FILE
+    save_timing_metrics(state, doc_dir, doc_id, timestamp)
+    
+    # 4. INTERMEDIATE RESULTS FILE
+    save_intermediate_results_file(state, doc_dir, doc_id, timestamp)
+    
+    # 5. EXECUTION SUMMARY FILE
+    save_execution_summary(state, doc_dir, doc_id, timestamp, doc_type)
+    
+    print(f"📊 Full observability saved to: {doc_dir}")
+    return doc_dir
+
+
+def save_discovered_fields(state, doc_dir, doc_id, timestamp):
+    """Save all discovered fields to dedicated file."""
+    all_fields = []
+    field_stats = {
+        "total_chunks_processed": len(state.chunks or []),
+        "total_discovery_results": len(state.progressive_results or []),
+        "unique_fields_discovered": 0,
+        "field_categories": {},
+        "field_types": {}
+    }
+    
+    if state.progressive_results:
+        for i, pr in enumerate(state.progressive_results):
+            chunk_fields = []
+            for field in pr.discovered_fields:
+                field_data = {
+                    "field_name": field.field_name,
+                    "field_type": field.field_type,
+                    "description": field.description,
+                    "example_text": field.example_text,
+                    "category": field.category,
+                    "subcategory": field.subcategory,
+                    "discovered_in_chunk": i + 1,
+                    "chunk_coverage": pr.chunk_coverage
+                }
+                chunk_fields.append(field_data)
+                all_fields.append(field_data)
+                
+                # Update stats
+                field_stats["field_categories"][field.category] = field_stats["field_categories"].get(field.category, 0) + 1
+                field_stats["field_types"][field.field_type] = field_stats["field_types"].get(field.field_type, 0) + 1
+    
+    # Calculate unique fields
+    unique_field_names = set(f["field_name"] for f in all_fields)
+    field_stats["unique_fields_discovered"] = len(unique_field_names)
+    field_stats["unique_field_list"] = list(unique_field_names)
+    
+    discovered_fields_data = {
+        "document_id": doc_id,
+        "timestamp": timestamp,
+        "statistics": field_stats,
+        "all_discovered_fields": all_fields
+    }
+    
+    filepath = doc_dir / f"discovered_fields_{timestamp}.json"
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(discovered_fields_data, f, indent=2, ensure_ascii=False)
+    print(f"  📋 Discovered fields: {filepath.name}")
+
+
+def save_extractions_file(state, doc_dir, doc_id, timestamp):
+    """Save all extractions to dedicated file."""
+    extractions_data = {
+        "document_id": doc_id,
+        "timestamp": timestamp,
+        "extraction_summary": {
+            "total_extractions": len(state.extractions or []),
+            "extraction_methods": [],
+            "fallback_used": False,
+            "extraction_quality": "unknown"
+        },
+        "all_extractions": state.extractions or []
+    }
+    
+    # Add intermediate results analysis if available
+    if hasattr(state, 'intermediate_results') and state.intermediate_results:
+        ir = state.intermediate_results
+        extractions_data["extraction_summary"].update({
+            "extraction_methods": ir.get("extraction_summary", {}).get("successful_methods", []),
+            "fallback_used": ir.get("fallback_analysis", {}).get("fallback_used", False),
+            "extraction_quality": "high" if not ir.get("fallback_analysis", {}).get("fallback_used") else "medium",
+            "config_quality_score": ir.get("config_analysis", {}).get("quality_score", 0),
+            "entity_categories": ir.get("extracted_entities", {}).get("categories", {}),
+            "quality_metrics": ir.get("extracted_entities", {}).get("quality_metrics", {})
+        })
+        
+        # Add detailed analysis
+        extractions_data["detailed_analysis"] = {
+            "entity_analysis": ir.get("extracted_entities", {}),
+            "fallback_analysis": ir.get("fallback_analysis", {}),
+            "recommendations": ir.get("fallback_analysis", {}).get("recommendations", [])
+        }
+    
+    filepath = doc_dir / f"extractions_{timestamp}.json"
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(extractions_data, f, indent=2, ensure_ascii=False)
+    print(f"  🎯 Extractions: {filepath.name}")
+
+
+def save_timing_metrics(state, doc_dir, doc_id, timestamp):
+    """Save detailed timing metrics to dedicated file."""
+    timing_data = {
+        "document_id": doc_id,
+        "timestamp": timestamp,
+        "execution_timeline": [],
+        "performance_summary": {
+            "total_pipeline_time": 0,
+            "slowest_task": "",
+            "fastest_task": "",
+            "average_task_time": 0
+        }
+    }
+    
+    if state.task_execution_log:
+        # Process execution log to calculate timings
+        task_timings = {}
+        current_task = None
+        
+        for log_entry in state.task_execution_log:
+            task_name = log_entry["task_name"]
+            status = log_entry["status"]
+            ts = log_entry["timestamp"]
+            
+            if status == "started":
+                current_task = task_name
+                task_timings[task_name] = {"start": ts, "end": None, "duration": 0}
+            elif status == "completed" and current_task == task_name:
+                if task_name in task_timings:
+                    task_timings[task_name]["end"] = ts
+                    task_timings[task_name]["duration"] = ts - task_timings[task_name]["start"]
+            
+            timing_data["execution_timeline"].append({
+                "task": task_name,
+                "status": status,
+                "timestamp": ts,
+                "datetime": datetime.fromtimestamp(ts).isoformat()
+            })
+        
+        # Calculate performance summary
+        durations = [t["duration"] for t in task_timings.values() if t["duration"] > 0]
+        if durations:
+            timing_data["performance_summary"] = {
+                "total_pipeline_time": sum(durations),
+                "slowest_task": max(task_timings.items(), key=lambda x: x[1]["duration"])[0],
+                "fastest_task": min(task_timings.items(), key=lambda x: x[1]["duration"])[0],
+                "average_task_time": sum(durations) / len(durations),
+                "task_durations": {name: data["duration"] for name, data in task_timings.items()}
+            }
+    
+    filepath = doc_dir / f"timing_metrics_{timestamp}.json"
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(timing_data, f, indent=2, ensure_ascii=False)
+    print(f"  ⏱️  Timing metrics: {filepath.name}")
+
+
+def save_intermediate_results_file(state, doc_dir, doc_id, timestamp):
+    """Save intermediate results to dedicated file."""
+    if hasattr(state, 'intermediate_results') and state.intermediate_results:
+        ir_data = {
+            "document_id": doc_id,
+            "timestamp": timestamp,
+            "intermediate_results": state.intermediate_results
+        }
+        
+        filepath = doc_dir / f"intermediate_results_{timestamp}.json"
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(ir_data, f, indent=2, ensure_ascii=False)
+        print(f"  🔍 Intermediate results: {filepath.name}")
+
+
+def save_execution_summary(state, doc_dir, doc_id, timestamp, doc_type):
+    """Save executive summary with key metrics."""
+    summary_data = {
+        "document_info": {
+            "document_id": doc_id,
+            "document_type": doc_type,
+            "classification": state.classification,
+            "classification_confidence": state.classification_confidence,
+            "user_id": state.user_id
+        },
+        "processing_results": {
+            "status": state.status,
+            "error": state.error,
+            "chunks_processed": len(state.chunks or []),
+            "fields_discovered": len(state.progressive_results or []),
+            "extractions_count": len(state.extractions or [])
+        },
+        "key_metrics": {},
+        "recommendations": []
+    }
+    
+    # Add intermediate results summary
+    if hasattr(state, 'intermediate_results') and state.intermediate_results:
+        ir = state.intermediate_results
+        summary_data["key_metrics"] = {
+            "fallback_used": ir.get("fallback_analysis", {}).get("fallback_used", False),
+            "config_quality_score": ir.get("config_analysis", {}).get("quality_score", 0),
+            "extraction_completeness": ir.get("extracted_entities", {}).get("quality_metrics", {}).get("completeness_rate", 0),
+            "entity_categories": list(ir.get("extracted_entities", {}).get("categories", {}).keys())
+        }
+        summary_data["recommendations"] = ir.get("fallback_analysis", {}).get("recommendations", [])
+    
+    filepath = doc_dir / f"execution_summary_{timestamp}.json"
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(summary_data, f, indent=2, ensure_ascii=False)
+    print(f"  📈 Executive summary: {filepath.name}")
+
+
 def save_intermediate_results(state, step_name, results_dir):
-    """Save intermediate results for each pipeline step."""
+    """Legacy function for backward compatibility."""
     timestamp = datetime.now().strftime("%H%M%S")
     filename = f"{step_name}_{timestamp}.json"
     filepath = results_dir / filename
     
-    # Prepare serializable data
+    # Basic data for legacy compatibility
     step_data = {
         "step": step_name,
         "timestamp": datetime.now().isoformat(),
@@ -48,32 +274,6 @@ def save_intermediate_results(state, step_name, results_dir):
         "task_execution_log": state.task_execution_log
     }
     
-    # Add detailed data for specific steps
-    if step_name == "final_results" and state.extractions:
-        step_data["extractions"] = state.extractions
-        
-    # Add intermediate results if available
-    if hasattr(state, 'intermediate_results') and state.intermediate_results:
-        step_data["intermediate_results"] = state.intermediate_results
-        
-    if state.progressive_results and step_name in ["discovery", "final_results"]:
-        step_data["progressive_results_sample"] = [
-            {
-                "document_type": pr.document_type,
-                "confidence_level": pr.confidence_level,
-                "chunk_coverage": pr.chunk_coverage,
-                "fields_count": len(pr.discovered_fields),
-                "sample_fields": [
-                    {
-                        "field_name": field.field_name,
-                        "field_type": field.field_type,
-                        "category": field.category
-                    } for field in pr.discovered_fields[:3]  # First 3 fields as sample
-                ]
-            } for pr in state.progressive_results[:2]  # First 2 results as sample
-        ]
-    
-    # Save to file
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(step_data, f, indent=2, ensure_ascii=False)
     
@@ -137,8 +337,8 @@ async def run_demo_pipeline():
                 user_id="test_user"
             )
             
-            # Save results
-            save_intermediate_results(result, f"{doc_type}_final_results", results_dir)
+            # Save comprehensive observability files
+            doc_dir = save_comprehensive_observability(result, doc_type, results_dir)
             
             # Print summary
             print(f"✅ Status: {result.status}")
