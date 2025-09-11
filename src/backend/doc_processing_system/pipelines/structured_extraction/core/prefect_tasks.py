@@ -22,7 +22,17 @@ from ..nodes.extraction import extract_data as _extract_data
 
 def _convert_state_to_langgraph(state: PipelineState) -> Dict[str, Any]:
     """Convert PipelineState to LangGraph-compatible dict format."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     langgraph_state = state.model_dump()
+    
+    # Debug logging
+    logger.debug(f"Converting state - progressive_results type: {type(langgraph_state.get('progressive_results'))}")
+    if langgraph_state.get("progressive_results"):
+        logger.debug(f"Progressive results count: {len(langgraph_state['progressive_results'])}")
+        for i, result in enumerate(langgraph_state['progressive_results']):
+            logger.debug(f"Result {i} type: {type(result)}, keys: {result.keys() if isinstance(result, dict) else 'N/A'}")
     
     # Ensure chunks are proper DocumentChunk objects
     if langgraph_state.get("chunks") and len(langgraph_state["chunks"]) > 0:
@@ -37,7 +47,9 @@ def _convert_state_to_langgraph(state: PipelineState) -> Dict[str, Any]:
     # Ensure progressive_results are proper ProgressiveSchema objects
     if langgraph_state.get("progressive_results") and len(langgraph_state["progressive_results"]) > 0:
         progressive_results = []
-        for result_data in langgraph_state["progressive_results"]:
+        for i, result_data in enumerate(langgraph_state["progressive_results"]):
+            logger.debug(f"Processing result {i}: type={type(result_data)}")
+            
             if isinstance(result_data, dict):
                 # Convert discovered_fields if they're dicts
                 if "discovered_fields" in result_data and result_data["discovered_fields"]:
@@ -48,10 +60,19 @@ def _convert_state_to_langgraph(state: PipelineState) -> Dict[str, Any]:
                         else:
                             fields.append(field_data)
                     result_data["discovered_fields"] = fields
-                progressive_results.append(ProgressiveSchema(**result_data))
+                
+                try:
+                    progressive_schema = ProgressiveSchema(**result_data)
+                    progressive_results.append(progressive_schema)
+                    logger.debug(f"Successfully created ProgressiveSchema {i} with {len(progressive_schema.discovered_fields)} fields")
+                except Exception as e:
+                    logger.error(f"Failed to create ProgressiveSchema from {result_data}: {e}")
+                    progressive_results.append(result_data)  # Fallback to original
             else:
                 progressive_results.append(result_data)
+                
         langgraph_state["progressive_results"] = progressive_results
+        logger.debug(f"Final progressive_results count: {len(progressive_results)}")
     
     return langgraph_state
 
@@ -273,20 +294,50 @@ def extract_data_task(state: PipelineState, settings: Settings) -> PipelineState
     logger = logging.getLogger(__name__)
     
     try:
+        logger.debug("Starting extraction task")
+        
         # Convert to LangGraph format for compatibility
+        logger.debug("Converting state to LangGraph format")
         langgraph_state = _convert_state_to_langgraph(state)
         
+        # Log state details for debugging
+        logger.debug(f"State has progressive_results: {bool(langgraph_state.get('progressive_results'))}")
+        if langgraph_state.get("progressive_results"):
+            logger.debug(f"Progressive results count: {len(langgraph_state['progressive_results'])}")
+            for i, result in enumerate(langgraph_state['progressive_results']):
+                logger.debug(f"Result {i} type: {type(result)}")
+        
         # Call original extraction function (synchronous)
+        logger.debug("Calling extraction function")
         result = _extract_data(langgraph_state, settings)
+        logger.debug(f"Extraction function returned: {type(result)}")
         
         # Update state with results using helper
+        logger.debug("Updating state with results")
         state = _update_state_from_result(state, result)
             
         logger.info(f"Extracted {len(state.extractions or [])} data items")
+        
+        # Ensure we have some result even if extraction partially failed
+        if not state.extractions:
+            logger.warning("No extractions found, but task completed")
+            
         return state
         
     except Exception as e:
         logger.error(f"Extraction task failed: {e}")
+        
+        # Add detailed error context
+        logger.error(f"State details - progressive_results: {bool(state.progressive_results)}")
+        if state.progressive_results:
+            logger.error(f"Progressive results count: {len(state.progressive_results)}")
+            for i, result in enumerate(state.progressive_results):
+                logger.error(f"Result {i} type: {type(result)}")
+        
+        # Log stack trace for debugging
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        
         state.status = "extraction_failed"
         state.error = str(e)
         return state
