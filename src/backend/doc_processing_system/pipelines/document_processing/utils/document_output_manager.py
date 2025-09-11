@@ -18,8 +18,8 @@ from datetime import datetime
 import json
 
 from ....core_deps.database import ConnectionManager, DocumentCRUD
-from ....data_models.document import Document, ProcessingStatus, FileType
-from ....messaging.document_processing.kafka_handler import KafkaHandler
+from ....data_models.document import Document, ProcessingStatus
+# from ....messaging.document_processing.kafka_handler import KafkaHandler
 
 
 class DocumentOutputManager:

@@ -15,7 +15,6 @@ Integration: Main interface for RAG pipeline chunking via Kafka messaging
 
 import json
 import logging
-import asyncio
 import time
 import hashlib
 from pathlib import Path

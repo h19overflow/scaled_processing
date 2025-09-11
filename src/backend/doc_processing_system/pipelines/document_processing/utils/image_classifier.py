@@ -7,7 +7,6 @@ from PIL import Image
 from google import genai
 from google.genai import types
 import io
-import concurrent.futures
 
 from .vision_config import VisionConfig
 from dotenv import load_dotenv

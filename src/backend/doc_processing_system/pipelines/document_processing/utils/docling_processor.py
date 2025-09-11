@@ -7,14 +7,11 @@ import logging
 import shutil
 from pathlib import Path
 from typing import Dict, Any
-try:
-    from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption, PowerpointFormatOption
-    from docling.datamodel.base_models import InputFormat
-    from docling.datamodel.pipeline_options import PdfPipelineOptions, PaginatedPipelineOptions
-    from docling_core.types.doc import ImageRefMode
-    DOCLING_AVAILABLE = True
-except ImportError:
-    DOCLING_AVAILABLE = False
+from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption, PowerpointFormatOption
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions, PaginatedPipelineOptions
+from docling_core.types.doc import ImageRefMode
+DOCLING_AVAILABLE = True
 
 
 class DoclingProcessor:

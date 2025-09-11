@@ -6,15 +6,13 @@ Integrates document processing + chunking + embeddings + Weaviate storage in a s
 import os
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
-from datetime import datetime
+from typing import Dict, Any
 
 from chonkie import SentenceTransformerEmbeddings, OpenAIEmbeddings, CohereEmbeddings
 from chonkie import WeaviateHandshake
 from chonkie import TextChef
 
 from .two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
-from ...data_models.document import ParsedDocument, DocumentMetadata, FileType
 from .utils.document_output_manager import DocumentOutputManager
 
 

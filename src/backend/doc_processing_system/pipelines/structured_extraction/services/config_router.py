@@ -79,12 +79,41 @@ def contract_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
 
 def invoice_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
     extraction_prompt = textwrap.dedent("""
-    Extract the following invoice information. For each date, provide both the original text and ISO 8601 (YYYY-MM-DD). Normalize payment terms and due periods as integer days where possible.
+    Extract the following invoice information comprehensively. For each date, provide both the original text and ISO 8601 (YYYY-MM-DD). Normalize payment terms and due periods as integer days where possible. Always include "USD" currency for all monetary amounts.
+    
+    COMPANY & CONTACT INFORMATION:
+    - Vendor details (name, address, phone, fax, email, website, tax IDs, DUNS number)
+    - Customer/Bill-to details (name, address, contact info, department)
+    - Ship-to details if different from bill-to
+    
+    PEOPLE & ROLES:
+    - Contact persons with roles (account managers, project managers, supervisors)
+    - Sales representatives and territory information
+    
+    INVOICE IDENTIFIERS:
     - Invoice number and date
-    - Vendor and customer details
-    - Line items (quantities and prices)
-    - Tax amounts and totals
-    - Payment terms and due date
+    - Purchase order numbers and contract references
+    - Project codes, quote references, customer account numbers
+    
+    FINANCIAL DETAILS:
+    - Line items with descriptions, quantities, unit prices, and totals (all with USD currency)
+    - Tax amounts, subtotals, and final totals (all with USD currency)
+    - Discounts and their percentages/amounts
+    - Shipping and handling costs
+    
+    PAYMENT & REMITTANCE:
+    - Payment terms, due dates, and payment methods
+    - Banking details (routing numbers, account numbers, wire transfer info)
+    - Remittance addresses and instructions
+    
+    BUSINESS TERMS & COMPLIANCE:
+    - Service periods and warranty terms
+    - Contract references and legal clauses
+    - Compliance notes and policy references
+    
+    DOCUMENT STRUCTURE:
+    - Section headers (BILL TO, SHIP TO, REMIT TO, etc.)
+    - Notes and special instructions
     """).strip()
 
     examples = [
@@ -102,6 +131,11 @@ def invoice_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
                     attributes={"type": "issue_date", "iso_date": "2024-03-15"}
                 ),
                 lx.data.Extraction(
+                    extraction_class="customer",
+                    extraction_text="ABC Company",
+                    attributes={"type": "bill_to", "company_name": "ABC Company"}
+                ),
+                lx.data.Extraction(
                     extraction_class="due_date",
                     extraction_text="April 14, 2024",
                     attributes={"iso_date": "2024-04-14"}
@@ -111,6 +145,125 @@ def invoice_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
                     extraction_text="Net 30",
                     attributes={"due_period_text": "Net 30", "due_period_days": 30}
                 ),
+            ]
+        ),
+        lx.data.ExampleData(
+            text="TechServices LLC, Tax ID: 12-3456789. Bill To: GlobalCorp Inc, IT Dept. Invoice #INV-2024-0156 dated June 10, 2024. Consulting: 40hrs x $85 = $3,400. Tax: $272. Total: $3,672. Net 30 days.",
+            extractions=[
+                lx.data.Extraction(
+                    extraction_class="vendor",
+                    extraction_text="TechServices LLC",
+                    attributes={"company_name": "TechServices LLC", "tax_id": "12-3456789"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="customer",
+                    extraction_text="GlobalCorp Inc",
+                    attributes={"company_name": "GlobalCorp Inc", "department": "IT Dept"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="invoice_number",
+                    extraction_text="INV-2024-0156",
+                    attributes={"type": "invoice_id"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="invoice_date",
+                    extraction_text="June 10, 2024",
+                    attributes={"type": "issue_date", "iso_date": "2024-06-10"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="line_item",
+                    extraction_text="Consulting: 40hrs x $85 = $3,400",
+                    attributes={
+                        "description": "Consulting",
+                        "quantity": 40.00,
+                        "unit": "Hours",
+                        "unit_price": 85.00,
+                        "total": 3400.00,
+                        "currency": "USD"
+                    }
+                ),
+                lx.data.Extraction(
+                    extraction_class="tax",
+                    extraction_text="$272",
+                    attributes={"amount": 272.00, "currency": "USD", "type": "tax"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="total_amount",
+                    extraction_text="$3,672",
+                    attributes={"amount": 3672.00, "currency": "USD"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="payment_terms",
+                    extraction_text="Net 30 days",
+                    attributes={"due_period_text": "Net 30 days", "due_period_days": 30}
+                ),
+            ]
+        ),
+        lx.data.ExampleData(
+            text="ACME LLC, DUNS: 987654321. BILL TO: MegaCorp, Attn: Robert Chen CFO. Invoice ACM-2024-001, Dec 5, 2024. Consulting 120hrs x $150 = $18,000. Tax: $1,575. Total: $19,575. REMIT TO: Chase Bank 021000021.",
+            extractions=[
+                lx.data.Extraction(
+                    extraction_class="vendor",
+                    extraction_text="ACME LLC",
+                    attributes={"company_name": "ACME LLC", "duns_number": "987654321"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="section_header",
+                    extraction_text="BILL TO:",
+                    attributes={"section_type": "billing_address"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="customer",
+                    extraction_text="MegaCorp",
+                    attributes={"company_name": "MegaCorp"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="contact_person",
+                    extraction_text="Robert Chen",
+                    attributes={"name": "Robert Chen", "role": "CFO", "type": "customer_contact"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="invoice_number",
+                    extraction_text="ACM-2024-001",
+                    attributes={"type": "invoice_id"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="invoice_date",
+                    extraction_text="Dec 5, 2024",
+                    attributes={"type": "issue_date", "iso_date": "2024-12-05"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="line_item",
+                    extraction_text="Consulting 120hrs x $150 = $18,000",
+                    attributes={
+                        "description": "Consulting",
+                        "quantity": 120.00,
+                        "unit": "Hours",
+                        "unit_price": 150.00,
+                        "total": 18000.00,
+                        "currency": "USD"
+                    }
+                ),
+                lx.data.Extraction(
+                    extraction_class="tax",
+                    extraction_text="$1,575",
+                    attributes={"amount": 1575.00, "currency": "USD", "type": "tax"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="total_amount",
+                    extraction_text="$19,575",
+                    attributes={"amount": 19575.00, "currency": "USD"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="section_header",
+                    extraction_text="REMIT TO:",
+                    attributes={"section_type": "remittance_address"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="banking_details",
+                    extraction_text="Chase Bank 021000021",
+                    attributes={"bank_name": "Chase Bank", "routing_number": "021000021", "type": "wire_transfer"}
+                )
             ]
         )
     ]
@@ -203,6 +356,7 @@ def process_document(text: str, doc_type: str):
         prompt_description=prompt,
         examples=examples,
         model_id="gemini-2.0-flash",
+        max_workers=20,
     )
     lx.io.save_annotated_documents(iter([result]), output_name="test.jsonl")
     return result

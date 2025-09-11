@@ -2,8 +2,7 @@
 
 import asyncio
 import logging
-from pathlib import Path
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple
 from PIL import Image
 
 from .vision_config import VisionConfig

@@ -3,7 +3,6 @@ Chunking task for document processing flow.
 Processes Docling-extracted markdown with vision enhancement and chunking.
 """
 
-import os
 import re
 import base64
 import tempfile

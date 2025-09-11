@@ -8,7 +8,6 @@ from typing import List, Dict, Any, Optional
 
 from chonkie import BaseChunker, OverlapRefinery, SentenceTransformerEmbeddings
 from chonkie.types import Chunk
-from wandb.sdk.internal.context import Context
 
 from .components.chunking.two_stage_chunker import TwoStageChunker
 
