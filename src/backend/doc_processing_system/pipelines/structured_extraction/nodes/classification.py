@@ -5,12 +5,19 @@ Document classification node for enhanced extraction pipeline.
 import logging
 from typing import Dict, Any
 
-from ..models.state import MultiAgentState
+from ..models.state import PipelineState
 from ..services.classification_service import DocumentClassificationService
 from ....core_deps.database.connection_manager import ConnectionManager
+from prefect import task
 
 
-async def classify_document(state: MultiAgentState) -> Dict[str, Any]:
+@task(name="document-classification",
+      retries=2,
+      retry_delay_seconds=10,
+      description="Classify document type using classification service."
+      )
+
+async def classify_document(state: PipelineState) -> Dict[str, Any]:
     """Classify document type using classification service."""
     logger = logging.getLogger(__name__)
 
@@ -18,7 +25,6 @@ async def classify_document(state: MultiAgentState) -> Dict[str, Any]:
         # Get required state
         document_text = state.get("document_text", "")
         document_id = state.get("document_id", "")
-        user_id = state.get("user_id", "default_user")
 
         if not document_text or not document_id:
             logger.warning("Missing document text or ID for classification")

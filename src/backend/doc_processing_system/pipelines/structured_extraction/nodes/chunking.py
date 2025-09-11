@@ -9,10 +9,16 @@ import tiktoken
 
 from ..config.settings import Settings
 from ..models.document import DocumentChunk
-from ..models.state import MultiAgentState
+from ..models.state import PipelineState
+from typing import Dict, Any
+from prefect import task
 
 
-def chunk_document(state: MultiAgentState, settings: Settings) -> MultiAgentState:
+@task(name="document-chunking",
+      retries=2,
+      retry_delay_seconds=10,
+      description="Chunk document into processing batches.")
+def chunk_document(state: PipelineState, settings: Settings) -> Dict[str, Any] :
     """Chunk document into processing batches."""
     try:
         document_input = state["document_text"]
