@@ -25,14 +25,12 @@ Converts LangGraph nodes to Prefect tasks with proper state management.
 
 📊 PIPELINE STEPS:
     1. Document Classification (non-critical)
-    2. Context Loading (non-critical) 
-    3. Preference Injection (non-critical)
-    4. Document Chunking (critical)
-    5. Discovery Phase (critical):
+    2. Document Chunking (critical)
+    3. Discovery Phase (critical):
        a. Template Check → Template Discovery (fast path) OR
        b. No Template → Sequential Discovery (slow path)
-    6. Config Generation (critical)
-    7. Data Extraction (critical)
+    4. Config Generation (critical)
+    5. Data Extraction (critical)
 
 💡 ARCHITECTURE IMPROVEMENTS:
     • Eliminated redundant helper functions (_convert_state_to_langgraph, _update_state_from_result)
@@ -50,8 +48,6 @@ from ..config.settings import Settings
 from ..models.state import PipelineState
 from ..nodes.chunking import chunk_document as _chunk_document
 from ..nodes.classification import classify_document as _classify_document
-from ..nodes.context_loading import load_feedback_context as _load_feedback_context
-from ..nodes.preference_injection import inject_user_preferences as _inject_user_preferences
 from ..nodes.discovery import sequential_discovery as _sequential_discovery
 from ..nodes.config_gen import generate_config as _generate_config
 from ..nodes.extraction import extract_data as _extract_data
@@ -128,18 +124,6 @@ async def classify_document_task(state: PipelineState) -> PipelineState:
     pass  # Implementation handled by decorator
 
 
-@task
-@create_pipeline_task(_load_feedback_context, "Context Loading", is_async=True, critical=False)
-async def load_feedback_context_task(state: PipelineState) -> PipelineState:
-    """Load user feedback context for enhanced extraction."""
-    pass  # Implementation handled by decorator
-
-
-@task
-@create_pipeline_task(_inject_user_preferences, "Preference Injection", is_async=True, critical=False)
-async def inject_user_preferences_task(state: PipelineState) -> PipelineState:
-    """Inject user preferences into the extraction pipeline."""
-    pass  # Implementation handled by decorator
 
 
 @task
@@ -250,18 +234,13 @@ async def structured_extraction_flow(
         # Step 1: Document Classification (non-critical)
         state = await classify_document_task(state)
         
-        # Step 2: Load Feedback Context (non-critical)
-        state = await load_feedback_context_task(state)
         
-        # Step 3: Inject User Preferences (non-critical)
-        state = await inject_user_preferences_task(state)
-        
-        # Step 4: Document Chunking (critical)
+        # Step 2: Document Chunking (critical)
         state = await chunk_document_task(state, settings)
         if state.status.endswith("_failed"):
             return state
         
-        # Step 5: Discovery Phase - Template Check (critical)
+        # Step 3: Discovery Phase - Template Check (critical)
         logger.info("🔍 Checking for field templates...")
         logger.info(f"🔍 Debug: user_id={state.user_id}, classification={getattr(state, 'classification', 'unknown')}")
         has_template = check_has_template(state)
@@ -282,12 +261,12 @@ async def structured_extraction_flow(
         if state.status.endswith("_failed"):
             return state
         
-        # Step 6: Generate Config (critical)
+        # Step 4: Generate Config (critical)
         state = await generate_config_task(state, settings)
         if state.status.endswith("_failed"):
             return state
         
-        # Step 7: Extract Data (critical)
+        # Step 5: Extract Data (critical)
         state = await extract_data_task(state, settings)
         if state.status.endswith("_failed"):
             return state
