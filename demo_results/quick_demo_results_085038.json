@@ -1,0 +1,109 @@
+{
+  "demo_type": "quick_demo",
+  "timestamp": "2025-09-11T08:50:38.650009",
+  "pipeline_status": "completed",
+  "classification": "contract",
+  "classification_confidence": 0.95,
+  "processing_stats": {
+    "chunks_count": 1,
+    "discovery_results_count": 1,
+    "extractions_count": 6
+  },
+  "task_execution_log": [
+    {
+      "task_name": "Document Classification",
+      "status": "started",
+      "timestamp": 1757551831.03464
+    },
+    {
+      "task_name": "Document Classification",
+      "status": "completed",
+      "timestamp": 1757551833.236762
+    },
+    {
+      "task_name": "Context Loading",
+      "status": "started",
+      "timestamp": 1757551833.2403924
+    },
+    {
+      "task_name": "Context Loading",
+      "status": "completed",
+      "timestamp": 1757551833.280658
+    },
+    {
+      "task_name": "Preference Injection",
+      "status": "started",
+      "timestamp": 1757551833.2856576
+    },
+    {
+      "task_name": "Preference Injection",
+      "status": "completed",
+      "timestamp": 1757551833.327655
+    },
+    {
+      "task_name": "Document Chunking",
+      "status": "started",
+      "timestamp": 1757551833.3327215
+    },
+    {
+      "task_name": "Document Chunking",
+      "status": "completed",
+      "timestamp": 1757551833.4309168
+    },
+    {
+      "task_name": "Sequential Discovery",
+      "status": "started",
+      "timestamp": 1757551833.4385571
+    },
+    {
+      "task_name": "Sequential Discovery",
+      "status": "completed",
+      "timestamp": 1757551835.113641
+    },
+    {
+      "task_name": "Config Generation",
+      "status": "started",
+      "timestamp": 1757551835.121207
+    },
+    {
+      "task_name": "Config Generation",
+      "status": "completed",
+      "timestamp": 1757551835.121207
+    },
+    {
+      "task_name": "Data Extraction",
+      "status": "started",
+      "timestamp": 1757551835.1287713
+    },
+    {
+      "task_name": "Data Extraction",
+      "status": "completed",
+      "timestamp": 1757551838.3688707
+    }
+  ],
+  "sample_extractions": [
+    {
+      "extraction_class": "Position",
+      "extraction_text": "Software Engineer",
+      "attributes": {}
+    },
+    {
+      "extraction_class": "Department",
+      "extraction_text": "Engineering",
+      "attributes": {}
+    },
+    {
+      "extraction_class": "Department",
+      "extraction_text": "Engineering",
+      "attributes": {}
+    }
+  ],
+  "refactoring_features_demonstrated": [
+    "Generic task wrapper reducing boilerplate",
+    "Centralized state management",
+    "Prefect native logging",
+    "Async standardization",
+    "Enhanced error handling",
+    "Task execution monitoring"
+  ]
+}
