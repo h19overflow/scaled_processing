@@ -5,15 +5,14 @@ Core components for orchestrating multi-agent document extraction with
 user preferences, feedback integration, and document classification.
 """
 
-from .core.graph import build_graph, create_initial_state
+from .core.prefect_tasks import structured_extraction_flow
 from .services.classification_service import DocumentClassificationService
 from .services.feedback_context_manager import FeedbackContextManager
 from .services.preference_manager import PreferenceManager
 
 __all__ = [
-    "build_graph",
-    "create_initial_state",
+    "structured_extraction_flow",
     "DocumentClassificationService",
-    "PreferenceManager",
+    "PreferenceManager", 
     "FeedbackContextManager"
 ]

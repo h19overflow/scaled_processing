@@ -85,95 +85,35 @@ async def run_demo_pipeline():
     results_dir = create_demo_results_dir()
     print(f"📁 Results will be saved to: {results_dir.absolute()}")
     
-    # Sample documents for testing different types
-    demo_documents = {
-        "employment_contract": """
-        EMPLOYMENT AGREEMENT
+    # Read the actual document from docling processing
+    document_path = "data/temp/docling/Covering_Letter_-_AHMED_HAMZA_KHALED_MAHMOUD/Covering_Letter_-_AHMED_HAMZA_KHALED_MAHMOUD_vision_enhanced.md"
+    
+    try:
+        with open(document_path, 'r', encoding='utf-8') as f:
+            document_content = f.read()
+        print(f"📄 Loaded document from: {document_path}")
+        print(f"📊 Document length: {len(document_content)} characters")
+    except FileNotFoundError:
+        print(f"❌ Could not find document at: {document_path}")
+        print("📋 Using fallback document instead")
+        document_content = """
+        MEDICAL INSURANCE CONFIRMATION LETTER
         
-        Employee: Sarah Johnson
-        Position: Senior Data Scientist
-        Department: AI Research
-        Start Date: March 1, 2024
-        Annual Salary: $95,000
-        Reporting Manager: Dr. Michael Chen
+        Student Name: AHMED HAMZA KHALED MAHMOUD
+        Student ID: 1211309695
+        Passport Number: A31074358
+        Country: EGYPT
+        Institution: MULTIMEDIA UNIVERSITY (MMU) CYBER
+        Plan Type: BM200
+        Start Date: 14.02.2025
+        Expiry Date: 13.02.2026
         
-        Job Responsibilities:
-        - Design and implement machine learning models
-        - Analyze large datasets for business insights
-        - Collaborate with engineering teams
-        - Present findings to stakeholders
-        
-        Benefits Package:
-        - Health, dental, and vision insurance
-        - 401(k) with 4% company match
-        - 20 days paid vacation
-        - Professional development budget: $3,000/year
-        - Remote work flexibility
-        
-        This agreement is effective from March 1, 2024, and subject to
-        company policies and applicable employment laws.
-        """,
-        
-        "invoice": """
-        INVOICE #INV-2024-0156
-        
-        From: TechSolutions Inc.
-        123 Innovation Drive
-        San Francisco, CA 94107
-        
-        To: DataCorp LLC
-        456 Business Blvd
-        New York, NY 10001
-        
-        Invoice Date: February 15, 2024
-        Due Date: March 15, 2024
-        
-        Services Provided:
-        - Cloud Infrastructure Setup: $5,000.00
-        - Data Pipeline Implementation: $8,500.00
-        - Performance Optimization: $2,200.00
-        - Documentation and Training: $1,800.00
-        
-        Subtotal: $17,500.00
-        Tax (8.5%): $1,487.50
-        Total Amount Due: $18,987.50
-        
-        Payment Terms: Net 30 days
-        Payment Methods: Check, Wire Transfer, ACH
-        """,
-        
-        "medical_report": """
-        MEDICAL CONSULTATION REPORT
-        
-        Patient: John Anderson (DOB: 1985-06-15)
-        Patient ID: MR-789456
-        Date of Visit: February 20, 2024
-        Physician: Dr. Lisa Rodriguez, MD
-        Department: Cardiology
-        
-        Chief Complaint:
-        Patient reports chest discomfort and shortness of breath
-        during physical activity over the past 2 weeks.
-        
-        Vital Signs:
-        - Blood Pressure: 140/90 mmHg
-        - Heart Rate: 78 bpm
-        - Temperature: 98.6°F
-        - Respiratory Rate: 16/min
-        - Oxygen Saturation: 98%
-        
-        Assessment:
-        Possible exercise-induced angina. EKG shows normal sinus rhythm.
-        Stress test recommended to evaluate cardiac function.
-        
-        Treatment Plan:
-        1. Schedule cardiac stress test within 2 weeks
-        2. Start low-dose aspirin (81mg daily)
-        3. Lifestyle modifications: diet and exercise
-        4. Follow-up in 4 weeks
-        
-        Next Appointment: March 20, 2024
+        This confirms medical & health insurance coverage for the international student.
         """
+    
+    # Test document
+    demo_documents = {
+        "insurance_confirmation": document_content
     }
     
     # Test each document type
@@ -190,7 +130,7 @@ async def run_demo_pipeline():
                 document_text=document_text,
                 document_id=f"demo_{doc_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
                 settings=settings,
-                user_id="demo_user"
+                user_id="test_user"
             )
             
             # Save results
@@ -224,9 +164,7 @@ async def run_demo_pipeline():
         f.write("✅ **Critical vs Non-Critical Tasks**: Smart error handling based on task importance\n\n")
         f.write("✅ **Task Execution Monitoring**: Detailed logging of each pipeline step\n\n")
         f.write("## Document Types Processed\n\n")
-        f.write("- Employment Contract\n")
-        f.write("- Invoice\n")
-        f.write("- Medical Report\n\n")
+        f.write("- Insurance Confirmation Letter (AHMED HAMZA KHALED MAHMOUD)\n\n")
         f.write("## Results Location\n\n")
         f.write(f"All intermediate results saved to: `{results_dir.absolute()}`\n\n")
         f.write("## Pipeline Architecture\n\n")
