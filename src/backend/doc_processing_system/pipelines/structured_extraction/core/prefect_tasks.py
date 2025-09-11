@@ -53,6 +53,8 @@ from ..nodes.preference_injection import inject_user_preferences as _inject_user
 from ..nodes.discovery import sequential_discovery as _sequential_discovery
 from ..nodes.config_gen import generate_config as _generate_config
 from ..nodes.extraction import extract_data as _extract_data
+from ..services.field_template_manager import FieldTemplateManager
+from ....core_deps.database.connection_manager import ConnectionManager
 
 
 def create_pipeline_task(
@@ -145,11 +147,77 @@ async def chunk_document_task(state: PipelineState, settings: Settings) -> Pipel
     pass  # Implementation handled by decorator
 
 
+async def _template_based_discovery(state: PipelineState, settings: Settings) -> PipelineState:
+    """Create schema from user template, bypassing Sequential Discovery."""
+    logger = get_run_logger()
+    
+    try:
+        user_id = state.user_id
+        classification = getattr(state, "classification", "unknown")
+        chunks = getattr(state, "chunks", [])
+        
+        # Initialize template manager
+        connection_manager = ConnectionManager()
+        template_manager = FieldTemplateManager(connection_manager)
+        
+        # Create progressive results from template
+        progressive_results = template_manager.create_schema_from_template(
+            user_id=user_id, 
+            classification=classification,
+            chunks=chunks
+        )
+        
+        if progressive_results:
+            logger.info(f"Generated schema from template with {len(progressive_results[0].discovered_fields)} fields")
+            return {
+                **state.to_langgraph(),
+                "progressive_results": progressive_results,
+                "status": "discovery_complete",
+                "discovery_method": "template_based"
+            }
+        else:
+            logger.warning("Failed to generate schema from template, falling back to sequential discovery")
+            # Fall back to sequential discovery
+            return await _sequential_discovery(state.to_langgraph(), settings)
+            
+    except Exception as e:
+        logger.error(f"Template-based discovery failed: {e}, falling back to sequential discovery")
+        # Fall back to sequential discovery
+        return await _sequential_discovery(state.to_langgraph(), settings)
+
+
 @task
 @create_pipeline_task(_sequential_discovery, "Sequential Discovery", is_async=True, critical=True)
 async def sequential_discovery_task(state: PipelineState, settings: Settings) -> PipelineState:
-    """Process chunks sequentially to discover schemas."""
-    pass  # Implementation handled by decorator
+    """Process chunks sequentially to discover schemas or use template if available."""
+    logger = get_run_logger()
+    
+    # Check if user has a template for this classification
+    try:
+        user_id = state.user_id
+        classification = getattr(state, "classification", "unknown")
+        
+        logger.info(f"🔍 Template check: user_id={user_id}, classification={classification}")
+        
+        if classification != "unknown":
+            connection_manager = ConnectionManager()
+            template_manager = FieldTemplateManager(connection_manager)
+            
+            has_template = template_manager.has_template(user_id, classification)
+            logger.info(f"🔍 Has template for {user_id}/{classification}: {has_template}")
+            
+            if has_template:
+                logger.info(f"✅ Using field template for {classification}, bypassing Sequential Discovery")
+                return await _template_based_discovery(state, settings)
+        
+        logger.info("❌ No template found, proceeding with Sequential Discovery")
+    except Exception as e:
+        logger.warning(f"❌ Template check failed: {e}, proceeding with Sequential Discovery")
+        import traceback
+        traceback.print_exc()
+    
+    # Original sequential discovery implementation handled by decorator
+    pass
 
 
 @task

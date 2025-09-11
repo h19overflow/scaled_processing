@@ -154,7 +154,7 @@ class PreferenceManager:
             self.logger.error(f"Failed to generate preference prompt: {e}")
             return ""
 
-    async def save_user_preferences(
+    def save_user_preferences(
             self,
             user_id: str,
             classification: str,

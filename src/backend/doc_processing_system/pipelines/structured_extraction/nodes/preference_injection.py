@@ -7,6 +7,7 @@ from typing import Dict, Any
 
 from ..models.state import MultiAgentState
 from ..services.preference_manager import PreferenceManager
+from ..services.field_template_manager import FieldTemplateManager
 from ....core_deps.database.connection_manager import ConnectionManager
 
 
@@ -29,6 +30,7 @@ async def inject_user_preferences(state: MultiAgentState) -> Dict[str, Any]:
         # Initialize preference manager
         connection_manager = ConnectionManager()
         preference_manager = PreferenceManager(connection_manager)
+        template_manager = FieldTemplateManager(connection_manager)
 
         # Load user preferences
         logger.info(f"Loading preferences for {classification}")
@@ -36,13 +38,18 @@ async def inject_user_preferences(state: MultiAgentState) -> Dict[str, Any]:
             user_id=user_id,
             classification=classification
         )
+        
+        # Check if user has field template
+        has_template = template_manager.has_template(user_id, classification)
+        
         updated_state = {
             "user_preferences": user_preferences,
+            "has_field_template": has_template,
             "status": "preferences_loaded"
         }
 
         has_custom = bool(user_preferences.get("prompt_instructions"))
-        logger.info(f"Loaded preferences (custom instructions: {has_custom})")
+        logger.info(f"Loaded preferences (custom instructions: {has_custom}, field template: {has_template})")
 
         return updated_state
 
