@@ -38,12 +38,8 @@ class DocumentClassificationResult(BaseModel):
     classification: Literal[
         "contract",
         "invoice",
-        "resume",
         "legal",
-        "medical",
-        "attendance",
         "report",
-        "other"
     ] = Field(
         description="The document classification category"
     )

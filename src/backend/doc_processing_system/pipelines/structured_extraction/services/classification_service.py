@@ -102,10 +102,7 @@ class DocumentClassificationService:
         return {
             "contract": ["agreement", "contract", "parties", "terms", "obligations", "whereas", "party", "shall"],
             "invoice": ["invoice", "bill", "payment", "due", "amount", "vendor", "total", "tax", "remit"],
-            "resume": ["experience", "education", "skills", "employment", "cv", "objective", "work", "university"],
             "legal": ["whereas", "plaintiff", "defendant", "court", "jurisdiction", "legal", "attorney", "counsel"],
-            "medical": ["patient", "diagnosis", "treatment", "medical", "symptoms", "doctor", "prescription", "health"],
-            "attendance": ["attendance", "time in", "time out", "hours", "date", "work from home", "wfh", "timesheet"],
             "report": ["report", "analysis", "summary", "findings", "monthly", "quarterly", "performance", "status"]
         }
 

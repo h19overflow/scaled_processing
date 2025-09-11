@@ -1,59 +1,44 @@
 """
-Configuration generation node.
+Configuration generation node using config_router for classification-based prompts and examples.
 """
 
 from typing import List, Dict, Any
-import textwrap
 
 try:
     import langextract as lx
-
     LANGEXTRACT_AVAILABLE = True
 except ImportError:
     LANGEXTRACT_AVAILABLE = False
 
-
-    class Extraction:
-        def __init__(self, extraction_class: str, extraction_text: str, attributes: Dict[str, Any]):
-            self.extraction_class = extraction_class
-            self.extraction_text = extraction_text
-            self.attributes = attributes
-
-
-    class ExampleData:
-        def __init__(self, text: str, extractions: List[Extraction]):
-            self.text = text
-            self.extractions = extractions
-
 from ..models.state import MultiAgentState
-from ..models.schema import FieldSchema
 from ..config.settings import Settings
+from ..services.config_router import route_classification
 
 
 def generate_config(state: MultiAgentState, settings: Settings) -> MultiAgentState:
-    """Generate langextract configuration directly from discovery results."""
+    """Generate langextract configuration using config_router based on document classification."""
     try:
-        # Get all discovered fields from progressive results
-        all_fields = []
-        for result in state["progressive_results"]:
-            all_fields.extend(result.discovered_fields)
+        # Get document classification
+        classification = state.get("classification", "unknown")
         
-        if not all_fields:
-            raise ValueError("No fields discovered to generate config")
+        if classification == "unknown":
+            raise ValueError("Document classification is unknown - cannot generate appropriate config")
         
-        # Limit to max fields and remove duplicates
-        seen_names = set()
-        unique_fields = []
-        for field in all_fields:
-            if field.field_name.lower() not in seen_names:
-                seen_names.add(field.field_name.lower())
-                unique_fields.append(field)
-                
-                if len(unique_fields) >= settings.extraction.max_fields:
-                    break
+        # Use config_router to get appropriate prompt and examples
+        prompt, examples = route_classification(classification)
         
-        sample_text = state["document_text"][:1000]
-        config = _create_config_from_fields(unique_fields, sample_text, settings.models.extraction_model)
+        if prompt == "Unknown classification":
+            # Fallback to general extraction
+            prompt = "Extract structured information from this document. Use exact text from the document for extractions."
+            examples = []
+        
+        # Create configuration
+        config = {
+            "prompt": prompt,
+            "examples": [{"example": ex.text if hasattr(ex, 'text') else str(ex)} for ex in examples],
+            "model_id": settings.models.extraction_model,
+            "extraction_classes": [classification]  # Simple approach
+        }
 
         return {
             **state,
@@ -69,155 +54,9 @@ def generate_config(state: MultiAgentState, settings: Settings) -> MultiAgentSta
         }
 
 
-def _create_config_from_fields(fields: List[FieldSchema], sample_text: str, model_id: str) -> Dict[str, Any]:
-    """Create langextract configuration directly from discovered fields."""
+# All the old complex functions have been replaced by the simple config_router approach
 
-    # Validate inputs
-    if not fields:
-        raise ValueError("Cannot create config from empty fields list")
-    
-    if not sample_text or len(sample_text.strip()) < 10:
-        sample_text = "Sample document text for extraction demonstration purposes."
-    
-    if not model_id or len(model_id.strip()) == 0:
-        raise ValueError("Model ID cannot be empty")
-
-    # Create field list with validation
-    field_list = _format_field_list(fields)
-    
-    # Create extraction prompt
-    prompt = textwrap.dedent(f"""
-        Extract structured information from this document.
-        
-        Extract the following types of information:
-        {field_list}
-        
-        IMPORTANT RULES:
-        - Use exact text from the document for extractions
-        - Only extract information that actually exists in the document
-        - If information is not found, skip that extraction class
-        - Provide meaningful attributes for context
-        - Do not create empty or duplicate extractions
-    """).strip()
-
-    # Validate final prompt
-    if len(prompt.strip()) < 50:
-        raise ValueError("Generated prompt is too short - configuration may be invalid")
-
-    # Create example data
-    examples = _create_examples(fields, sample_text)
-
-    return {
-        "prompt": prompt,
-        "examples": examples,
-        "model_id": model_id.strip(),
-        "extraction_classes": [field.field_name for field in fields]
-    }
-
-
-def _create_config(schema, sample_text: str, model_id: str) -> Dict[str, Any]:
-    """Create langextract configuration from schema."""
-
-    # Create extraction prompt
-    prompt = textwrap.dedent(f"""
-        {schema.extraction_prompt}
-        
-        Extract the following types of information:
-        {_format_extraction_classes(schema.extraction_classes)}
-        
-        IMPORTANT RULES:
-        - Use exact text from the document for extractions
-        - Only extract information that actually exists in the document
-        - If information is not found, skip that extraction class
-        - Provide meaningful attributes for context
-        - Do not create empty or duplicate extractions
-    """).strip()
-
-    # Create example data
-    examples = _create_examples(schema.extraction_classes, sample_text)
-
-    return {
-        "prompt": prompt,
-        "examples": examples,
-        "model_id": model_id,
-        "extraction_classes": [field.field_name for field in schema.extraction_classes]
-    }
-
-
-def _format_field_list(fields: List[FieldSchema]) -> str:
-    """Format field list for prompt."""
-    formatted = []
-    for field in fields:
-        # Ensure description is not empty
-        description = field.description if field.description and field.description.strip() else f"Extract {field.field_name} information from the document"
-        formatted.append(f"- {field.field_name}: {description}")
-    
-    # Ensure we have at least some content
-    if not formatted:
-        formatted.append("- general_information: Extract any relevant information from the document")
-    
-    return "\n".join(formatted)
-
-
-def _format_extraction_classes(classes: List[FieldSchema]) -> str:
-    """Format extraction classes for prompt."""
-    formatted = []
-    for field in classes:
-        # Ensure description is not empty
-        description = field.description if field.description and field.description.strip() else f"Extract {field.field_name} information from the document"
-        formatted.append(f"- {field.field_name}: {description}")
-    
-    # Ensure we have at least some content
-    if not formatted:
-        formatted.append("- general_information: Extract any relevant information from the document")
-    
-    return "\n".join(formatted)
-
-
-def _create_examples(extraction_classes: List[FieldSchema], sample_text: str) -> List:
-    """Create example extractions using document text."""
-    if not sample_text:
-        sample_text = "Sample document text for demonstration."
-
-    # Create one extraction per class
-    extractions = []
-    for field in extraction_classes:
-        example_text = field.example_text if field.example_text else f"Sample {field.field_name}"
-        attributes = {"category": field.category, "subcategory": field.subcategory}
-
-        if LANGEXTRACT_AVAILABLE:
-            extraction = lx.data.Extraction(
-                extraction_class=field.field_name,
-                extraction_text=example_text,
-                attributes=attributes
-            )
-        else:
-            extraction = Extraction(
-                extraction_class=field.field_name,
-                extraction_text=example_text,
-                attributes=attributes
-            )
-        extractions.append(extraction)
-
-    # Use longer sample text for better alignment
-    example_text = sample_text[:1500] if len(sample_text) > 1500 else sample_text
-
-    # Create example data
-    if LANGEXTRACT_AVAILABLE:
-        example = lx.data.ExampleData(
-            text=example_text,
-            extractions=extractions
-        )
-    else:
-        example = ExampleData(
-            text=example_text,
-            extractions=extractions
-        )
-
-    return [example]
-
-
-async def demonstrate_config_generation():
+# Old demo functions removed - they were specific to the complex field-based approach
     """
     Demonstrate how configuration generation works with template-based discovery.
     Shows the complete flow from template → FieldSchema → Config → AI Prompt.
