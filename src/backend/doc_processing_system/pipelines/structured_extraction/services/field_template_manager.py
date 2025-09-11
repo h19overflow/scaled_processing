@@ -7,7 +7,6 @@ import logging
 from typing import Dict, Any, List, Optional
 
 from ..models.schema import FieldSchema, ProgressiveSchema
-from ..services.preference_manager import PreferenceManager
 from ....core_deps.database.connection_manager import ConnectionManager
 
 
@@ -17,8 +16,11 @@ class FieldTemplateManager:
     def __init__(self, connection_manager: ConnectionManager):
         """Initialize field template manager."""
         self.connection_manager = connection_manager
-        self.preference_manager = PreferenceManager(connection_manager)
         self.logger = logging.getLogger(__name__)
+        
+        # In-memory template storage for now (could be moved to database later)
+        self.templates = {}
+        self._initialize_default_templates()
 
     async def create_template(
         self,
@@ -41,51 +43,32 @@ class FieldTemplateManager:
             }
         """
         try:
-            # Convert user-friendly format to internal preference format
-            field_priorities = {}
-            extraction_rules = {}
+            # Convert user-friendly format to template format
+            field_definitions = {}
             
             for field_name, requirements in fields.items():
                 # Parse requirements
                 is_required = "required" in requirements.lower()
                 weight = 0.9 if is_required else 0.7
                 
-                field_priorities[field_name] = {
+                field_definitions[field_name] = {
+                    "requirements": requirements,
                     "weight": weight,
-                    "required": is_required
+                    "required": is_required,
+                    "description": requirements if requirements != "required" else f"Extract {field_name} information from the document"
                 }
-                
-                # Extract specific rules
-                if "extract as" in requirements.lower():
-                    extraction_rules[field_name] = requirements
-                elif "format" in requirements.lower():
-                    extraction_rules[field_name] = requirements
-
-            # Create preference structure
-            field_preferences = {
-                "field_priorities": field_priorities,
-                "extraction_rules": extraction_rules,
-                "template_mode": True  # Flag to indicate this is a template
+            
+            # Store template in memory (key: user_id/classification)
+            template_key = f"{user_id}/{classification}"
+            self.templates[template_key] = {
+                "fields": field_definitions,
+                "template_mode": True,
+                "user_id": user_id,
+                "classification": classification
             }
             
-            # Save as user preference
-            success = self.preference_manager.save_user_preferences(
-                user_id=user_id,
-                classification=classification,
-                field_preferences=field_preferences,
-                extraction_style={
-                    "template_based": True,
-                    "bypass_discovery": True
-                },
-                prompt_instructions=f"Use predefined field template for {classification} documents"
-            )
-            
-            if success:
-                self.logger.info(f"Field template created for {user_id}/{classification} with {len(fields)} fields")
-            else:
-                self.logger.error(f"Failed to save field template for {user_id}/{classification}")
-                
-            return success
+            self.logger.info(f"Field template created for {user_id}/{classification} with {len(fields)} fields")
+            return True
             
         except Exception as e:
             self.logger.error(f"Failed to create template: {e}")
@@ -97,22 +80,11 @@ class FieldTemplateManager:
         Args:
             user_id: User identifier
             classification: Document classification
-            user_preferences: Pre-loaded user preferences (optional, avoids DB call)
+            user_preferences: Unused (kept for compatibility)
         """
         try:
-            # Use provided preferences or fetch them
-            if user_preferences is not None:
-                preferences = user_preferences
-            else:
-                preferences = self.preference_manager.get_user_preferences(user_id, classification)
-                
-            field_prefs = preferences.get("field_preferences", {})
-            
-            # Check for template mode flag and field priorities
-            has_template_flag = field_prefs.get("template_mode", False)
-            has_field_priorities = bool(field_prefs.get("field_priorities", {}))
-            
-            return has_template_flag and has_field_priorities
+            template_key = f"{user_id}/{classification}"
+            return template_key in self.templates and self.templates[template_key].get("template_mode", False)
             
         except Exception as e:
             self.logger.error(f"Failed to check template existence: {e}")
@@ -121,19 +93,21 @@ class FieldTemplateManager:
     def get_template_schema(self, user_id: str, classification: str) -> List[FieldSchema]:
         """Convert user template to FieldSchema objects for extraction."""
         try:
-            preferences = self.preference_manager.get_user_preferences(user_id, classification)
-            field_prefs = preferences.get("field_preferences", {})
-            field_priorities = field_prefs.get("field_priorities", {})
-            extraction_rules = field_prefs.get("extraction_rules", {})
+            template_key = f"{user_id}/{classification}"
+            if template_key not in self.templates:
+                self.logger.warning(f"No template found for {user_id}/{classification}")
+                return []
             
-            if not field_priorities:
-                self.logger.warning(f"No field priorities found for {user_id}/{classification}")
+            template = self.templates[template_key]
+            field_definitions = template.get("fields", {})
+            
+            if not field_definitions:
+                self.logger.warning(f"No field definitions found for {user_id}/{classification}")
                 return []
             
             field_schemas = []
-            for field_name, priority_info in field_priorities.items():
-                # Get description from extraction rules or create default
-                description = extraction_rules.get(field_name, f"Extract {field_name} information from the document")
+            for field_name, field_info in field_definitions.items():
+                description = field_info.get("description", f"Extract {field_name} information from the document")
                 
                 # Create FieldSchema
                 field_schema = FieldSchema(
@@ -178,6 +152,41 @@ class FieldTemplateManager:
             return []
 
     # HELPER FUNCTIONS
+    def _initialize_default_templates(self):
+        """Initialize some default templates for testing."""
+        # Contract template for test_user
+        self.templates["test_user/contract"] = {
+            "fields": {
+                "employee_name": {
+                    "requirements": "required",
+                    "weight": 0.9,
+                    "required": True,
+                    "description": "Extract employee_name information from the document"
+                },
+                "salary": {
+                    "requirements": "required, extract as number with currency",
+                    "weight": 0.9,
+                    "required": True,
+                    "description": "required, extract as number with currency"
+                },
+                "start_date": {
+                    "requirements": "required, format YYYY-MM-DD",
+                    "weight": 0.9,
+                    "required": True,
+                    "description": "required, format YYYY-MM-DD"
+                },
+                "benefits": {
+                    "requirements": "Extract benefits information from the document",
+                    "weight": 0.7,
+                    "required": False,
+                    "description": "Extract benefits information from the document"
+                }
+            },
+            "template_mode": True,
+            "user_id": "test_user",
+            "classification": "contract"
+        }
+    
     def _infer_field_type(self, field_name: str, description: str) -> str:
         """Infer field type from field name and description."""
         field_name_lower = field_name.lower()
