@@ -1,8 +1,6 @@
 from confluent_kafka import Consumer, KafkaError
-import json
 import logging
 import signal
-import sys
 from typing import List, Dict, Any, Optional, Callable
 
 class ConsumerHandler:

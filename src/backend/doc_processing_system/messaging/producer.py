@@ -24,7 +24,7 @@ class ProducerHandler:
             self.logger.error(f"Failed to initialize producer: {e}")
             raise
 
-    def produce_message(self, topic: str, key: str, value: Any, retries: int = 3) -> bool:
+    def produce_message(self, topic: str, key: str, value: Any, retries: int = 3) -> bool | None:
         if isinstance(value, dict):
             value = json.dumps(value)
             

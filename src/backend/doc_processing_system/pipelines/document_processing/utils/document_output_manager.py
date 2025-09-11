@@ -10,15 +10,16 @@ This class orchestrates the complete document processing workflow:
 Acts as the central coordination point for all document processing operations.
 """
 
-import logging
-import hashlib
-from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
-from datetime import datetime
 import json
+import logging
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, Any
 
 from ....core_deps.database import ConnectionManager, DocumentCRUD
 from ....data_models.document import Document, ProcessingStatus
+
+
 # from ....messaging.document_processing.kafka_handler import KafkaHandler
 
 
@@ -42,8 +43,7 @@ class DocumentOutputManager:
         self.document_crud = DocumentCRUD(self.connection_manager)
         
         # Initialize messaging components
-        self.kafka = KafkaHandler()
-        
+
         # Set up directory structure
         self.processed_dir = Path(processed_documents_dir)
         self.processed_dir.mkdir(parents=True, exist_ok=True)
@@ -106,8 +106,7 @@ class DocumentOutputManager:
                 
                 self.logger.info(f"Document record created in database: {db_document_id}")
                 
-                # Send document ready event directly
-                self.kafka.send_document_ready(document_id, str(raw_path), user_id)
+
                 
                 processing_result = {
                     "status": "ready_for_processing", 
@@ -175,9 +174,7 @@ class DocumentOutputManager:
             # Step 4: Store document record in database
             self._store_document_in_database(document_id, metadata, user_id)
             
-            # Step 5: Send completion events directly
-            self.send_processing_complete_events(document_id, str(processed_file_path), metadata, user_id)
-            
+
             self.logger.info(f"Document saved successfully: {document_id}")
             
             return {
@@ -197,26 +194,7 @@ class DocumentOutputManager:
                 "error": str(e),
                 "message": f"Failed to save document: {e}"
             }
-    
-    def send_processing_complete_events(self, 
-                                      document_id: str, 
-                                      processed_file_path: str,
-                                      metadata: Dict[str, Any],
-                                      user_id: str = "default") -> bool:
-        """Send workflow ready event directly - no message preparation needed."""
-        try:
-            # Send workflow initialized event
-            success = self.kafka.send_workflow_ready(document_id, ["rag", "extraction"])
-            
-            if success:
-                self.logger.info(f"Processing complete events sent for: {document_id}")
-            
-            return success
-            
-        except Exception as e:
-            self.logger.error(f"Error sending processing events for {document_id}: {e}")
-            return False
-    
+
     def get_document_path_info(self, document_id: str) -> Dict[str, Any]:
         """
         Get file path information for a processed document.
@@ -310,15 +288,15 @@ class DocumentOutputManager:
             f.write(content)
         
         return markdown_file
-    
-    def _save_processing_metadata(self, 
-                                document_dir: Path, 
-                                document_id: str, 
+
+    def _save_processing_metadata(self,
+                                document_dir: Path,
+                                document_id: str,
                                 metadata: Dict[str, Any],
                                 user_id: str) -> Path:
         """Save processing metadata as JSON."""
         metadata_file = document_dir / f"{document_id}_metadata.json"
-        
+
         processing_metadata = {
             "document_id": document_id,
             "user_id": user_id,
@@ -333,13 +311,13 @@ class DocumentOutputManager:
             "processed_file": f"{document_id}_processed.md",
             "status": "completed"
         }
-        
+
         with open(metadata_file, 'w', encoding='utf-8') as f:
             json.dump(processing_metadata, f, indent=2)
-        
+
         return metadata_file
-    
-    def _store_document_in_database(self, 
+
+    def _store_document_in_database(self,
                                    document_id: str, 
                                    metadata: Dict[str, Any], 
                                    user_id: str):

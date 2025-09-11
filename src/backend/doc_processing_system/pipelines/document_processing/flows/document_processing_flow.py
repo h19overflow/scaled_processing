@@ -8,12 +8,34 @@ from .tasks import (
     duplicate_detection_task,
     docling_processing_task,
     document_saving_task,
-    kafka_message_preparation_task,
     chonkie_chunking_task,
     weaviate_storage_task
 )
 from .tasks.vision_enriching_task import markdown_vision_task
-
+# TODO 30:14.712 | INFO    | Task run 'duplicate-detection-5ec' - 🔍 Starting duplicate detection for: Monthly-Report-Aug.docx
+# 2025-09-11 21:30:14,723 - src.backend.doc_processing_system.core_deps.database.connection_manager - INFO - Connection manager initialized with database: postgresql://postgres:***@localhost:5444/document_processing
+# 21:30:14.723 | INFO    | src.backend.doc_processing_system.core_deps.database.connection_manager - Connection manager initialized with database: postgresql://postgres:***@localhost:5444/document_processing
+# 2025-09-11 21:30:14 - src.backend.doc_processing_system.pipelines.document_processing.chonkie_processor.ChonkieProcessor - INFO - [ChonkieProcessor] Initializing embeddings with model: BAAI/bge-small-en-v1.5
+# 2025-09-11 21:30:14 - src.backend.doc_processing_system.pipelines.document_processing.chonkie_processor.ChonkieProcessor - INFO - [ChonkieProcessor] Using SentenceTransformer embeddings
+# 21:30:28.341 | INFO    | Task run 'duplicate-detection-5ec' - ✅ Successfully loaded embedding model: BAAI/bge-small-en-v1.5
+# 2025-09-11 21:30:28,342 - INFO - ✅ Semantic chunker initialized (threshold=0.75, min_size=500)
+# 21:30:28.342 | INFO    | src.backend.doc_processing_system.pipelines.document_processing.two_stage_chunking.components.chunking.semantic_chunker - ✅ Semantic chunker initialized (threshold=0.75, min_size=500)
+# C:\Users\User\Projects\scaled_processing\.venv\Lib\site-packages\pydantic\json_schema.py:2324: PydanticJsonSchemaWarning: Default value typing.Literal['MERGE', 'KEEP'] is not JSON serializable; excluding default from JSON schema [non-serializable-default]
+#   warnings.warn(message, PydanticJsonSchemaWarning)
+# 2025-09-11 21:30:28,595 - INFO - 🤖 Boundary review agent initialized (context_window=200, model=gemini-2.0-flash)
+# 21:30:28.595 | INFO    | src.backend.doc_processing_system.pipelines.document_processing.two_stage_chunking.components.chunking.boundary_agent - 🤖 Boundary review agent initialized (context_window=200, model=gemini-2.0-flash)
+# 2025-09-11 21:30:28,595 - INFO - 🚀 2-Stage Chunker initialized (chunk_size=700, threshold=0.75, concurrent_agents=10, model=gemini-2.0-flash)
+# 21:30:28.595 | INFO    | src.backend.doc_processing_system.pipelines.document_processing.two_stage_chunking.components.chunking.two_stage_chunker - 🚀 2-Stage Chunker initialized (chunk_size=700, threshold=0.75, concurrent_agents=10, model=gemini-2.0-flash)
+# 2025-09-11 21:30:35 - src.backend.doc_processing_system.pipelines.document_processing.chonkie_processor.ChonkieProcessor - INFO - [ChonkieProcessor] ChonkieProcessor initialized - complete DoclingProcessor replacement
+# 2025-09-11 21:30:35 - src.backend.doc_processing_system.pipelines.document_processing.chonkie_processor.ChonkieProcessor - INFO - [ChonkieProcessor] Configuration: embedding_model=BAAI/bge-small-en-v1.5, collection=rag_documents
+# 21:30:35.985 | ERROR   | src.backend.doc_processing_system.core_deps.database.CRUD.base_repository - Failed to check duplicate for file C:\Users\Use\Projects\scaled_processing\data\documents\raw\Monthly-Report-Aug.docx: File not found: C:\Users\Use\Projects\scaled_processing\data\documents\raw\Monthly-Report-Aug.docx
+# 21:30:35.986 | ERROR   | Task run 'duplicate-detection-5ec' - ❌ Duplicate detection failed: File not found: C:\Users\Use\Projects\scaled_processing\data\documents\raw\Monthly-Report-Aug.docx
+# 21:30:35.987 | INFO    | Task run 'duplicate-detection-5ec' - Finished in state Completed()
+# 21:30:36.254 | INFO    | Flow run 'auspicious-chihuahua' - Finished in state Completed()
+# {'status': 'error', 'error': 'File not found: C:\\Users\\Use\\Projects\\scaled_processing\\data\\documents\\raw\\Monthly-Report-Aug.docx', 'message': 'Duplicate detection failed: File not found: C:\\Users\\Use\\Projects\\scaled_processing\\data\\documents\\raw\\Monthly-Report-Aug.docx'}
+# C:\Users\User\Projects\scaled_processing\.venv\Lib\site-packages\weaviate\warnings.py:302: ResourceWarning: Con004: The connection to Weaviate was not closed properly. This can lead to memory leaks.
+#             Please make sure to close the connection using `client.close()`.
+#   warnings.warn(
 @flow(
     name="document-processing-pipeline",
     task_runner=ConcurrentTaskRunner(),
@@ -83,11 +105,7 @@ async def document_processing_flow(
         if save_result.get("save_result", {}).get("status") != "saved":
             return save_result
 
-        kafka_result = kafka_message_preparation_task(save_result, user_id)
-        if kafka_result.get("kafka_message", {}).get("status") != "processed":
-            return kafka_result
 
-        weaviate_result = None
         if enable_weaviate_storage and chunking_result.get("embedded_chunks"):
             weaviate_result = weaviate_storage_task(
                 embedded_chunks=chunking_result["embedded_chunks"],
@@ -104,11 +122,6 @@ async def document_processing_flow(
         return {
             "status": "completed",
             "document_id": document_id,
-            "processed_file_path": kafka_result["processed_file_path"],
-            "document_directory": kafka_result["document_directory"],
-            "kafka_message": kafka_result["kafka_message"],
-            "content_length": kafka_result["content_length"],
-            "page_count": kafka_result["page_count"],
             "chunking_result": chunking_result,
             "weaviate_storage": weaviate_result,
             "processing_steps": {
@@ -117,7 +130,6 @@ async def document_processing_flow(
                 "vision_enhancement": vision_result.get("status"),
                 "chunking": chunking_result.get("status"),
                 "document_saving": save_result.get("save_result", {}).get("status"),
-                "kafka_preparation": kafka_result.get("kafka_message", {}).get("status"),
                 "weaviate_storage": weaviate_result.get("status")
             }
         }
@@ -146,6 +158,6 @@ async def process_document_with_flow(
 
 if __name__ == "__main__":
     import asyncio
-    test_file_path = "C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\Hamza_CV_Updated.pdf"
+    test_file_path = "C:\\Users\\Use\\Projects\\scaled_processing\\data\\documents\\raw\\Monthly-Report-Aug.docx"
     result = asyncio.run(process_document_with_flow(test_file_path, user_id="test_user", enable_weaviate_storage=True))
     print(result)
