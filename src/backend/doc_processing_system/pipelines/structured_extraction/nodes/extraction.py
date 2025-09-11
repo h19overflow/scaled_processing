@@ -4,6 +4,7 @@ Data extraction node with enhanced error handling and logging.
 
 from typing import Dict, Any, List
 import json
+import logging
 
 try:
     import langextract as lx
@@ -116,38 +117,62 @@ def extract_data(state: MultiAgentState, settings: Settings) -> MultiAgentState:
         logger.info(f"Extraction completed successfully with {len(extractions)} items")
         logger.debug(f"Extraction attempts summary: {extraction_attempts}")
         
+        # Create comprehensive intermediate results
+        intermediate_results = _create_intermediate_results(
+            extractions, 
+            extraction_attempts, 
+            state, 
+            settings
+        )
+        
         return {
             **state,
             "extractions": extractions,
             "extraction_attempts": extraction_attempts,
+            "intermediate_results": intermediate_results,
             "status": "extraction_complete"
         }
 
     except ConfigurationError as e:
         logger.error(f"Configuration error: {e}")
+        # Create intermediate results even for failures
+        intermediate_results = _create_intermediate_results(
+            [], extraction_attempts, state, settings
+        )
         return {
             **state,
             "error": f"Configuration error: {str(e)}",
             "extraction_attempts": extraction_attempts,
+            "intermediate_results": intermediate_results,
             "status": "error"
         }
         
     except ExtractionError as e:
         logger.error(f"Extraction error: {e}")
+        # Create intermediate results even for failures
+        intermediate_results = _create_intermediate_results(
+            [], extraction_attempts, state, settings
+        )
         return {
             **state,
             "error": f"Extraction error: {str(e)}",
             "extraction_attempts": extraction_attempts,
+            "intermediate_results": intermediate_results,
             "status": "error"
         }
         
     except Exception as e:
         logger.critical(f"Critical unexpected error in extraction: {e}")
         logger.debug(f"Full critical error details: {e}", exc_info=True)
+        # Create intermediate results even for critical failures
+        intermediate_results = _create_intermediate_results(
+            [], extraction_attempts, state, settings
+        )
         return {
             **state,
             "error": f"Critical extraction failure: {str(e)}",
             "extraction_attempts": extraction_attempts,
+            "intermediate_results": intermediate_results,
             "status": "error"
         }
 
@@ -215,13 +240,40 @@ def _extract_with_langextract(state: MultiAgentState) -> List[Dict[str, Any]]:
         )
         examples.append(example_data)
 
+    # Enhanced pre-call logging and validation
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Log all parameters before LangExtract call
+    logger.debug("LangExtract inputs validation:")
+    logger.debug(f"  document_text length: {len(state['document_text'])}")
+    logger.debug(f"  document_text preview: {state['document_text'][:200]}...")
+    logger.debug(f"  prompt length: {len(state['config']['prompt'])}")
+    logger.debug(f"  prompt content: {state['config']['prompt'][:300]}...")
+    logger.debug(f"  model_id: {state['config']['model_id']}")
+    logger.debug(f"  examples count: {len(examples)}")
+    
+    # Final input sanitization
+    document_text = state["document_text"].strip()
+    prompt_description = state["config"]["prompt"].strip()
+    model_id = state["config"]["model_id"].strip()
+    
+    if not document_text:
+        raise ConfigurationError("Document text is empty after sanitization")
+    if not prompt_description:
+        raise ConfigurationError("Prompt is empty after sanitization")
+    if not model_id:
+        raise ConfigurationError("Model ID is empty after sanitization")
+    
+    logger.debug("Pre-call validation passed - calling LangExtract...")
+    
     # Wrap LangExtract call with enhanced error handling
     try:
         result = lx.extract(
-            text_or_documents=state["document_text"],
-            prompt_description=state["config"]["prompt"],
+            text_or_documents=document_text,
+            prompt_description=prompt_description,
             examples=examples,
-            model_id=state["config"]["model_id"]
+            model_id=model_id
         )
     except json.JSONDecodeError as e:
         raise JSONParsingError(f"AI model returned invalid JSON: {str(e)[:200]}...")
@@ -248,28 +300,78 @@ def _extract_with_langextract(state: MultiAgentState) -> List[Dict[str, Any]]:
         # Generic LangExtract error
         raise LangExtractError(f"LangExtract extraction failed: {str(e)[:200]}...")
 
-    # Validate result structure
+    # Enhanced result validation with detailed logging
+    logger.debug("Validating LangExtract response...")
+    
     if not result:
         raise ModelResponseError("LangExtract returned None/empty result")
+    
+    logger.debug(f"Result type: {type(result)}")
+    logger.debug(f"Result attributes: {dir(result)}")
     
     if not hasattr(result, 'extractions'):
         raise ModelResponseError("LangExtract result missing 'extractions' attribute")
     
     if result.extractions is None:
         raise ModelResponseError("LangExtract extractions is None")
+    
+    logger.debug(f"Extractions type: {type(result.extractions)}")
+    logger.debug(f"Extractions count: {len(result.extractions) if hasattr(result.extractions, '__len__') else 'unknown'}")
+    
+    # Validate that extractions is iterable
+    try:
+        extraction_list = list(result.extractions)
+        logger.debug(f"Successfully converted extractions to list with {len(extraction_list)} items")
+    except (TypeError, AttributeError) as e:
+        raise ModelResponseError(f"LangExtract extractions is not iterable: {e}")
+    
+    # Check for empty response
+    if len(extraction_list) == 0:
+        logger.warning("LangExtract returned empty extractions list")
+        # Don't raise error here, let the validation below handle it
 
     extractions = []
-    for extraction in result.extractions:
-        # Filter out empty or invalid extractions
-        if (extraction.extraction_text and
-                extraction.extraction_text.strip() and
-                extraction.extraction_text.lower() not in ['null', 'none', 'n/a', ''] and
-                len(extraction.extraction_text.strip()) > 5):
-            extractions.append({
-                "extraction_class": extraction.extraction_class,
-                "extraction_text": extraction.extraction_text.strip(),
-                "attributes": extraction.attributes
-            })
+    for i, extraction in enumerate(result.extractions):
+        logger.debug(f"Processing extraction {i}: type={type(extraction)}")
+        
+        try:
+            # Validate extraction object structure
+            if not hasattr(extraction, 'extraction_text'):
+                logger.warning(f"Extraction {i} missing 'extraction_text' attribute")
+                continue
+            
+            if not hasattr(extraction, 'extraction_class'):
+                logger.warning(f"Extraction {i} missing 'extraction_class' attribute")
+                continue
+            
+            extraction_text = extraction.extraction_text
+            extraction_class = extraction.extraction_class
+            
+            logger.debug(f"Extraction {i}: class='{extraction_class}', text='{extraction_text[:50]}...'")
+            
+            # Filter out empty or invalid extractions
+            if (extraction_text and
+                    extraction_text.strip() and
+                    extraction_text.lower() not in ['null', 'none', 'n/a', '', 'na'] and
+                    len(extraction_text.strip()) > 2):  # Reduced from 5 to 2 for IDs
+                
+                attributes = getattr(extraction, 'attributes', {})
+                
+                extractions.append({
+                    "extraction_class": extraction_class,
+                    "extraction_text": extraction_text.strip(),
+                    "attributes": attributes if attributes else {}
+                })
+                
+                logger.debug(f"Added valid extraction {i}: {extraction_class}")
+            else:
+                logger.debug(f"Skipped invalid extraction {i}: '{extraction_text}' (too short or invalid)")
+                
+        except Exception as e:
+            logger.warning(f"Error processing extraction {i}: {e}")
+            continue
+
+    logger.info(f"Processed {len(result.extractions)} raw extractions, kept {len(extractions)} valid ones")
 
     if len(extractions) == 0:
         raise ValueError("No valid extractions found - all extractions were empty or invalid")
@@ -305,6 +407,25 @@ def _validate_extraction_state(state: MultiAgentState) -> None:
     
     if len(state["document_text"].strip()) < 10:
         raise ConfigurationError("document_text is too short for meaningful extraction")
+    
+    # Enhanced prompt validation
+    prompt = config["prompt"]
+    if not isinstance(prompt, str):
+        raise ConfigurationError("prompt must be a string")
+    
+    if len(prompt.strip()) == 0:
+        raise ConfigurationError("prompt cannot be empty or whitespace only")
+    
+    if len(prompt.strip()) < 20:
+        raise ConfigurationError("prompt is too short - must be at least 20 characters for meaningful extraction")
+    
+    # Validate model_id
+    model_id = config["model_id"]
+    if not isinstance(model_id, str):
+        raise ConfigurationError("model_id must be a string")
+    
+    if len(model_id.strip()) == 0:
+        raise ConfigurationError("model_id cannot be empty or whitespace only")
 
 
 def _mock_extractions(state: MultiAgentState) -> List[Dict[str, Any]]:
@@ -418,3 +539,232 @@ def _mock_extractions(state: MultiAgentState) -> List[Dict[str, Any]]:
         logger.error(f"Unexpected error in mock extraction: {e}")
         logger.debug(f"Full mock extraction error: {e}", exc_info=True)
         raise ExtractionError(f"Mock extraction failed due to unexpected error: {str(e)}")
+
+
+def _create_intermediate_results(extractions: List[Dict[str, Any]], 
+                               extraction_attempts: List[Dict[str, Any]], 
+                               state: MultiAgentState, 
+                               settings: Settings) -> Dict[str, Any]:
+    """Create comprehensive intermediate results for debugging and monitoring."""
+    import time
+    from typing import Set
+    
+    logger = logging.getLogger(__name__)
+    
+    # Determine which methods were used and which were fallbacks
+    methods_used = [attempt["method"] for attempt in extraction_attempts]
+    successful_methods = [attempt["method"] for attempt in extraction_attempts if attempt["status"] == "success"]
+    fallback_used = "mock" in successful_methods
+    langextract_failed = any(attempt["method"] == "langextract" and attempt["status"] != "success" for attempt in extraction_attempts)
+    
+    # Analyze extracted entities
+    entity_analysis = _analyze_extracted_entities(extractions)
+    
+    # Get config analysis
+    config_analysis = _analyze_config_quality(state.get("config", {}))
+    
+    # Document processing analysis
+    doc_analysis = _analyze_document_processing(state)
+    
+    # Fallback analysis
+    fallback_analysis = _analyze_fallback_usage(extraction_attempts, langextract_failed, fallback_used)
+    
+    intermediate_results = {
+        "timestamp": time.time(),
+        "extraction_summary": {
+            "total_extractions": len(extractions),
+            "methods_attempted": len(set(methods_used)),
+            "successful_methods": successful_methods,
+            "fallback_used": fallback_used,
+            "langextract_failed": langextract_failed
+        },
+        "extracted_entities": entity_analysis,
+        "config_analysis": config_analysis,
+        "document_analysis": doc_analysis,
+        "fallback_analysis": fallback_analysis,
+        "extraction_attempts_detailed": extraction_attempts,
+        "processing_metadata": {
+            "model_used": state.get("config", {}).get("model_id", "unknown"),
+            "document_length": len(state.get("document_text", "")),
+            "chunks_processed": len(state.get("chunks", [])),
+            "progressive_results_count": len(state.get("progressive_results", [])),
+            "settings_used": {
+                "max_fields": getattr(settings.extraction, 'max_fields', 'unknown'),
+                "model": getattr(settings.models, 'extraction_model', 'unknown')
+            }
+        }
+    }
+    
+    logger.info(f"Created intermediate results with {len(extractions)} entities and fallback_used={fallback_used}")
+    return intermediate_results
+
+
+# HELPER FUNCTIONS
+
+def _analyze_extracted_entities(extractions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Analyze the quality and types of extracted entities."""
+    if not extractions:
+        return {
+            "entity_count": 0,
+            "entity_types": [],
+            "categories": {},
+            "quality_metrics": {
+                "avg_text_length": 0,
+                "empty_extractions": 0,
+                "has_attributes": 0
+            }
+        }
+    
+    # Analyze entity types and categories
+    entity_types = [ext.get("extraction_class", "unknown") for ext in extractions]
+    categories = {}
+    
+    text_lengths = []
+    empty_count = 0
+    with_attributes = 0
+    
+    for extraction in extractions:
+        # Category analysis
+        attributes = extraction.get("attributes", {})
+        if attributes and "category" in attributes:
+            category = attributes["category"]
+            categories[category] = categories.get(category, 0) + 1
+        
+        # Quality metrics
+        text = extraction.get("extraction_text", "")
+        text_lengths.append(len(text))
+        
+        if not text or len(text.strip()) == 0:
+            empty_count += 1
+            
+        if attributes:
+            with_attributes += 1
+    
+    return {
+        "entity_count": len(extractions),
+        "entity_types": list(set(entity_types)),
+        "entity_type_counts": {etype: entity_types.count(etype) for etype in set(entity_types)},
+        "categories": categories,
+        "quality_metrics": {
+            "avg_text_length": sum(text_lengths) / len(text_lengths) if text_lengths else 0,
+            "empty_extractions": empty_count,
+            "has_attributes": with_attributes,
+            "completeness_rate": (len(extractions) - empty_count) / len(extractions) if len(extractions) > 0 else 0
+        },
+        "sample_extractions": extractions[:3]  # First 3 for review
+    }
+
+
+def _analyze_config_quality(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Analyze the quality of the extraction configuration."""
+    if not config:
+        return {
+            "config_available": False,
+            "quality_score": 0,
+            "issues": ["No config provided"]
+        }
+    
+    issues = []
+    quality_score = 0
+    
+    # Check prompt quality
+    prompt = config.get("prompt", "")
+    if not prompt:
+        issues.append("Empty prompt")
+    elif len(prompt) < 50:
+        issues.append("Prompt too short")
+        quality_score += 25
+    else:
+        quality_score += 50
+    
+    # Check examples
+    examples = config.get("examples", [])
+    if not examples:
+        issues.append("No examples provided")
+    else:
+        quality_score += 25
+    
+    # Check model
+    model_id = config.get("model_id", "")
+    if model_id:
+        quality_score += 25
+    else:
+        issues.append("No model specified")
+    
+    return {
+        "config_available": True,
+        "quality_score": quality_score,
+        "issues": issues,
+        "prompt_length": len(prompt),
+        "examples_count": len(examples),
+        "model_id": model_id,
+        "extraction_classes": config.get("extraction_classes", [])
+    }
+
+
+def _analyze_document_processing(state: MultiAgentState) -> Dict[str, Any]:
+    """Analyze document processing quality and completeness."""
+    doc_text = state.get("document_text", "")
+    chunks = state.get("chunks", [])
+    progressive_results = state.get("progressive_results", [])
+    
+    return {
+        "document_stats": {
+            "text_length": len(doc_text),
+            "text_preview": doc_text[:200] + "..." if len(doc_text) > 200 else doc_text,
+            "chunks_count": len(chunks),
+            "progressive_results_count": len(progressive_results)
+        },
+        "processing_completeness": {
+            "has_text": bool(doc_text),
+            "has_chunks": bool(chunks),
+            "has_progressive_results": bool(progressive_results),
+            "chunking_effective": len(chunks) > 0 if doc_text else False
+        }
+    }
+
+
+def _analyze_fallback_usage(extraction_attempts: List[Dict[str, Any]], 
+                          langextract_failed: bool, 
+                          fallback_used: bool) -> Dict[str, Any]:
+    """Analyze fallback usage and provide recommendations."""
+    
+    # Find LangExtract failure details
+    langextract_errors = []
+    for attempt in extraction_attempts:
+        if attempt["method"] == "langextract" and attempt["status"] != "success":
+            error_info = {
+                "status": attempt["status"],
+                "error": attempt.get("error", "Unknown error")
+            }
+            langextract_errors.append(error_info)
+    
+    # Determine fallback reasons
+    fallback_reasons = []
+    if langextract_failed:
+        fallback_reasons.append("LangExtract method failed")
+    if not any(attempt["method"] == "langextract" for attempt in extraction_attempts):
+        fallback_reasons.append("LangExtract not available")
+    
+    # Recommendations
+    recommendations = []
+    if fallback_used:
+        recommendations.append("Consider investigating LangExtract failures for better extraction quality")
+        if langextract_errors:
+            error_types = [err["status"] for err in langextract_errors]
+            if "json_error" in error_types:
+                recommendations.append("Model is returning malformed JSON - consider prompt engineering")
+            if "model_error" in error_types:
+                recommendations.append("Model API issues detected - check quotas and connectivity")
+    
+    return {
+        "fallback_used": fallback_used,
+        "langextract_failed": langextract_failed,
+        "fallback_reasons": fallback_reasons,
+        "langextract_errors": langextract_errors,
+        "impact_assessment": {
+            "quality_impact": "medium" if fallback_used else "none",
+            "reliability_impact": "low" if fallback_used else "none"
+        },
+        "recommendations": recommendations
+    }

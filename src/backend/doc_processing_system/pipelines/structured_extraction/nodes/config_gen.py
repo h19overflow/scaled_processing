@@ -72,12 +72,25 @@ def generate_config(state: MultiAgentState, settings: Settings) -> MultiAgentSta
 def _create_config_from_fields(fields: List[FieldSchema], sample_text: str, model_id: str) -> Dict[str, Any]:
     """Create langextract configuration directly from discovered fields."""
 
+    # Validate inputs
+    if not fields:
+        raise ValueError("Cannot create config from empty fields list")
+    
+    if not sample_text or len(sample_text.strip()) < 10:
+        sample_text = "Sample document text for extraction demonstration purposes."
+    
+    if not model_id or len(model_id.strip()) == 0:
+        raise ValueError("Model ID cannot be empty")
+
+    # Create field list with validation
+    field_list = _format_field_list(fields)
+    
     # Create extraction prompt
     prompt = textwrap.dedent(f"""
         Extract structured information from this document.
         
         Extract the following types of information:
-        {_format_field_list(fields)}
+        {field_list}
         
         IMPORTANT RULES:
         - Use exact text from the document for extractions
@@ -87,13 +100,17 @@ def _create_config_from_fields(fields: List[FieldSchema], sample_text: str, mode
         - Do not create empty or duplicate extractions
     """).strip()
 
+    # Validate final prompt
+    if len(prompt.strip()) < 50:
+        raise ValueError("Generated prompt is too short - configuration may be invalid")
+
     # Create example data
     examples = _create_examples(fields, sample_text)
 
     return {
         "prompt": prompt,
         "examples": examples,
-        "model_id": model_id,
+        "model_id": model_id.strip(),
         "extraction_classes": [field.field_name for field in fields]
     }
 
@@ -131,7 +148,14 @@ def _format_field_list(fields: List[FieldSchema]) -> str:
     """Format field list for prompt."""
     formatted = []
     for field in fields:
-        formatted.append(f"- {field.field_name}: {field.description}")
+        # Ensure description is not empty
+        description = field.description if field.description and field.description.strip() else f"Extract {field.field_name} information from the document"
+        formatted.append(f"- {field.field_name}: {description}")
+    
+    # Ensure we have at least some content
+    if not formatted:
+        formatted.append("- general_information: Extract any relevant information from the document")
+    
     return "\n".join(formatted)
 
 
@@ -139,7 +163,14 @@ def _format_extraction_classes(classes: List[FieldSchema]) -> str:
     """Format extraction classes for prompt."""
     formatted = []
     for field in classes:
-        formatted.append(f"- {field.field_name}: {field.description}")
+        # Ensure description is not empty
+        description = field.description if field.description and field.description.strip() else f"Extract {field.field_name} information from the document"
+        formatted.append(f"- {field.field_name}: {description}")
+    
+    # Ensure we have at least some content
+    if not formatted:
+        formatted.append("- general_information: Extract any relevant information from the document")
+    
     return "\n".join(formatted)
 
 

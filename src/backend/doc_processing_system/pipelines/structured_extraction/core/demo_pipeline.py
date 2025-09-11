@@ -52,6 +52,10 @@ def save_intermediate_results(state, step_name, results_dir):
     if step_name == "final_results" and state.extractions:
         step_data["extractions"] = state.extractions
         
+    # Add intermediate results if available
+    if hasattr(state, 'intermediate_results') and state.intermediate_results:
+        step_data["intermediate_results"] = state.intermediate_results
+        
     if state.progressive_results and step_name in ["discovery", "final_results"]:
         step_data["progressive_results_sample"] = [
             {
@@ -143,9 +147,20 @@ async def run_demo_pipeline():
             print(f"🔍 Discovery Results: {len(result.progressive_results or [])}")
             print(f"📋 Extractions: {len(result.extractions or [])}")
             
+            # Show intermediate results summary if available
+            if hasattr(result, 'intermediate_results') and result.intermediate_results:
+                ir = result.intermediate_results
+                print(f"🔧 Intermediate Results:")
+                print(f"   • Fallback Used: {ir.get('fallback_analysis', {}).get('fallback_used', 'Unknown')}")
+                print(f"   • Config Quality: {ir.get('config_analysis', {}).get('quality_score', 'Unknown')}/100")
+                print(f"   • Entity Categories: {list(ir.get('extracted_entities', {}).get('categories', {}).keys())}")
+                
+                if ir.get('fallback_analysis', {}).get('recommendations'):
+                    print(f"   • Recommendations: {len(ir['fallback_analysis']['recommendations'])} items")
+            
             if result.extractions:
                 print("📈 Sample Extractions:")
-                for i, extraction in enumerate(result.extractions[:3]):
+                for i, extraction in enumerate(result.extractions[]):
                     print(f"   {i+1}. {extraction}")
             
         except Exception as e:
