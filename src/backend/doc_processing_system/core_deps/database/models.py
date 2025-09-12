@@ -92,8 +92,8 @@ class StructuredDocumentModel(Base):
     """SQLAlchemy model for structured document extractions table."""
     __tablename__ = "structured_documents"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    document_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    document_id = Column(UUID(as_uuid=True), primary_key=True)
+    document_name = Column(String(255), nullable=False, index=True)
     extraction_class = Column(String(100), nullable=False, index=True)
     extraction_text = Column(Text, nullable=False)
     attributes = Column(JSON, nullable=False)
@@ -105,13 +105,16 @@ class StructuredDocumentModel(Base):
     char_end_pos = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), default=func.now())
     
-    # No relationships - standalone table
+    # Composite primary key to allow multiple extractions per document
+    __table_args__ = (
+        UniqueConstraint('document_id', 'extraction_index', name='unique_document_extraction'),
+    )
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
         return {
-            "id": str(self.id),
             "document_id": str(self.document_id),
+            "document_name": self.document_name,
             "extraction_class": self.extraction_class,
             "extraction_text": self.extraction_text,
             "attributes": self.attributes or {},

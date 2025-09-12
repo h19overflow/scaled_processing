@@ -38,6 +38,7 @@ class AgentScalingConfig(BaseModel):
 class ExtractionResult(BaseModel):
     """Model for structured document extraction results."""
     document_id: str
+    document_name: str
     extraction_class: str
     extraction_text: str
     attributes: Dict[str, Any]
@@ -61,6 +62,7 @@ class ExtractionResult(BaseModel):
         """Check if extraction result is valid."""
         return (
             bool(self.document_id) and
+            bool(self.document_name) and
             bool(self.extraction_class) and
             bool(self.extraction_text) and
             self.char_end_pos > self.char_start_pos

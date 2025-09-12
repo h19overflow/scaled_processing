@@ -11,6 +11,7 @@ class PipelineState(BaseModel):
     """Pydantic state model for Prefect workflow."""
     document_text: Optional[str] = None
     document_id: Optional[str] = None
+    document_name: Optional[str] = None
     chunks: Optional[List[DocumentChunk]] = None
     config: Optional[Dict[str, Any]] = None
     extractions: Optional[List[Dict[str, Any]]] = None

@@ -15,13 +15,13 @@ class ExtractionCRUD(BaseRepository):
     """CRUD operations for extraction result entities."""
     
     def create(self, result: ExtractionResult) -> str:
-        """Create extraction result and return its ID.
+        """Create extraction result and return document_id.
         
         Args:
             result: ExtractionResult object to create
             
         Returns:
-            str: Created extraction result ID
+            str: Document ID of the created extraction result
             
         Raises:
             Exception: If extraction result creation fails
@@ -30,6 +30,7 @@ class ExtractionCRUD(BaseRepository):
             with self.connection_manager.get_session() as session:
                 result_model = StructuredDocumentModel(
                     document_id=self._validate_uuid(result.document_id),
+                    document_name=result.document_name,
                     extraction_class=result.extraction_class,
                     extraction_text=result.extraction_text,
                     attributes=result.attributes,
@@ -43,10 +44,10 @@ class ExtractionCRUD(BaseRepository):
                 
                 session.add(result_model)
                 session.flush()
-                result_id = str(result_model.id)
+                result_id = str(result_model.document_id)
                 
                 self._log_operation("Created extraction result", result_id, 
-                                  f"document: {result.document_id}, class: {result.extraction_class}")
+                                  f"document: {result.document_name}, class: {result.extraction_class}")
                 return result_id
         
         except Exception as e:
@@ -170,6 +171,31 @@ class ExtractionCRUD(BaseRepository):
             self.logger.error(f"Failed to update alignment status for extraction result {result_id}: {e}")
             raise
     
+    def get_by_document_name(self, document_name: str) -> List[ExtractionResult]:
+        """Get extraction results by document name.
+        
+        Args:
+            document_name: Document name to filter by
+            
+        Returns:
+            List[ExtractionResult]: List of extraction results for the document name
+        """
+        try:
+            with self.connection_manager.get_session() as session:
+                result_models = session.query(StructuredDocumentModel).filter(
+                    StructuredDocumentModel.document_name == document_name
+                ).order_by(StructuredDocumentModel.created_at).all()
+                
+                results = [self._model_to_extraction_result(result) for result in result_models]
+                
+                self._log_operation("Retrieved extraction results by document name", document_name,
+                                  f"count: {len(results)}")
+                return results
+        
+        except Exception as e:
+            self.logger.error(f"Failed to get extraction results for document name {document_name}: {e}")
+            raise
+    
     def delete_by_document(self, document_id: str) -> int:
         """Delete all extraction results for a document.
         
@@ -206,6 +232,7 @@ class ExtractionCRUD(BaseRepository):
         """
         return ExtractionResult(
             document_id=str(result_model.document_id),
+            document_name=result_model.document_name,
             extraction_class=result_model.extraction_class,
             extraction_text=result_model.extraction_text,
             attributes=result_model.attributes or {},
