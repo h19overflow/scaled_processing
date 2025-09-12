@@ -12,8 +12,8 @@ from chonkie import SentenceTransformerEmbeddings, OpenAIEmbeddings, CohereEmbed
 from chonkie import WeaviateHandshake
 from chonkie import TextChef
 
-from .two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
-from .utils.document_output_manager import DocumentOutputManager
+from src.backend.doc_processing_system.pipelines.document_processing.two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
+from src.backend.doc_processing_system.pipelines.document_processing.utils.document_output_manager import DocumentOutputManager
 
 
 class ChonkieProcessor:

@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from prefect import task, get_run_logger
 
-from ...chonkie_processor import ChonkieProcessor
+from src.backend.doc_processing_system.pipelines.document_processing.utils.chonkie_processor import ChonkieProcessor
 
 
 @task(name="duplicate-detection", retries=2)

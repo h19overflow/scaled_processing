@@ -9,7 +9,8 @@ from datetime import datetime
 from prefect import task, get_run_logger
 
 from ...utils.document_output_manager import DocumentOutputManager
-
+from src.backend.doc_processing_system.messaging.producer import ProducerHandler
+from src.backend.doc_processing_system.messaging.message_schemas import create_message
 
 @task(name="document-saving", retries=2)
 def document_saving_task(
@@ -21,7 +22,7 @@ def document_saving_task(
     user_id: str = "default"
 ) -> Dict[str, Any]:
     """Save vision-enhanced document to structured directory using path-based I/O.
-    
+
     Args:
         vision_enhanced_markdown_path: Path to vision-enhanced markdown file
         document_id: Document identifier
@@ -63,7 +64,23 @@ def document_saving_task(
             "vision_processing": True,
             "processing_timestamp": datetime.now().isoformat()
         }
-        
+
+
+        # Create a kafka message and send it using the ProducerHandler
+        try:
+            message = create_message(event_type="document_pipeline_completed", data=metadata, source="document_processing")
+            kafka_producer = ProducerHandler("localhost:9092")
+
+            result = kafka_producer.produce_message(topic="document_pipeline_completed",key= file_path_obj.name,value=message)
+            if result:
+                logger.info(f"✅ Message sent for document: {file_path_obj.name}")
+            else:
+                logger.error(f"❌ Failed to send message for document: {file_path_obj.name}")
+
+        except Exception as e:
+            logger.error(f"Failed to send message for document: {file_path_obj.name} ERROR: {e}")
+
+
         # Save processed document
         save_result = output_manager.save_processed_document(
             document_id, processed_content, metadata, user_id

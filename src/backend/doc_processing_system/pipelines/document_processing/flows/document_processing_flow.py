@@ -73,10 +73,8 @@ async def document_processing_flow(
         
         vision_result = await markdown_vision_task(
             processed_markdown_path=docling_result["processed_markdown_path"],
-            extracted_images_dir=docling_result["extracted_images_dir"],
             document_id=document_id,
-            file_info=docling_result["file_info"],
-            user_id=user_id
+            file_info=docling_result["file_info"]
         )
         if vision_result["status"] != "completed":
             return vision_result

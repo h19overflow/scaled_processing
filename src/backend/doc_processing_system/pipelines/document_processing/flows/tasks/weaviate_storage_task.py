@@ -10,7 +10,7 @@ from prefect import task, get_run_logger
 from chonkie import WeaviateHandshake
 from chonkie.types import Chunk
 
-
+# TODO , PROBLEM WITH CHUNK.MEATADATA
 @task(name="weaviate-storage", retries=2)
 def weaviate_storage_task(
         embedded_chunks: List[Chunk],

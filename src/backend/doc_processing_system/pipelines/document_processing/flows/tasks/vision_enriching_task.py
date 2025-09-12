@@ -20,10 +20,8 @@ from ...utils.vision_config import VisionConfig
 @task(name="Markdown_VISION", retries=1)
 async def markdown_vision_task(
     processed_markdown_path: str,
-    extracted_images_dir: str, 
     document_id: str,
     file_info: Dict[str, Any],
-    user_id: str = "default"
 ) -> Optional[Dict[str, Any]]:
     """Process Docling-extracted content with vision enhancement and chunking.
     
@@ -86,8 +84,6 @@ async def markdown_vision_task(
         
         logger.info(f"✅ Vision enhancement completed: {len(enhanced_content)} chars")
         logger.info(f"💾 Enhanced markdown saved to: {enhanced_markdown_path}")
-        
-        # This can be added later for additional processing
         
         return {
             "status": "completed",

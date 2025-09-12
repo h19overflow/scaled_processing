@@ -43,7 +43,6 @@ def docling_processing_task(
         extraction_result = processor.extract_document(
             raw_file_path=raw_file_path,
             document_id=document_id,
-            user_id=user_id
         )
         
         if extraction_result["status"] == "completed":
