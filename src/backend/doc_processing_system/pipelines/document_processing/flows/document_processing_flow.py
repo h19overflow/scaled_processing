@@ -4,6 +4,10 @@ from typing import Dict, Any
 from prefect import flow, get_run_logger
 from prefect.task_runners import ConcurrentTaskRunner
 
+from src.backend.doc_processing_system.messaging.producer import ProducerHandler
+from src.backend.doc_processing_system.messaging.message_schemas import create_message
+from datetime import datetime
+
 from .tasks import (
     duplicate_detection_task,
     docling_processing_task,
@@ -30,6 +34,36 @@ def get_markdown_path_for_processing(docling_result: Dict[str, Any], vision_resu
         return vision_result["vision_enhanced_markdown_path"]
     else:
         return docling_result["processed_markdown_path"]
+
+
+def send_completion_message(document_id: str, raw_file_path: str, user_id: str, processing_steps: Dict[str, Any]) -> None:
+    """Send document_pipeline_completed message."""
+    try:
+        # Create metadata for completion message
+        file_path_obj = Path(raw_file_path)
+        metadata = {
+            "document_id": document_id,
+            "user_id": user_id,
+            "file_name": file_path_obj.name,
+            "file_path": raw_file_path,
+            "processing_steps": processing_steps,
+            "completed_at": str(datetime.now())
+        }
+        
+        # Send completion message
+        kafka_producer = ProducerHandler("localhost:9092")
+        message = create_message(event_type="document_pipeline_completed", data=metadata, source="document_processing")
+        result = kafka_producer.produce_message(topic="document_pipeline_completed", key=file_path_obj.name, value=message)
+        
+        if result:
+            logger = get_run_logger()
+            logger.info(f"✅ Sent document_pipeline_completed message for: {document_id}")
+        
+        kafka_producer.close()
+        
+    except Exception as e:
+        logger = get_run_logger()
+        logger.error(f"Failed to send completion message: {e}")
 @flow(
     name="document-processing-pipeline",
     task_runner=ConcurrentTaskRunner(),
@@ -80,17 +114,24 @@ async def document_processing_flow(
 
         # Early return if chunking is disabled
         if not enable_chunking:
+            processing_steps = {
+                "duplicate_detection": duplicate_result.get("status"),
+                "docling_extraction": docling_result.get("status"),
+                "vision_enhancement": vision_result.get("status") if vision_result else "disabled",
+                "chunking": "disabled",
+                "document_saving": "disabled",
+                "weaviate_storage": "disabled"
+            }
+            
+            # Send completion message
+            send_completion_message(document_id, raw_file_path, user_id, processing_steps)
+            
             return {
                 "status": "completed",
                 "document_id": document_id,
-                "processing_steps": {
-                    "duplicate_detection": duplicate_result.get("status"),
-                    "docling_extraction": docling_result.get("status"),
-                    "vision_enhancement": vision_result.get("status") if vision_result else "disabled",
-                    "chunking": "disabled",
-                    "document_saving": "disabled",
-                    "weaviate_storage": "disabled"
-                }
+                "chunking_result": {"status": "disabled", "message": "Chunking disabled"},
+                "weaviate_storage": {"status": "disabled", "message": "Weaviate storage disabled (chunking disabled)"},
+                "processing_steps": processing_steps
             }
 
         # Get correct markdown path for processing
