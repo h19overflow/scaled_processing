@@ -3,7 +3,7 @@ Demo script to test the structured extraction flow with dummy data.
 """
 
 from src.backend.doc_processing_system.pipelines.structured_extraction.models.state import PipelineState
-from src.backend.doc_processing_system.pipelines.structured_extraction.core.prefect_tasks import structured_extraction_flow
+from src.backend.doc_processing_system.pipelines.structured_extraction.core.prefect_flow import structured_extraction_flow
 
 DUMMY_INVOICE_TEXT = """
 INVOICE

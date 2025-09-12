@@ -7,7 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from src.backend.doc_processing_system.pipelines.structured_extraction.models.state import PipelineState
-from src.backend.doc_processing_system.pipelines.structured_extraction.core.prefect_tasks import structured_extraction_flow
+from src.backend.doc_processing_system.pipelines.structured_extraction.core.prefect_flow import structured_extraction_flow
 
 # Very complex enterprise invoice with multiple challenging scenarios
 TEST_TEXT = """
