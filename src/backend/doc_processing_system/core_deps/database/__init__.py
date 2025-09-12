@@ -7,7 +7,7 @@ from .connection_manager import ConnectionManager
 from .models import (
     DocumentModel,
     ChunkModel, 
-    ExtractionResultModel,
+    StructuredDocumentModel,
     QueryLogModel,
     QueryResultModel,
     Base
@@ -26,7 +26,7 @@ __all__ = [
     "ConnectionManager",
     "DocumentModel",
     "ChunkModel",
-    "ExtractionResultModel", 
+    "StructuredDocumentModel", 
     "QueryLogModel",
     "QueryResultModel",
     "Base",

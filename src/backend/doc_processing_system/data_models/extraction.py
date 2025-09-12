@@ -36,51 +36,39 @@ class AgentScalingConfig(BaseModel):
 
 
 class ExtractionResult(BaseModel):
-    """Model for extraction results from agents."""
+    """Model for structured document extraction results."""
     document_id: str
-    page_range: Tuple[int, int]
-    extracted_fields: Dict[str, Any]
-    confidence_scores: Dict[str, float]
-    agent_id: str
+    extraction_class: str
+    extraction_text: str
+    attributes: Dict[str, Any]
+    alignment_status: str
+    extraction_index: int
+    group_index: int
+    description: Optional[str] = None
+    char_start_pos: int
+    char_end_pos: int
     timestamp: Optional[datetime] = None
     
     def get_data(self) -> Dict[str, Any]:
-        """Get extracted data."""
-        return self.extracted_fields
+        """Get extracted attributes."""
+        return self.attributes
     
-    def get_confidence(self) -> float:
-        """Get average confidence score."""
-        if not self.confidence_scores:
-            return 0.0
-        return sum(self.confidence_scores.values()) / len(self.confidence_scores)
+    def get_text_length(self) -> int:
+        """Get length of extracted text."""
+        return self.char_end_pos - self.char_start_pos
     
     def is_valid(self) -> bool:
         """Check if extraction result is valid."""
         return (
             bool(self.document_id) and
-            bool(self.extracted_fields) and
-            self.get_confidence() > 0.5
+            bool(self.extraction_class) and
+            bool(self.extraction_text) and
+            self.char_end_pos > self.char_start_pos
         )
     
-    def merge_with(self, other: 'ExtractionResult') -> 'ExtractionResult':
-        """Merge with another extraction result."""
-        if self.document_id != other.document_id:
-            raise ValueError("Cannot merge results from different documents")
-        
-        merged_fields = {**self.extracted_fields, **other.extracted_fields}
-        merged_confidence = {**self.confidence_scores, **other.confidence_scores}
-        
-        return ExtractionResult(
-            document_id=self.document_id,
-            page_range=(
-                min(self.page_range[0], other.page_range[0]),
-                max(self.page_range[1], other.page_range[1])
-            ),
-            extracted_fields=merged_fields,
-            confidence_scores=merged_confidence,
-            agent_id=f"{self.agent_id}+{other.agent_id}",
-            timestamp=datetime.now()
-        )
+    def is_aligned(self) -> bool:
+        """Check if extraction is properly aligned."""
+        return self.alignment_status in ["match_exact", "match_fuzzy"]
 
 
 class ExtractionSchema(BaseModel):

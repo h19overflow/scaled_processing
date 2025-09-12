@@ -8,6 +8,7 @@ from ..models.state import PipelineState
 from ..nodes.chunking import chunk_document
 from ..nodes.classification import classify_document
 from ..nodes.config_gen import generate_config
+from ..nodes.database_storage import store_in_database
 
 @flow(name="structured-extraction-flow", description="Extract structured information from document.")
 def structured_extraction_flow(initial_state: PipelineState):
@@ -62,8 +63,27 @@ def structured_extraction_flow(initial_state: PipelineState):
     
     if config_result:
         state_dict.update(config_result)
-        state_dict["status"] = "completed"
-        logger.info(f"Extraction completed successfully")
+        logger.info(f"Config generation completed successfully")
+        
+        # Step 4: Store results in database
+        logger.info("Step 4: Storing extraction results in database...")
+        temp_state = PipelineState(**state_dict)
+        
+        storage_result = store_in_database(temp_state)
+        state_dict.update(storage_result)
+        
+        # Set final status based on storage result
+        if state_dict.get("status") == "storage_completed":
+            state_dict["status"] = "completed"
+            stored_count = state_dict.get("stored_count", 0)
+            total_extractions = state_dict.get("total_extractions", 0)
+            logger.info(f"Pipeline completed successfully. Stored {stored_count}/{total_extractions} extractions")
+        elif state_dict.get("status") == "storage_skipped":
+            state_dict["status"] = "completed_no_storage"
+            logger.warning("Pipeline completed but no results were stored")
+        else:
+            state_dict["status"] = "storage_failed"
+            logger.error(f"Storage failed: {state_dict.get('error', 'Unknown error')}")
     else:
         state_dict["status"] = "config_generation_failed"
         logger.error("Config generation failed")

@@ -47,7 +47,7 @@ class ExtractionCRUD(BaseRepository):
                 result_id = str(result_model.id)
                 
                 self._log_operation("Created extraction result", result_id, 
-                                  f"document: {result.document_id}, agent: {result.agent_id}")
+                                  f"document: {result.document_id}, class: {result.extraction_class}")
                 return result_id
         
         except Exception as e:
@@ -81,66 +81,74 @@ class ExtractionCRUD(BaseRepository):
             self.logger.error(f"Failed to get extraction results for document {document_id}: {e}")
             raise
     
-    def get_by_page_range(self, document_id: str, start_page: int, end_page: int) -> List[ExtractionResult]:
-        """Get extraction results for a specific page range.
+    def get_by_extraction_class(self, document_id: str, extraction_class: str) -> List[ExtractionResult]:
+        """Get extraction results for a specific extraction class.
         
         Args:
             document_id: Document ID
-            start_page: Starting page number
-            end_page: Ending page number
+            extraction_class: Type of extraction to filter by
             
         Returns:
-            List[ExtractionResult]: List of extraction results in the page range
+            List[ExtractionResult]: List of extraction results for the class
         """
         try:
             uuid_id = self._validate_uuid(document_id)
             
             with self.connection_manager.get_session() as session:
                 result_models = session.query(StructuredDocumentModel).filter(
-                    StructuredDocumentModel.document_id == uuid_id
-                ).all()
+                    and_(
+                        StructuredDocumentModel.document_id == uuid_id,
+                        StructuredDocumentModel.extraction_class == extraction_class
+                    )
+                ).order_by(StructuredDocumentModel.extraction_index).all()
                 
                 results = [self._model_to_extraction_result(result) for result in result_models]
                 
-                self._log_operation("Retrieved extraction results by page range", document_id,
-                                  f"pages: {start_page}-{end_page}, count: {len(results)}")
+                self._log_operation("Retrieved extraction results by class", document_id,
+                                  f"class: {extraction_class}, count: {len(results)}")
                 return results
         
         except Exception as e:
-            self.logger.error(f"Failed to get extraction results for document {document_id}, pages {start_page}-{end_page}: {e}")
+            self.logger.error(f"Failed to get extraction results for document {document_id}, class {extraction_class}: {e}")
             raise
     
-    def get_by_agent(self, agent_id: str) -> List[ExtractionResult]:
-        """Get extraction results by agent ID.
+    def get_by_alignment_status(self, document_id: str, alignment_status: str) -> List[ExtractionResult]:
+        """Get extraction results by alignment status.
         
         Args:
-            agent_id: Agent ID to filter by
+            document_id: Document ID to filter by
+            alignment_status: Alignment status to filter by
             
         Returns:
-            List[ExtractionResult]: List of extraction results from the agent
+            List[ExtractionResult]: List of extraction results with the alignment status
         """
         try:
+            uuid_id = self._validate_uuid(document_id)
+            
             with self.connection_manager.get_session() as session:
                 result_models = session.query(StructuredDocumentModel).filter(
-                    StructuredDocumentModel.document_id.isnot(None)
-                ).order_by(StructuredDocumentModel.created_at).all()
+                    and_(
+                        StructuredDocumentModel.document_id == uuid_id,
+                        StructuredDocumentModel.alignment_status == alignment_status
+                    )
+                ).order_by(StructuredDocumentModel.extraction_index).all()
                 
                 results = [self._model_to_extraction_result(result) for result in result_models]
                 
-                self._log_operation("Retrieved extraction results by agent", agent_id,
-                                  f"count: {len(results)}")
+                self._log_operation("Retrieved extraction results by alignment status", document_id,
+                                  f"status: {alignment_status}, count: {len(results)}")
                 return results
         
         except Exception as e:
-            self.logger.error(f"Failed to get extraction results for agent {agent_id}: {e}")
+            self.logger.error(f"Failed to get extraction results for document {document_id}, status {alignment_status}: {e}")
             raise
     
-    def update_confidence_scores(self, result_id: str, confidence_scores: dict) -> bool:
-        """Update confidence scores for an extraction result.
+    def update_alignment_status(self, result_id: str, alignment_status: str) -> bool:
+        """Update alignment status for an extraction result.
         
         Args:
             result_id: Extraction result ID to update
-            confidence_scores: New confidence scores
+            alignment_status: New alignment status
             
         Returns:
             bool: True if update was successful
@@ -151,16 +159,16 @@ class ExtractionCRUD(BaseRepository):
             with self.connection_manager.get_session() as session:
                 updated_rows = session.query(StructuredDocumentModel).filter(
                     StructuredDocumentModel.id == uuid_id
-                ).update({'alignment_status': confidence_scores})
+                ).update({'alignment_status': alignment_status})
                 
                 success = updated_rows > 0
                 if success:
-                    self._log_operation("Updated extraction result confidence scores", result_id)
+                    self._log_operation("Updated extraction result alignment status", result_id)
                 
                 return success
         
         except Exception as e:
-            self.logger.error(f"Failed to update confidence scores for extraction result {result_id}: {e}")
+            self.logger.error(f"Failed to update alignment status for extraction result {result_id}: {e}")
             raise
     
     def delete_by_document(self, document_id: str) -> int:

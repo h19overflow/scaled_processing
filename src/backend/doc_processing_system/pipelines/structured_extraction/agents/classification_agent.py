@@ -106,10 +106,15 @@ class ClassificationAgent:
             return final_result
 
         except Exception as e:
-            self.logger.error(f"LLM classification failed: {e}")
-            import traceback
-            self.logger.error(f"Full traceback: {traceback.format_exc()}")
-            return {"classification": "other", "confidence": 0.0, "keywords": []}
+            # Check for event loop closure in any exception type
+            if "Event loop is closed" in str(e) or isinstance(e, RuntimeError):
+                self.logger.warning(f"Event loop closed during classification - using fallback classification")
+                return self._fallback_classification(document_text)
+            else:
+                self.logger.error(f"LLM classification failed: {e}")
+                import traceback
+                self.logger.error(f"Full traceback: {traceback.format_exc()}")
+                return self._fallback_classification(document_text)
 
     # HELPER FUNCTIONS
     def _create_comprehensive_sample(self, document_text: str, sample_size: int = 3000) -> str:
@@ -138,3 +143,46 @@ class ClassificationAgent:
 {end}"""
         
         return comprehensive_sample
+    
+    def _fallback_classification(self, document_text: str) -> Dict[str, any]:
+        """Fallback classification using keyword patterns when LLM fails."""
+        text_lower = document_text.lower()
+        
+        # Define keyword patterns for each document type
+        patterns = {
+            "invoice": ["invoice", "bill to", "amount due", "total", "payment", "subtotal", "tax", "due date"],
+            "resume": ["experience", "education", "skills", "employment", "resume", "cv", "work history"],
+            "contract": ["agreement", "contract", "terms", "conditions", "party", "whereas", "parties"],
+            "legal": ["court", "legal", "plaintiff", "defendant", "attorney", "law", "case"],
+            "medical": ["patient", "doctor", "medical", "prescription", "diagnosis", "treatment"],
+            "attendance": ["attendance", "time", "hours", "schedule", "timesheet", "clock"],
+            "report": ["report", "analysis", "summary", "findings", "conclusion", "executive"]
+        }
+        
+        # Count matches for each category
+        scores = {}
+        for category, keywords in patterns.items():
+            score = sum(1 for keyword in keywords if keyword in text_lower)
+            if score > 0:
+                scores[category] = score / len(keywords)  # Normalize by keyword count
+        
+        if scores:
+            # Get category with highest score
+            best_category = max(scores, key=scores.get)
+            confidence = min(scores[best_category] * 0.7, 0.8)  # Cap confidence at 0.8 for fallback
+            self.logger.info(f"Fallback classification: {best_category} (confidence: {confidence})")
+            return {
+                "classification": best_category,
+                "confidence": confidence,
+                "reasoning": f"Fallback classification based on keyword patterns",
+                "keywords": patterns[best_category]
+            }
+        else:
+            # No matches found
+            self.logger.info("Fallback classification: No keyword matches found, defaulting to 'other'")
+            return {
+                "classification": "other",
+                "confidence": 0.1,
+                "reasoning": "No recognizable patterns found in document",
+                "keywords": []
+            }
