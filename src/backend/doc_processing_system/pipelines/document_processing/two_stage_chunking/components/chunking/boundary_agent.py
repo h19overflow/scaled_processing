@@ -219,7 +219,7 @@ Be concise and decisive. Focus on semantic continuity across the boundary."""
                 chunk2 = chunks[i + 1]
                 return await self.review_boundary(chunk1, chunk2, i)
         
-        # Create all boundary review tasks
+        # Create all boundary review tasks_core
         tasks = []
         for i in range(len(chunks) - 1):
             task = review_boundary_with_semaphore(i)

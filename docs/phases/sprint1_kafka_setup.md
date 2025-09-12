@@ -15,9 +15,9 @@ Successfully implemented comprehensive Kafka infrastructure with automated topic
 
 **Topic Configuration Strategy:**
 ```python
-# High throughput topics (document ingestion, agent tasks)
+# High throughput topics (document ingestion, agent tasks_core)
 "document-received": 6 partitions
-"extraction-tasks": 8 partitions
+"extraction-tasks_core": 8 partitions
 
 # Medium throughput topics (RAG workflow, queries)
 "chunking-complete": 4 partitions  

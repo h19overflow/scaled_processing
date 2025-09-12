@@ -58,7 +58,7 @@ services:
 # 13 Topics with Optimized Partitions
 📊 Topic Summary:
   • document-received: 6 partitions      # High throughput document ingestion
-  • extraction-tasks: 8 partitions       # Parallel agent processing  
+  • extraction-tasks_core: 8 partitions       # Parallel agent processing  
   • chunking-complete: 4 partitions      # RAG workflow
   • embedding-ready: 4 partitions        # RAG workflow
   • query-received: 4 partitions         # Query processing
@@ -120,7 +120,7 @@ RAGProducer.send_ingestion_complete(vectors)   → 'ingestion-complete' (3 parti
 ```python
 ExtractionProducer.send_field_init_complete(fields)     → 'field-init-complete' (2 partitions)
 ExtractionProducer.send_agent_scaling_complete(config)  → 'agent-scaling-complete' (2 partitions)
-ExtractionProducer.send_extraction_task(task)          → 'extraction-tasks' (8 partitions)
+ExtractionProducer.send_extraction_task(task)          → 'extraction-tasks_core' (8 partitions)
 ExtractionProducer.send_extraction_complete(results)    → 'extraction-complete' (3 partitions)
 ```
 

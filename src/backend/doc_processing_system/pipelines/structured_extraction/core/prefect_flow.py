@@ -20,7 +20,7 @@ def structured_extraction_flow(initial_state: PipelineState):
     settings = Settings()
     
     # Convert Pydantic model to dict for state management
-    state_dict = initial_state.dict()
+    state_dict = initial_state.model_dump()
     logger.info(f"Initial state: {state_dict}")
     
     # Step 1: Chunk the document

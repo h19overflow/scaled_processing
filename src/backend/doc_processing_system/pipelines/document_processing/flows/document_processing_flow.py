@@ -8,14 +8,14 @@ from src.backend.doc_processing_system.messaging.producer import ProducerHandler
 from src.backend.doc_processing_system.messaging.message_schemas import create_message
 from datetime import datetime
 
-from .tasks import (
+from src.backend.doc_processing_system.pipelines.document_processing.tasks_core import (
     duplicate_detection_task,
     docling_processing_task,
     document_saving_task,
     chonkie_chunking_task,
     weaviate_storage_task
 )
-from .tasks.vision_enriching_task import markdown_vision_task
+from src.backend.doc_processing_system.pipelines.document_processing.tasks_core import markdown_vision_task
 
 
 def get_markdown_path_for_processing(docling_result: Dict[str, Any], vision_result: Dict[str, Any] = None, enable_vision: bool = True) -> str:

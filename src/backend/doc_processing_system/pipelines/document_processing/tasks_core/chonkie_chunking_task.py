@@ -8,7 +8,7 @@ from pathlib import Path
 from prefect import task, get_run_logger
 from chonkie.types import Chunk
 
-from ...two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
+from src.backend.doc_processing_system.pipelines.document_processing.two_stage_chunking.chonkie_two_stage_chunker import ChonkieTwoStageChunker
 
 
 

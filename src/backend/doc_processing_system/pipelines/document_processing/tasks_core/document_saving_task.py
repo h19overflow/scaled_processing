@@ -8,7 +8,7 @@ from datetime import datetime
 
 from prefect import task, get_run_logger
 
-from ...utils.document_output_manager import DocumentOutputManager
+from src.backend.doc_processing_system.pipelines.document_processing.utils.document_output_manager import DocumentOutputManager
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
 from src.backend.doc_processing_system.messaging.message_schemas import create_message
 

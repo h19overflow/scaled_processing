@@ -82,13 +82,13 @@ class AgentScalingCompleteEvent(BaseModel):
 
 
 class ExtractionTaskMessage(BaseModel):
-    """Message for extraction tasks sent to agents."""
+    """Message for extraction tasks_core sent to agents."""
     task_id: str
     document_id: str
     page_range: tuple
     field_specs: List[FieldSpecification]
     agent_id: str
-    topic: str = "extraction-tasks"
+    topic: str = "extraction-tasks_core"
 
 
 class ExtractionCompleteEvent(BaseModel):

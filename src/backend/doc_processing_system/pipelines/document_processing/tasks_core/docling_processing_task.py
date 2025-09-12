@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from prefect import task, get_run_logger
 
-from ...utils.docling_processor import DoclingProcessor
+from src.backend.doc_processing_system.pipelines.document_processing.utils.docling_processor import DoclingProcessor
 
 
 @task(name="docling-processing", retries=2)
