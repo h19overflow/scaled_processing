@@ -14,9 +14,9 @@ class FileDetectedConsumer(ConsumerHandler):
     def __init__(
         self, 
         user_id: str = "default", 
-        enable_vision_enhancement: bool = True,
-        enable_chunking: bool = True,
-        num_consumers: int = 1
+        enable_vision_enhancement: bool = False,
+        enable_chunking: bool = False,
+        num_consumers: int = 6
     ):
         super().__init__(
             broker="localhost:9092",
