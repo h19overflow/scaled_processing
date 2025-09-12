@@ -77,7 +77,7 @@ class ChonkieTwoStageChunker(BaseChunker):
         Returns:
             List of Chonkie Chunk objects
         """
-        # Try to use existing event loop if available, otherwise create new one
+        # Try to use the existing event loop if available, otherwise create new one
         try:
             # Check if there's already a running event loop
             loop = asyncio.get_running_loop()
