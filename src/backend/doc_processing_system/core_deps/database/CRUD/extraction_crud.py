@@ -4,7 +4,6 @@ Handles all database operations related to extraction results.
 """
 
 from typing import List
-from uuid import UUID
 from sqlalchemy import and_
 
 from .base_repository import BaseRepository

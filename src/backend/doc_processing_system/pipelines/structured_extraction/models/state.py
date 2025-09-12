@@ -2,13 +2,11 @@
 State models for the multi-agent workflow.
 """
 
-import logging
 from typing import Dict, Any, List
-from typing_extensions import TypedDict, Optional
-from pydantic import BaseModel, Field
+from typing_extensions import  Optional
+from pydantic import BaseModel
 
 from .document import DocumentChunk
-from .schema import ProgressiveSchema, FieldSchema
 class PipelineState(BaseModel):
     """Pydantic state model for Prefect workflow."""
     document_text: Optional[str] = None

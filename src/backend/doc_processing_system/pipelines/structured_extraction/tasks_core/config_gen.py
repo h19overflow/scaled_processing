@@ -29,9 +29,31 @@ def generate_config(state: PipelineState) -> dict[str, Any] | None:
         if getattr(state, 'document_text', None) and LANGEXTRACT_AVAILABLE:
             # Pass classification directly to process_document - it will handle routing internally
             results = process_document(getattr(state, 'document_text'), classification)
-
-
-            return {'results':results}
+            
+            # Convert AnnotatedDocument to dict format expected by PipelineState
+            if hasattr(results, 'extractions'):
+                # Convert Extraction objects to dictionaries
+                extractions_dicts = []
+                for extraction in results.extractions:
+                    if hasattr(extraction, 'model_dump'):
+                        # Pydantic object
+                        extractions_dicts.append(extraction.model_dump())
+                    elif hasattr(extraction, 'dict'):
+                        # Older Pydantic object
+                        extractions_dicts.append(extraction.dict())
+                    elif hasattr(extraction, '__dict__'):
+                        # Regular object
+                        extractions_dicts.append(extraction.__dict__)
+                    else:
+                        # Already a dict
+                        extractions_dicts.append(extraction)
+                
+                return {
+                    'extractions': extractions_dicts,
+                    'document_id': getattr(results, 'document_id', None)
+                }
+            else:
+                return {'extractions': results}
 
     except Exception as e:
         import logging

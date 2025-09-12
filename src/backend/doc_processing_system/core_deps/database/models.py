@@ -37,7 +37,6 @@ class DocumentModel(Base):
     
     # Relationships
     chunks = relationship("ChunkModel", back_populates="document", cascade="all, delete-orphan")
-    structured_documents = relationship("StructuredDocumentModel", back_populates="document", cascade="all, delete-orphan")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
@@ -94,7 +93,7 @@ class StructuredDocumentModel(Base):
     __tablename__ = "structured_documents"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    document_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     extraction_class = Column(String(100), nullable=False, index=True)
     extraction_text = Column(Text, nullable=False)
     attributes = Column(JSON, nullable=False)
@@ -106,8 +105,7 @@ class StructuredDocumentModel(Base):
     char_end_pos = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), default=func.now())
     
-    # Relationships
-    document = relationship("DocumentModel", back_populates="structured_documents")
+    # No relationships - standalone table
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
