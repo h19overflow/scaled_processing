@@ -12,30 +12,24 @@ from .tasks import (
     weaviate_storage_task
 )
 from .tasks.vision_enriching_task import markdown_vision_task
-# TODO 30:14.712 | INFO    | Task run 'duplicate-detection-5ec' - 🔍 Starting duplicate detection for: Monthly-Report-Aug.docx
-# 2025-09-11 21:30:14,723 - src.backend.doc_processing_system.core_deps.database.connection_manager - INFO - Connection manager initialized with database: postgresql://postgres:***@localhost:5444/document_processing
-# 21:30:14.723 | INFO    | src.backend.doc_processing_system.core_deps.database.connection_manager - Connection manager initialized with database: postgresql://postgres:***@localhost:5444/document_processing
-# 2025-09-11 21:30:14 - src.backend.doc_processing_system.pipelines.document_processing.chonkie_processor.ChonkieProcessor - INFO - [ChonkieProcessor] Initializing embeddings with model: BAAI/bge-small-en-v1.5
-# 2025-09-11 21:30:14 - src.backend.doc_processing_system.pipelines.document_processing.chonkie_processor.ChonkieProcessor - INFO - [ChonkieProcessor] Using SentenceTransformer embeddings
-# 21:30:28.341 | INFO    | Task run 'duplicate-detection-5ec' - ✅ Successfully loaded embedding model: BAAI/bge-small-en-v1.5
-# 2025-09-11 21:30:28,342 - INFO - ✅ Semantic chunker initialized (threshold=0.75, min_size=500)
-# 21:30:28.342 | INFO    | src.backend.doc_processing_system.pipelines.document_processing.two_stage_chunking.components.chunking.semantic_chunker - ✅ Semantic chunker initialized (threshold=0.75, min_size=500)
-# C:\Users\User\Projects\scaled_processing\.venv\Lib\site-packages\pydantic\json_schema.py:2324: PydanticJsonSchemaWarning: Default value typing.Literal['MERGE', 'KEEP'] is not JSON serializable; excluding default from JSON schema [non-serializable-default]
-#   warnings.warn(message, PydanticJsonSchemaWarning)
-# 2025-09-11 21:30:28,595 - INFO - 🤖 Boundary review agent initialized (context_window=200, model=gemini-2.0-flash)
-# 21:30:28.595 | INFO    | src.backend.doc_processing_system.pipelines.document_processing.two_stage_chunking.components.chunking.boundary_agent - 🤖 Boundary review agent initialized (context_window=200, model=gemini-2.0-flash)
-# 2025-09-11 21:30:28,595 - INFO - 🚀 2-Stage Chunker initialized (chunk_size=700, threshold=0.75, concurrent_agents=10, model=gemini-2.0-flash)
-# 21:30:28.595 | INFO    | src.backend.doc_processing_system.pipelines.document_processing.two_stage_chunking.components.chunking.two_stage_chunker - 🚀 2-Stage Chunker initialized (chunk_size=700, threshold=0.75, concurrent_agents=10, model=gemini-2.0-flash)
-# 2025-09-11 21:30:35 - src.backend.doc_processing_system.pipelines.document_processing.chonkie_processor.ChonkieProcessor - INFO - [ChonkieProcessor] ChonkieProcessor initialized - complete DoclingProcessor replacement
-# 2025-09-11 21:30:35 - src.backend.doc_processing_system.pipelines.document_processing.chonkie_processor.ChonkieProcessor - INFO - [ChonkieProcessor] Configuration: embedding_model=BAAI/bge-small-en-v1.5, collection=rag_documents
-# 21:30:35.985 | ERROR   | src.backend.doc_processing_system.core_deps.database.CRUD.base_repository - Failed to check duplicate for file C:\Users\Use\Projects\scaled_processing\data\documents\raw\Monthly-Report-Aug.docx: File not found: C:\Users\Use\Projects\scaled_processing\data\documents\raw\Monthly-Report-Aug.docx
-# 21:30:35.986 | ERROR   | Task run 'duplicate-detection-5ec' - ❌ Duplicate detection failed: File not found: C:\Users\Use\Projects\scaled_processing\data\documents\raw\Monthly-Report-Aug.docx
-# 21:30:35.987 | INFO    | Task run 'duplicate-detection-5ec' - Finished in state Completed()
-# 21:30:36.254 | INFO    | Flow run 'auspicious-chihuahua' - Finished in state Completed()
-# {'status': 'error', 'error': 'File not found: C:\\Users\\Use\\Projects\\scaled_processing\\data\\documents\\raw\\Monthly-Report-Aug.docx', 'message': 'Duplicate detection failed: File not found: C:\\Users\\Use\\Projects\\scaled_processing\\data\\documents\\raw\\Monthly-Report-Aug.docx'}
-# C:\Users\User\Projects\scaled_processing\.venv\Lib\site-packages\weaviate\warnings.py:302: ResourceWarning: Con004: The connection to Weaviate was not closed properly. This can lead to memory leaks.
-#             Please make sure to close the connection using `client.close()`.
-#   warnings.warn(
+
+
+def get_markdown_path_for_processing(docling_result: Dict[str, Any], vision_result: Dict[str, Any] = None, enable_vision: bool = True) -> str:
+    """
+    Get the correct markdown file path based on vision enhancement setting.
+    
+    Args:
+        docling_result: Result from docling processing task
+        vision_result: Result from vision enhancement task (optional)
+        enable_vision: Whether vision enhancement is enabled
+        
+    Returns:
+        Path to the markdown file to use for further processing
+    """
+    if enable_vision and vision_result and vision_result.get("status") == "completed":
+        return vision_result["vision_enhanced_markdown_path"]
+    else:
+        return docling_result["processed_markdown_path"]
 @flow(
     name="document-processing-pipeline",
     task_runner=ConcurrentTaskRunner(),
@@ -47,7 +41,9 @@ async def document_processing_flow(
     raw_file_path: str,
     user_id: str = "default",
     enable_weaviate_storage: bool = True,
-    weaviate_collection: str = "rag_documents"
+    weaviate_collection: str = "rag_documents",
+    enable_vision_enhancement: bool = True,
+    enable_chunking: bool = True
 ) -> Dict[str, Any]:
     logger = get_run_logger()
     logger.info(f"🚀 Starting document processing flow for: {Path(raw_file_path).name}")
@@ -71,32 +67,62 @@ async def document_processing_flow(
         if docling_result["status"] != "completed":
             return docling_result
         
-        vision_result = await markdown_vision_task(
-            processed_markdown_path=docling_result["processed_markdown_path"],
-            document_id=document_id,
-            file_info=docling_result["file_info"]
-        )
-        if vision_result["status"] != "completed":
-            return vision_result
+        # Vision enhancement (optional)
+        vision_result = None
+        if enable_vision_enhancement:
+            vision_result = await markdown_vision_task(
+                processed_markdown_path=docling_result["processed_markdown_path"],
+                document_id=document_id,
+                file_info=docling_result["file_info"]
+            )
+            if vision_result["status"] != "completed":
+                return vision_result
 
-        vision_enhanced_path = Path(vision_result["vision_enhanced_markdown_path"])
-        with open(vision_enhanced_path, 'r', encoding='utf-8') as f:
-            enhanced_content = f.read()
+        # Early return if chunking is disabled
+        if not enable_chunking:
+            return {
+                "status": "completed",
+                "document_id": document_id,
+                "processing_steps": {
+                    "duplicate_detection": duplicate_result.get("status"),
+                    "docling_extraction": docling_result.get("status"),
+                    "vision_enhancement": vision_result.get("status") if vision_result else "disabled",
+                    "chunking": "disabled",
+                    "document_saving": "disabled",
+                    "weaviate_storage": "disabled"
+                }
+            }
+
+        # Get correct markdown path for processing
+        markdown_path = get_markdown_path_for_processing(docling_result, vision_result, enable_vision_enhancement)
+        
+        # Read content from the selected markdown file
+        content_path = Path(markdown_path)
+        with open(content_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Use appropriate page count and content length
+        if enable_vision_enhancement and vision_result:
+            page_count = vision_result["page_count"]
+            content_length = vision_result["content_length"]
+        else:
+            page_count = docling_result["file_info"]["page_count"]
+            content_length = len(content)
 
         chunking_result = chonkie_chunking_task(
-            text_content=enhanced_content,
+            text_content=content,
             document_id=document_id,
-            page_count=vision_result["page_count"],
+            page_count=page_count,
             raw_file_path=raw_file_path
         )
         if chunking_result["status"] != "completed":
             return chunking_result
 
         save_result = document_saving_task(
-            vision_enhanced_markdown_path=vision_result["vision_enhanced_markdown_path"],
+            vision_enhanced_markdown_path=markdown_path,
             document_id=document_id,
-            content_length=vision_result["content_length"], 
-            page_count=vision_result["page_count"],
+            content_length=content_length,
+            page_count=page_count,
             raw_file_path=raw_file_path,
             user_id=user_id
         )
@@ -125,7 +151,7 @@ async def document_processing_flow(
             "processing_steps": {
                 "duplicate_detection": duplicate_result.get("status"),
                 "docling_extraction": docling_result.get("status"),
-                "vision_enhancement": vision_result.get("status"),
+                "vision_enhancement": vision_result.get("status") if vision_result else "disabled",
                 "chunking": chunking_result.get("status"),
                 "document_saving": save_result.get("save_result", {}).get("status"),
                 "weaviate_storage": weaviate_result.get("status")
@@ -145,13 +171,17 @@ async def process_document_with_flow(
     raw_file_path: str, 
     user_id: str = "default",
     enable_weaviate_storage: bool = True,
-    weaviate_collection: str = "rag_documents"
+    weaviate_collection: str = "rag_documents",
+    enable_vision_enhancement: bool = True,
+    enable_chunking: bool = True
 ) -> Dict[str, Any]:
     return await document_processing_flow(
         raw_file_path, 
         user_id, 
         enable_weaviate_storage, 
-        weaviate_collection
+        weaviate_collection,
+        enable_vision_enhancement,
+        enable_chunking
     )
 
 if __name__ == "__main__":
