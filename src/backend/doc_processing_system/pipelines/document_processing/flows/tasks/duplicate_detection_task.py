@@ -1,19 +1,22 @@
 """
-Duplicate detection task for document processing flow.
+Fast duplicate detection task using file hash only (no embedding models).
 """
 
+import hashlib
+import re
 from pathlib import Path
 from typing import Dict, Any
 
 from prefect import task, get_run_logger
 
-from src.backend.doc_processing_system.pipelines.document_processing.utils.chonkie_processor import ChonkieProcessor
+from src.backend.doc_processing_system.core_deps.database.CRUD.document_crud import DocumentCRUD
+from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 
 
 @task(name="duplicate-detection", retries=2)
 def duplicate_detection_task(raw_file_path: str, user_id: str = "default") -> Dict[str, Any]:
     """
-    Check for duplicate documents using content hash.
+    Fast duplicate detection using file hash only - no heavy ML models.
     
     Args:
         raw_file_path: Path to the raw document file
@@ -23,16 +26,16 @@ def duplicate_detection_task(raw_file_path: str, user_id: str = "default") -> Di
         Dict containing duplicate check results
     """
     logger = get_run_logger()
-    logger.info(f"🔍 Starting duplicate detection for: {Path(raw_file_path).name}")
+    raw_path = Path(raw_file_path)
+    logger.info(f"🔍 Fast duplicate detection for: {raw_path.name}")
     
     try:
-        # Initialize a processor without vision for a fast duplicate check
-        processor = ChonkieProcessor(enable_vision=False)
-        output_manager = processor.get_output_manager()
+        # Create lightweight DocumentCRUD directly (no heavy processors)
+        connection_manager = ConnectionManager()
+        document_crud = DocumentCRUD(connection_manager)
         
-        # Only check for duplicates, don't do the full processing
-        raw_path = Path(raw_file_path)
-        is_duplicate, existing_doc_id = output_manager.document_crud.check_duplicate_by_raw_file(str(raw_path))
+        # Fast duplicate check using file hash only
+        is_duplicate, existing_doc_id = document_crud.check_duplicate_by_raw_file(str(raw_path))
         
         if is_duplicate:
             logger.info(f"📋 Document is duplicate: {existing_doc_id}")
@@ -42,8 +45,8 @@ def duplicate_detection_task(raw_file_path: str, user_id: str = "default") -> Di
                 "message": f"Document already processed: {existing_doc_id}"
             }
         else:
-            # Generate safe document ID for new document
-            document_id = output_manager._generate_document_id(raw_path)
+            # Generate lightweight document ID (no heavy processing)
+            document_id = _generate_document_id(raw_path)
             logger.info(f"✅ Document is new, ready for processing: {document_id}")
             return {
                 "status": "ready_for_processing",
@@ -58,3 +61,15 @@ def duplicate_detection_task(raw_file_path: str, user_id: str = "default") -> Di
             "error": str(e),
             "message": f"Duplicate detection failed: {e}"
         }
+
+
+def _generate_document_id(file_path: Path) -> str:
+    """Generate lightweight document ID from file path only."""
+    # Clean filename for document ID
+    clean_name = re.sub(r'[^\w\s-]', '', file_path.stem).strip()
+    clean_name = re.sub(r'[-\s]+', '_', clean_name)
+    
+    # Add file hash for uniqueness
+    file_hash = hashlib.sha256(str(file_path).encode()).hexdigest()[:8]
+    
+    return f"{clean_name}_{file_hash}"

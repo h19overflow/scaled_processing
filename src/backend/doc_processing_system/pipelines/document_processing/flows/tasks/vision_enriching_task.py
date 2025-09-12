@@ -13,8 +13,7 @@ from PIL import Image
 
 from prefect import task, get_run_logger
 
-from ...utils.vision_processor import VisionProcessor
-from ...utils.vision_config import VisionConfig
+# Conditional imports - only load heavy vision components when needed
 
 
 @task(name="Markdown_VISION", retries=1)
@@ -62,9 +61,23 @@ async def markdown_vision_task(
         
         logger.info(f"Found {len(extracted_images)} images for vision processing")
         
-        # Step 3: Initialize vision processor for image enhancement
-        vision_config = VisionConfig.from_env()
-        vision_processor = VisionProcessor(vision_config)
+        # Step 3: Initialize vision processor with conditional import (lazy loading)
+        try:
+            # Only import heavy vision components when actually needed
+            from ...utils.vision_processor import VisionProcessor
+            from ...utils.vision_config import VisionConfig
+            
+            logger.info("🔄 Loading vision processing components...")
+            vision_config = VisionConfig.from_env()
+            vision_processor = VisionProcessor(vision_config)
+            
+        except ImportError as e:
+            logger.error(f"❌ Vision components not available: {e}")
+            return {
+                "status": "error",
+                "error": "Vision processing components not available",
+                "message": f"Failed to load vision components: {e}"
+            }
         
         # Step 4: Process images with vision AI and enhance markdown
         context = f"Document: {file_info.get('filename', 'unknown')} ({file_info.get('file_type', 'pdf')})"

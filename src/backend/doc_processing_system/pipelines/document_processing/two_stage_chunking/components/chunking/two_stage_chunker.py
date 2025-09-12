@@ -61,17 +61,31 @@ class TwoStageChunker:
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
         
-        # Initialize components (cached for performance)
-        self._cached_semantic_chunker = SemanticChunker(
-            chunk_size=chunk_size, 
-            threshold=semantic_threshold
-        )
-        self._cached_boundary_agent = BoundaryReviewAgent(
-            context_window=boundary_context,
-            model_name=model_name
-        )
+        # Lazy initialization - components created only when needed
+        self._semantic_chunker = None
+        self._boundary_agent = None
         
-        self.logger.info(f"🚀 2-Stage Chunker initialized (chunk_size={chunk_size}, threshold={semantic_threshold}, concurrent_agents={concurrent_agents}, model={model_name})")
+        self.logger.info(f"🚀 2-Stage Chunker initialized (lazy loading enabled - chunk_size={chunk_size}, threshold={semantic_threshold}, concurrent_agents={concurrent_agents}, model={model_name})")
+    
+    def _get_semantic_chunker(self):
+        """Get semantic chunker with lazy loading."""
+        if self._semantic_chunker is None:
+            self.logger.info("🔄 Loading semantic chunker (first use)...")
+            self._semantic_chunker = SemanticChunker(
+                chunk_size=self.chunk_size, 
+                threshold=self.semantic_threshold
+            )
+        return self._semantic_chunker
+    
+    def _get_boundary_agent(self):
+        """Get boundary agent with lazy loading."""
+        if self._boundary_agent is None:
+            self.logger.info("🔄 Loading boundary agent (first use)...")
+            self._boundary_agent = BoundaryReviewAgent(
+                context_window=self.boundary_context,
+                model_name=self.model_name
+            )
+        return self._boundary_agent
     
     async def process_document(self, file_path: str, document_id: str) -> Dict[str, Any]:
         """Process document through complete 2-stage chunking pipeline.
@@ -95,7 +109,7 @@ class TwoStageChunker:
             raise ValueError(f"Cannot read document file: {file_path}")
         
         # Stage 1: Semantic Chunking
-        stage1_result = self._cached_semantic_chunker.chunk_text(text, document_id)
+        stage1_result = self._get_semantic_chunker().chunk_text(text, document_id)
         initial_chunks = stage1_result["chunks"]
         
         self.logger.info(f"✅ Stage 1 complete: {len(initial_chunks)} semantic chunks")
@@ -115,7 +129,7 @@ class TwoStageChunker:
             }
         else:
             # Review boundaries and apply refinements with concurrent agents
-            stage2_result = await self._cached_boundary_agent.review_all_boundaries(
+            stage2_result = await self._get_boundary_agent().review_all_boundaries(
                 initial_chunks, max_concurrent=self.concurrent_agents
             )
             final_chunks = self._apply_boundary_decisions(initial_chunks, stage2_result["boundary_decisions"])
@@ -190,7 +204,7 @@ class TwoStageChunker:
         self.logger.info(f"🔄 Starting 2-stage chunking for {document_id} from raw text")
         
         # Stage 1: Semantic Chunking
-        stage1_result = self._cached_semantic_chunker.chunk_text(text, document_id)
+        stage1_result = self._get_semantic_chunker().chunk_text(text, document_id)
         initial_chunks = stage1_result["chunks"]
         
         self.logger.info(f"✅ Stage 1 complete: {len(initial_chunks)} semantic chunks")
@@ -210,7 +224,7 @@ class TwoStageChunker:
             }
         else:
             # Review boundaries and apply refinements with concurrent agents
-            stage2_result = await self._cached_boundary_agent.review_all_boundaries(
+            stage2_result = await self._get_boundary_agent().review_all_boundaries(
                 initial_chunks, max_concurrent=self.concurrent_agents
             )
             final_chunks = self._apply_boundary_decisions(initial_chunks, stage2_result["boundary_decisions"])

@@ -64,6 +64,8 @@ def send_completion_message(document_id: str, raw_file_path: str, user_id: str, 
     except Exception as e:
         logger = get_run_logger()
         logger.error(f"Failed to send completion message: {e}")
+
+
 @flow(
     name="document-processing-pipeline",
     task_runner=ConcurrentTaskRunner(),
@@ -104,6 +106,7 @@ async def document_processing_flow(
         # Vision enhancement (optional)
         vision_result = None
         if enable_vision_enhancement:
+            logger.info("🔄 Vision enhancement enabled - processing images...")
             vision_result = await markdown_vision_task(
                 processed_markdown_path=docling_result["processed_markdown_path"],
                 document_id=document_id,
@@ -111,6 +114,8 @@ async def document_processing_flow(
             )
             if vision_result["status"] != "completed":
                 return vision_result
+        else:
+            logger.info("⏭️ Vision enhancement disabled - skipping image processing")
 
         # Early return if chunking is disabled
         if not enable_chunking:
@@ -150,6 +155,7 @@ async def document_processing_flow(
             page_count = docling_result["file_info"]["page_count"]
             content_length = len(content)
 
+        logger.info("🔄 Chunking enabled - processing text into chunks...")
         chunking_result = chonkie_chunking_task(
             text_content=content,
             document_id=document_id,

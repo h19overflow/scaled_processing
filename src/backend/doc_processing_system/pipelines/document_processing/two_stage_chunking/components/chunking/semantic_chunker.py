@@ -27,21 +27,28 @@ class SentenceTransformerEmbeddings(Embeddings):
     """Wrapper for SentenceTransformer models to work with LangChain."""
     
     def __init__(self, model_name: str = 'BAAI/bge-small-en-v1.5'):
-        """Initialize the SentenceTransformer embeddings wrapper.
+        """Initialize the SentenceTransformer embeddings wrapper with lazy loading.
         
         Args:
             model_name: Name of the SentenceTransformer model to use
         """
-        try:
-            from sentence_transformers import SentenceTransformer
-            # Use a reliable model that doesn't need trust_remote_code
-            self.model = SentenceTransformer(model_name)
-            print(f"✅ Successfully loaded embedding model: {model_name}")
-        except Exception as e:
-            print(f"❌ Failed to load {model_name}, trying fallback: {e}")
-            # Fallback to a more standard model
-            from sentence_transformers import SentenceTransformer
-            self.model = SentenceTransformer('BAAI/bge-small-en-v1.5')
+        self.model_name = model_name
+        self.model = None  # Lazy loading - load only when needed
+    
+    def _get_model(self):
+        """Get the model with lazy loading."""
+        if self.model is None:
+            try:
+                from sentence_transformers import SentenceTransformer
+                print(f"🔄 Loading embedding model: {self.model_name}")
+                self.model = SentenceTransformer(self.model_name)
+                print(f"✅ Successfully loaded embedding model: {self.model_name}")
+            except Exception as e:
+                print(f"❌ Failed to load {self.model_name}, trying fallback: {e}")
+                # Fallback to a more standard model
+                from sentence_transformers import SentenceTransformer
+                self.model = SentenceTransformer('BAAI/bge-small-en-v1.5')
+        return self.model
     
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs.
@@ -52,7 +59,7 @@ class SentenceTransformerEmbeddings(Embeddings):
         Returns:
             List of embeddings.
         """
-        embeddings = self.model.encode(texts)
+        embeddings = self._get_model().encode(texts)
         return embeddings.tolist()
     
     def embed_query(self, text: str) -> List[float]:
@@ -64,7 +71,7 @@ class SentenceTransformerEmbeddings(Embeddings):
         Returns:
             Embedding.
         """
-        embedding = self.model.encode([text])
+        embedding = self._get_model().encode([text])
         return embedding[0].tolist()
 
 
