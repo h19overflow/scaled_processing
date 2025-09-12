@@ -44,7 +44,7 @@ class ConsumerHandler:
     def consume_messages(self, message_handler: Callable[[str, str, str], None], timeout: float = 1.0):
         """Consume messages and process them with the provided handler."""
         self.running = True
-        self.logger.info("Starting message consumption...")
+        self.logger.info("Starting messag e consumption...")
         
         try:
             while self.running:
