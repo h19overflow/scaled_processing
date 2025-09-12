@@ -43,7 +43,7 @@ def chunk_document(state: PipelineState, settings: Settings) -> Dict[str, Any] :
 
         return {
             "chunks": chunks,
-            "document_text": text,  # Include actual document content for downstream nodes
+            "document_text": text,  # Include actual document content for downstream tasks_core
             "status": "chunked"
         }
 

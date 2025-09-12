@@ -5,10 +5,10 @@ import asyncio
 
 from ..config.settings import Settings
 from ..models.state import PipelineState
-from ..nodes.chunking import chunk_document
-from ..nodes.classification import classify_document
-from ..nodes.config_gen import generate_config
-from ..nodes.database_storage import store_in_database
+from ..tasks_core.chunking import chunk_document
+from ..tasks_core.classification import classify_document
+from ..tasks_core.config_gen import generate_config
+from ..tasks_core.database_storage import store_in_database
 
 @flow(name="structured-extraction-flow", description="Extract structured information from document.")
 def structured_extraction_flow(initial_state: PipelineState):
