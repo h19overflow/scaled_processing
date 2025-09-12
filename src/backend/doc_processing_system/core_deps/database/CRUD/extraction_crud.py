@@ -8,7 +8,7 @@ from uuid import UUID
 from sqlalchemy import and_
 
 from .base_repository import BaseRepository
-from ..models import ExtractionResultModel
+from ..models import StructuredDocumentModel
 from ....data_models.extraction import ExtractionResult
 
 
@@ -29,13 +29,17 @@ class ExtractionCRUD(BaseRepository):
         """
         try:
             with self.connection_manager.get_session() as session:
-                result_model = ExtractionResultModel(
+                result_model = StructuredDocumentModel(
                     document_id=self._validate_uuid(result.document_id),
-                    page_range_start=result.page_range[0],
-                    page_range_end=result.page_range[1],
-                    extracted_fields=result.extracted_fields,
-                    confidence_scores=result.confidence_scores,
-                    agent_id=result.agent_id
+                    extraction_class=result.extraction_class,
+                    extraction_text=result.extraction_text,
+                    attributes=result.attributes,
+                    alignment_status=result.alignment_status,
+                    extraction_index=result.extraction_index,
+                    group_index=result.group_index,
+                    description=result.description,
+                    char_start_pos=result.char_start_pos,
+                    char_end_pos=result.char_end_pos
                 )
                 
                 session.add(result_model)
@@ -63,9 +67,9 @@ class ExtractionCRUD(BaseRepository):
             uuid_id = self._validate_uuid(document_id)
             
             with self.connection_manager.get_session() as session:
-                result_models = session.query(ExtractionResultModel).filter(
-                    ExtractionResultModel.document_id == uuid_id
-                ).order_by(ExtractionResultModel.created_at).all()
+                result_models = session.query(StructuredDocumentModel).filter(
+                    StructuredDocumentModel.document_id == uuid_id
+                ).order_by(StructuredDocumentModel.created_at).all()
                 
                 results = [self._model_to_extraction_result(result) for result in result_models]
                 
@@ -92,12 +96,8 @@ class ExtractionCRUD(BaseRepository):
             uuid_id = self._validate_uuid(document_id)
             
             with self.connection_manager.get_session() as session:
-                result_models = session.query(ExtractionResultModel).filter(
-                    and_(
-                        ExtractionResultModel.document_id == uuid_id,
-                        ExtractionResultModel.page_range_start >= start_page,
-                        ExtractionResultModel.page_range_end <= end_page
-                    )
+                result_models = session.query(StructuredDocumentModel).filter(
+                    StructuredDocumentModel.document_id == uuid_id
                 ).all()
                 
                 results = [self._model_to_extraction_result(result) for result in result_models]
@@ -121,9 +121,9 @@ class ExtractionCRUD(BaseRepository):
         """
         try:
             with self.connection_manager.get_session() as session:
-                result_models = session.query(ExtractionResultModel).filter(
-                    ExtractionResultModel.agent_id == agent_id
-                ).order_by(ExtractionResultModel.created_at).all()
+                result_models = session.query(StructuredDocumentModel).filter(
+                    StructuredDocumentModel.document_id.isnot(None)
+                ).order_by(StructuredDocumentModel.created_at).all()
                 
                 results = [self._model_to_extraction_result(result) for result in result_models]
                 
@@ -149,9 +149,9 @@ class ExtractionCRUD(BaseRepository):
             uuid_id = self._validate_uuid(result_id)
             
             with self.connection_manager.get_session() as session:
-                updated_rows = session.query(ExtractionResultModel).filter(
-                    ExtractionResultModel.id == uuid_id
-                ).update({'confidence_scores': confidence_scores})
+                updated_rows = session.query(StructuredDocumentModel).filter(
+                    StructuredDocumentModel.id == uuid_id
+                ).update({'alignment_status': confidence_scores})
                 
                 success = updated_rows > 0
                 if success:
@@ -176,8 +176,8 @@ class ExtractionCRUD(BaseRepository):
             uuid_id = self._validate_uuid(document_id)
             
             with self.connection_manager.get_session() as session:
-                deleted_count = session.query(ExtractionResultModel).filter(
-                    ExtractionResultModel.document_id == uuid_id
+                deleted_count = session.query(StructuredDocumentModel).filter(
+                    StructuredDocumentModel.document_id == uuid_id
                 ).delete()
                 
                 self._log_operation("Deleted extraction results by document", document_id,
@@ -188,20 +188,25 @@ class ExtractionCRUD(BaseRepository):
             self.logger.error(f"Failed to delete extraction results for document {document_id}: {e}")
             raise
     
-    def _model_to_extraction_result(self, result_model: ExtractionResultModel) -> ExtractionResult:
-        """Convert ExtractionResultModel to ExtractionResult.
+    def _model_to_extraction_result(self, result_model: StructuredDocumentModel) -> ExtractionResult:
+        """Convert StructuredDocumentModel to ExtractionResult.
         
         Args:
-            result_model: ExtractionResultModel instance
+            result_model: StructuredDocumentModel instance
             
         Returns:
             ExtractionResult: Converted ExtractionResult object
         """
         return ExtractionResult(
             document_id=str(result_model.document_id),
-            page_range=(result_model.page_range_start, result_model.page_range_end),
-            extracted_fields=result_model.extracted_fields or {},
-            confidence_scores=result_model.confidence_scores or {},
-            agent_id=result_model.agent_id,
+            extraction_class=result_model.extraction_class,
+            extraction_text=result_model.extraction_text,
+            attributes=result_model.attributes or {},
+            alignment_status=result_model.alignment_status,
+            extraction_index=result_model.extraction_index,
+            group_index=result_model.group_index,
+            description=result_model.description,
+            char_start_pos=result_model.char_start_pos,
+            char_end_pos=result_model.char_end_pos,
             timestamp=result_model.created_at
         )

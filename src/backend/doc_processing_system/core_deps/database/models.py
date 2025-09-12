@@ -37,7 +37,7 @@ class DocumentModel(Base):
     
     # Relationships
     chunks = relationship("ChunkModel", back_populates="document", cascade="all, delete-orphan")
-    extraction_results = relationship("ExtractionResultModel", back_populates="document", cascade="all, delete-orphan")
+    structured_documents = relationship("StructuredDocumentModel", back_populates="document", cascade="all, delete-orphan")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
@@ -89,32 +89,40 @@ class ChunkModel(Base):
         }
 
 
-class ExtractionResultModel(Base):
-    """SQLAlchemy model for extraction results table."""
-    __tablename__ = "extraction_results"
+class StructuredDocumentModel(Base):
+    """SQLAlchemy model for structured document extractions table."""
+    __tablename__ = "structured_documents"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
-    page_range_start = Column(Integer, nullable=False)
-    page_range_end = Column(Integer, nullable=False)
-    extracted_fields = Column(JSON, nullable=False)
-    confidence_scores = Column(JSON, default=dict)
-    agent_id = Column(String(255))
+    extraction_class = Column(String(100), nullable=False, index=True)
+    extraction_text = Column(Text, nullable=False)
+    attributes = Column(JSON, nullable=False)
+    alignment_status = Column(String(50), nullable=False)
+    extraction_index = Column(Integer, nullable=False)
+    group_index = Column(Integer, nullable=False)
+    description = Column(Text)
+    char_start_pos = Column(Integer, nullable=False)
+    char_end_pos = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), default=func.now())
     
     # Relationships
-    document = relationship("DocumentModel", back_populates="extraction_results")
+    document = relationship("DocumentModel", back_populates="structured_documents")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
         return {
             "id": str(self.id),
             "document_id": str(self.document_id),
-            "page_range_start": self.page_range_start,
-            "page_range_end": self.page_range_end,
-            "extracted_fields": self.extracted_fields or {},
-            "confidence_scores": self.confidence_scores or {},
-            "agent_id": self.agent_id,
+            "extraction_class": self.extraction_class,
+            "extraction_text": self.extraction_text,
+            "attributes": self.attributes or {},
+            "alignment_status": self.alignment_status,
+            "extraction_index": self.extraction_index,
+            "group_index": self.group_index,
+            "description": self.description,
+            "char_start_pos": self.char_start_pos,
+            "char_end_pos": self.char_end_pos,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 

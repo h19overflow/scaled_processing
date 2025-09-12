@@ -10,7 +10,6 @@ from src.backend.doc_processing_system.pipelines.document_processing.flows.docum
 
 class FileDetectedConsumer(ConsumerHandler):
     """Consumes file_detected messages from Kafka and processes documents."""
-    
     def __init__(
         self, 
         user_id: str = "default", 

@@ -103,7 +103,7 @@ class DocumentClassificationService:
             "contract": ["agreement", "contract", "parties", "terms", "obligations", "whereas", "party", "shall"],
             "invoice": ["invoice", "bill", "payment", "due", "amount", "vendor", "total", "tax", "remit"],
             "legal": ["whereas", "plaintiff", "defendant", "court", "jurisdiction", "legal", "attorney", "counsel"],
-            "report": ["report", "analysis", "summary", "findings", "monthly", "quarterly", "performance", "status"]
+            "report": ["report", "analysis", "summary", "findings", "monthly", "quarterly", "performance", "status", "experience", "education", "skills", "employment", "developer", "university"]
         }
 
     # HELPER FUNCTIONS

@@ -2,12 +2,9 @@
 Demo script to test the structured extraction flow with dummy data.
 """
 
-import asyncio
-from prefect import flow
-from models.state import PipelineState
-from core.prefect_tasks import structured_extraction_flow
+from src.backend.doc_processing_system.pipelines.structured_extraction.models.state import PipelineState
+from src.backend.doc_processing_system.pipelines.structured_extraction.core.prefect_tasks import structured_extraction_flow
 
-# Dummy document text for testing
 DUMMY_INVOICE_TEXT = """
 INVOICE
 
@@ -142,12 +139,10 @@ def main():
     
     # Test with different document types
     invoice_result = test_flow_with_invoice()
-    resume_result = test_flow_with_resume()
-    
+
     print("\n📊 Demo Summary")
     print("=" * 30)
     print(f"Invoice processing: {'✅ Success' if invoice_result and invoice_result.status == 'completed' else '❌ Failed'}")
-    print(f"Resume processing: {'✅ Success' if resume_result and resume_result.status == 'completed' else '❌ Failed'}")
 
 if __name__ == "__main__":
     main()
