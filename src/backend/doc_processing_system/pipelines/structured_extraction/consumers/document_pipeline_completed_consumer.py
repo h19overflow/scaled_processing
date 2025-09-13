@@ -43,7 +43,7 @@ import json
 import uuid
 import logging
 from pathlib import Path
-
+from confluent_kafka.admin import AdminClient
 from src.backend.doc_processing_system.messaging.consumer import ConsumerHandler
 from src.backend.doc_processing_system.pipelines.structured_extraction.models.state import PipelineState
 from src.backend.doc_processing_system.pipelines.structured_extraction.core.prefect_flow import structured_extraction_flow
@@ -71,6 +71,13 @@ class StructuringConsumer(ConsumerHandler):
             event_type = message.get("event_type")
             
             self.logger.info(f"Received {event_type} event for document: {data.get('filename', 'unknown')}")
+            
+            # Validate processed content exists
+            if not data.get('processed_content'):
+                self.logger.error(f"SKIPPING - No processed content in message for {data.get('filename', 'unknown')}")
+                return
+                
+            self.logger.info(f"Processing document with {len(data.get('processed_content', ''))} characters")
             
             # Create initial pipeline state from message data
             initial_state = self._create_pipeline_state(data)
@@ -109,7 +116,7 @@ class StructuringConsumer(ConsumerHandler):
             document_id=document_id,
             document_name=document_name,
             status="started",
-            user_id="system"
+            user_id="test_user"
         )
 
     def _generate_document_id(self, filename: str) -> str:
@@ -125,14 +132,9 @@ class StructuringConsumer(ConsumerHandler):
 
 def main():
     """Main function to run the structured extraction consumer."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    
-    consumer = StructuringConsumer()
-    consumer.consume()
-
+    from confluent_kafka.admin import AdminClient
+    document_consumer = StructuringConsumer()
+    document_consumer.start()
 
 if __name__ == "__main__":
     main()
