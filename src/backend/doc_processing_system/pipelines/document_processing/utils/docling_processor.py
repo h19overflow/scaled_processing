@@ -4,7 +4,7 @@ Extracts rich markdown and images from documents using adaptive Docling pipeline
 """
 
 import logging
-import shutil
+import json
 from pathlib import Path
 from typing import Dict, Any
 from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption, PowerpointFormatOption
@@ -85,7 +85,28 @@ class DoclingProcessor:
                 str(markdown_path),
                 image_mode=ImageRefMode.EMBEDDED
             )
-            
+
+            # Step 4: Export JSON with embedded images
+            tables_data = []
+            for table_ix, table in enumerate(conv_result.document.tables):
+                # Convert to DataFrame to strip metadata
+                df = table.export_to_dataframe()
+
+                # Create clean table object
+                clean_table = {
+                    "table_id": table_ix,
+                    "data": df.to_dict('records'),  # Clean row data
+                    "columns": df.columns.tolist(),  # Column names
+                    "shape": df.shape  # Dimensions
+                }
+                tables_data.append(clean_table)
+
+            # Save as clean JSON
+            with open(processing_dir/f"{document_id}_table_json", "w", encoding="utf-8") as f:
+                json.dump(tables_data, f, indent=2, ensure_ascii=False)
+
+            print(f"Saved {len(tables_data)} tables as clean JSON!")
+
             # Step 5: Export images to directory
             self._extract_images_to_directory(conv_result.document, images_dir)
             
@@ -107,21 +128,7 @@ class DoclingProcessor:
         except Exception as e:
             self.logger.error(f"❌ Docling extraction failed: {e}")
             return self._error_result("Extraction failed", raw_file_path, error_details=str(e))
-    
-    def cleanup_processing_directory(self, processing_directory: str):
-        """Clean up temporary processing directory.
-        
-        Args:
-            processing_directory: Path to directory to clean up
-        """
-        try:
-            processing_path = Path(processing_directory)
-            if processing_path.exists():
-                shutil.rmtree(processing_path)
-                self.logger.info(f"Cleaned up processing directory: {processing_path}")
-        except Exception as e:
-            self.logger.warning(f"Failed to clean up directory {processing_directory}: {e}")
-    
+
     # HELPER FUNCTIONS
     def _initialize_converters(self) -> Dict[str, DocumentConverter]:
         """Initialize converters for different document formats."""
