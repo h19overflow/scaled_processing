@@ -12,8 +12,8 @@ from ...tools import temporal_analysis_tools, line_item_analysis_tools
 
 from dotenv import load_dotenv
 load_dotenv()
-
-
+import weave
+weave.init(project_name='scaled_processing')
 class DocumentAnalysisDeps(BaseModel):
     """
     Dependencies for the document analysis agent.
@@ -22,9 +22,9 @@ class DocumentAnalysisDeps(BaseModel):
 
 
 document_analysis_agent = Agent(
-    'openai:gpt-4o',
+    'gemini-2.0-flash',
     deps_type=DocumentAnalysisDeps,
-    tools=temporal_analysis_tools + line_item_analysis_tools
+    tools=temporal_analysis_tools + line_item_analysis_tools,
 )
 
 
@@ -53,6 +53,7 @@ class DocumentAnalysisAgent:
         """
         os.environ.setdefault("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
 
+    @weave.op()
     async def run_query(self, query: str) -> Any:
         """
         Run a query and let the agent execute the appropriate tools.
@@ -76,6 +77,7 @@ class DocumentAnalysisAgent:
         except Exception as e:
             return {"error": f"Failed to execute query: {e}"}
 
+    @weave.op()
     async def get_tool_outputs(self, query: str) -> Dict[str, Any]:
         """
         Get raw tool outputs for external processing.

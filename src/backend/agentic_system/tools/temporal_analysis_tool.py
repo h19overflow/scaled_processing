@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 
 from ...doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 from ...doc_processing_system.core_deps.database.CRUD.temporal_crud import TemporalCRUD
-
-
+import weave
+weave.init(project_name='scaled_processing')
 class DateRangeQuery(BaseModel):
     """Parameters for querying documents within a date range."""
     start_date: str = Field(description="Start date in YYYY-MM-DD format")
@@ -60,6 +60,7 @@ class TemporalAnalysisTool:
         self.connection_manager = ConnectionManager()
         self.temporal_crud = TemporalCRUD(self.connection_manager)
 
+    weave.op()
     async def get_documents_by_date_range(self, query: DateRangeQuery) -> List[Dict[str, Any]]:
         """
         Get documents with temporal data within a specific date range.
@@ -89,6 +90,7 @@ class TemporalAnalysisTool:
         except Exception as e:
             return [{"error": f"Failed to retrieve documents by date range: {str(e)}"}]
 
+    weave.op()
     async def get_documents_by_date_type(self, query: DateTypeQuery) -> List[Dict[str, Any]]:
         """
         Get documents by specific date type (invoice_date, due_date, etc.).
@@ -125,6 +127,7 @@ class TemporalAnalysisTool:
         except Exception as e:
             return [{"error": f"Failed to retrieve documents by date type: {str(e)}"}]
 
+    weave.op()
     async def get_recent_temporal_data(self, query: RecentDataQuery) -> List[Dict[str, Any]]:
         """
         Get recent temporal extractions from the last N days.
@@ -153,6 +156,7 @@ class TemporalAnalysisTool:
         except Exception as e:
             return [{"error": f"Failed to retrieve recent temporal data: {str(e)}"}]
 
+    weave.op()
     async def get_temporal_statistics(self) -> Dict[str, Any]:
         """
         Get comprehensive temporal data statistics.

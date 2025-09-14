@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field
 
 from ...doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 from ...doc_processing_system.core_deps.database.CRUD.line_item_crud import LineItemCRUD
-
-
+import weave
+weave.init(project_name='scaled_processing')
 class DocumentLineItemQuery(BaseModel):
     """Parameters for getting line items from a specific document."""
     document_id: str = Field(description="Document UUID to get line items for")
@@ -66,7 +66,7 @@ class LineItemAnalysisTool:
         """Initialize the line item analysis tool with database connection."""
         self.connection_manager = ConnectionManager()
         self.line_item_crud = LineItemCRUD(self.connection_manager)
-
+    @weave.op()
     async def get_line_items_by_document(self, query: DocumentLineItemQuery) -> List[Dict[str, Any]]:
         """
         Get all line items for a specific document.
@@ -99,6 +99,7 @@ class LineItemAnalysisTool:
         except Exception as e:
             return [{"error": f"Failed to retrieve line items for document: {str(e)}"}]
 
+    weave.op()
     async def get_line_items_by_amount_range(self, query: AmountRangeQuery) -> List[Dict[str, Any]]:
         """
         Get line items within a specified amount range.
@@ -128,6 +129,7 @@ class LineItemAnalysisTool:
         except Exception as e:
             return [{"error": f"Failed to retrieve line items by amount range: {str(e)}"}]
 
+    weave.op()
     async def get_recent_line_items(self, query: RecentLineItemQuery) -> List[Dict[str, Any]]:
         """
         Get recent line items from the last N days.
@@ -156,6 +158,7 @@ class LineItemAnalysisTool:
         except Exception as e:
             return [{"error": f"Failed to retrieve recent line items: {str(e)}"}]
 
+    weave.op()
     async def search_line_items_by_description(self, query: DescriptionSearchQuery) -> List[Dict[str, Any]]:
         """
         Search line items by product description keyword.
@@ -184,6 +187,7 @@ class LineItemAnalysisTool:
         except Exception as e:
             return [{"error": f"Failed to search line items by description: {str(e)}"}]
 
+    weave.op()
     async def get_line_item_statistics(self) -> Dict[str, Any]:
         """
         Get comprehensive line item statistics.
