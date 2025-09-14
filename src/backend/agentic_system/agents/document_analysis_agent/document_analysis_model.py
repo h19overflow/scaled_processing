@@ -66,6 +66,29 @@ class DocumentAnalysisModel(Model):
             "output_cost_usd": round(output_cost, 6),
             "total_cost_usd": round(total_cost, 6)
         }
+    @weave.op()
+    def _extract_raw_tool_results(self, result) -> List[Dict[str, Any]]:
+        """Extract ONLY raw tool results from agent response."""
+        raw_tool_results = []
+
+        try:
+            # Get all messages from the conversation
+            messages = result.all_messages()
+
+            for message in messages:
+                # Look for tool call results
+                if hasattr(message, 'parts'):
+                    for part in message.parts:
+                        if hasattr(part, 'tool_name') and hasattr(part, 'content'):
+                            raw_tool_results.append({
+                                "tool_name": part.tool_name,
+                                "tool_result": part.content
+                            })
+        except Exception as e:
+            # Return error if extraction fails
+            return [{"error": f"Failed to extract tool results: {e}"}]
+
+        return raw_tool_results
 
     @weave.op()
     async def run_document_analysis(self, query: str) -> Dict[str, Any]:
@@ -84,16 +107,19 @@ class DocumentAnalysisModel(Model):
 
             # Calculate input tokens (query + prompt)
             full_prompt = DOCUMENT_ANALYSIS_PROMPT.format(query=query)
-            input_tokens = self.simple_token_count(query + full_prompt)
+            input_tokens = self.simple_token_count(full_prompt + query)
 
             # Execute the cached agent
             result = await self._cached_agent.run(query, deps=deps)
 
-            # Calculate output tokens from tool results
-            output_data = result.data if hasattr(result, 'data') else {}
-            output_tokens = self.simple_token_count(str(output_data))
+            # Extract ONLY raw tool results (no agent interpretation)
+            raw_tool_results = self._extract_raw_tool_results(result)
 
-            # Calculate costs
+            # Since we only call tools and return raw results, there are NO LLM output tokens
+            # Tool outputs are database results, not LLM-generated content
+            output_tokens = 0  # No LLM output - just tool execution
+
+            # Calculate costs (only input tokens since no LLM output)
             costs = self.calculate_costs(input_tokens, output_tokens)
 
             return {
@@ -104,24 +130,28 @@ class DocumentAnalysisModel(Model):
                 },
                 "costs": costs,
                 "model": self.model_name,
-                "tool_results": output_data,
+                "tool_results": raw_tool_results,
                 "query": query
             }
 
         except Exception as e:
-            # Return error with minimal token usage for the error message
-            error_tokens = self.simple_token_count(str(e))
-            costs = self.calculate_costs(0, error_tokens)
+            # Calculate input tokens for error case
+            full_prompt = DOCUMENT_ANALYSIS_PROMPT.format(query=query)
+            input_tokens = self.simple_token_count(full_prompt + query)
+
+            # No output tokens for errors either - just tool execution failure
+            output_tokens = 0
+            costs = self.calculate_costs(input_tokens, output_tokens)
 
             return {
                 "usage": {
-                    "input_tokens": 0,
-                    "output_tokens": error_tokens,
-                    "total_tokens": error_tokens,
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "total_tokens": input_tokens + output_tokens,
                 },
                 "costs": costs,
                 "model": self.model_name,
-                "tool_results": {"error": f"Failed to execute query: {e}"},
+                "tool_results": [{"error": f"Failed to execute query: {e}"}],
                 "query": query
             }
 
@@ -148,7 +178,7 @@ class DocumentAnalysisModel(Model):
         return f"""
 Cost Summary:
 - Input tokens: {usage.get('input_tokens', 0):,} (${costs.get('input_cost_usd', 0):.6f})
-- Output tokens: {usage.get('output_tokens', 0):,} (${costs.get('output_cost_usd', 0):.6f})
+- Output tokens: {usage.get('output_tokens', 0):,} (${costs.get('output_cost_usd', 0):.6f}) [Tool outputs - no LLM cost]
 - Total cost: ${costs.get('total_cost_usd', 0):.6f}
         """.strip()
 

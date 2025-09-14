@@ -48,12 +48,12 @@ class DocumentAnalysisAgent:
             query: The user's natural language query
 
         Returns:
-            Dict with query, tool results, and cost information
+            Dict with query, raw tool results, and cost information
         """
         result = await self.run_query(query)
         return {
             "query": query,
-            "tool_results": result.get("tool_results", {}),
+            "tool_results": result.get("tool_results", []),  # Now a list of raw results
             "usage": result.get("usage", {}),
             "costs": result.get("costs", {}),
             "cost_summary": self.model.get_cost_summary(result)
@@ -76,13 +76,6 @@ async def demo_document_analysis_agent():
     agent = DocumentAnalysisAgent()
 
     # Show pricing info
-    pricing = agent.get_pricing_info()
-    print(f"💰 Pricing Info:")
-    print(f"   Model: {pricing['model_name']}")
-    print(f"   Input tokens: ${pricing['input_token_cost_per_million']:.2f} per 1M tokens")
-    print(f"   Output tokens: ${pricing['output_token_cost_per_million']:.2f} per 1M tokens")
-    print()
-
     demo_queries = [
         "Show me recent line items from the last 7 days",
         "What are our most expensive purchases over $500?",
@@ -104,7 +97,7 @@ async def demo_document_analysis_agent():
 
             print(f"✅ Query executed successfully")
             print(f"🔧 Tool Results: {len(str(result['tool_results']))} characters of data")
-
+            print( f"📝 Query results: {result['tool_results']}")
             # Show usage and costs
             usage = result['usage']
             costs = result['costs']
