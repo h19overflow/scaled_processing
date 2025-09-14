@@ -242,4 +242,3 @@ if __name__ == "__main__":
     import asyncio
     test_file_path = "C:\\Users\\User\\Projects\\scaled_processing\\data\\documents\\raw\\Covering Letter - AHMED HAMZA KHALED MAHMOUD .pdf"
     result = asyncio.run(process_document_with_flow(test_file_path, user_id="test_user", enable_weaviate_storage=True))
-    print(result)
