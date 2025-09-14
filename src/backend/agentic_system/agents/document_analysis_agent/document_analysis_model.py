@@ -142,73 +142,13 @@ class DocumentAnalysisModel(Model):
 
             # Execute the cached agent
             result = await self._cached_agent.run(query, deps=deps)
-
             logger.info(f"Query executed successfully")
-
-            # Extract tool results from the agent response
-            tool_results = self._extract_raw_tool_results(result)
-
-            # Calculate input tokens (rough estimate)
-            input_tokens = self.simple_token_count(query)
-            output_tokens = self.simple_token_count(str(tool_results))
-            total_tokens = input_tokens + output_tokens
-
-            # Calculate costs
-            costs = self.calculate_costs(input_tokens, output_tokens)
-
-            return {
-                "usage": {
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "total_tokens": total_tokens,
-                },
-                "costs": costs,
-                "model": self.model_name,
-                "results": tool_results,
-                "query": query
-            }
-
+            return result
         except Exception as e:
-            logger.error(f"Failed to run document analysis: {e}")
-            # Return error dictionary instead of None
-            return {
-                "usage": {
-                    "input_tokens": 0,
-                    "output_tokens": 0,
-                    "total_tokens": 0,
-                },
-                "costs": {
-                    "input_cost_usd": 0.0,
-                    "output_cost_usd": 0.0,
-                    "total_cost_usd": 0.0
-                },
-                "model": self.model_name,
-                "results": [{"error": f"Failed to run document analysis: {str(e)}"}],
-                "query": query
-            }
+            logger.error(f"Error in run_document_analysis method: {e}")
+            return {"error": str(e)}
 
-    @weave.op()
-    def predict(self, query: str) -> Dict[str, Any]:
-        """Synchronous prediction interface for Weave compatibility."""
-        import asyncio
 
-        try:
-            # Check if there's already an event loop running
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # If loop is running, we need to handle differently
-                    import nest_asyncio
-                    nest_asyncio.apply()
-                    return asyncio.run(self.run_document_analysis(query))
-                else:
-                    return loop.run_until_complete(self.run_document_analysis(query))
-            except RuntimeError:
-                # No event loop exists, create one
-                return asyncio.run(self.run_document_analysis(query))
-        except Exception as e:
-            self.logger.error(f"Error in predict method: {e}")
-            return self._error_response(query, str(e))
 
     # HELPER FUNCTIONS
     def get_cost_summary(self, results: Dict[str, Any]) -> str:
@@ -217,11 +157,11 @@ class DocumentAnalysisModel(Model):
         usage = results.get("usage", {})
 
         return f"""
-Cost Summary:
-- Input tokens: {usage.get('input_tokens', 0):,} (${costs.get('input_cost_usd', 0):.6f})
-- Output tokens: {usage.get('output_tokens', 0):,} (${costs.get('output_cost_usd', 0):.6f}) [Tool outputs - no LLM cost]
-- Total cost: ${costs.get('total_cost_usd', 0):.6f}
-        """.strip()
+        Cost Summary:
+        - Input tokens: {usage.get('input_tokens', 0):,} (${costs.get('input_cost_usd', 0):.6f})
+        - Output tokens: {usage.get('output_tokens', 0):,} (${costs.get('output_cost_usd', 0):.6f}) [Tool outputs - no LLM cost]
+        - Total cost: ${costs.get('total_cost_usd', 0):.6f}
+                """.strip()
 
     def get_usage_stats(self, results: Dict[str, Any]) -> Dict[str, Any]:
         """Extract usage statistics from results."""
@@ -231,7 +171,7 @@ Cost Summary:
             "model": results.get("model", self.model_name)
         }
 
-def demo_document_analysis_agent():
+async def demo_document_analysis_agent():
     """Demo function showing document analysis agent capabilities with cost tracking."""
     print("📊 DOCUMENT ANALYSIS AGENT DEMO WITH COST TRACKING")
     print("=" * 70)
@@ -256,7 +196,8 @@ def demo_document_analysis_agent():
 
         try:
             # Get results with cost tracking
-            result = agent.predict(query)
+            result = await agent.run_document_analysis(query)
+            print(result)
         except Exception as e:
             print(f"❌ Error: {e}")
 
@@ -271,5 +212,5 @@ def demo_document_analysis_agent():
 
 
 if __name__ == "__main__":
-
-    demo_document_analysis_agent()
+    import asyncio
+    asyncio.run(demo_document_analysis_agent())
