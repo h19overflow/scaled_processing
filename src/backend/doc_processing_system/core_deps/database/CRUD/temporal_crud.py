@@ -9,11 +9,12 @@ from sqlalchemy import and_, or_, func, cast, Date, text
 
 from .base_repository import BaseRepository
 from ..models import StructuredDocumentModel
-
+import weave
+weave.init(project_name="scaled_processing")
 
 class TemporalCRUD(BaseRepository):
     """CRUD operations for temporal data analysis with minimal input requirements."""
-
+    @weave.op()
     def get_by_date_range(self, start_date: str, end_date: str, limit: int = 100) -> List[Dict[str, Any]]:
         """Get documents with temporal data within date range.
 
@@ -81,6 +82,7 @@ class TemporalCRUD(BaseRepository):
             self.logger.error(f"Failed to get temporal data by date range: {e}")
             raise
 
+    @weave.op()
     def get_by_date_type(self, date_type: str, limit: int = 100) -> List[Dict[str, Any]]:
         """Get documents by specific date type.
 
@@ -139,6 +141,7 @@ class TemporalCRUD(BaseRepository):
             self.logger.error(f"Failed to get temporal data by date type: {e}")
             raise
 
+    @weave.op()
     def get_recent_temporal_data(self, days: int = 7, limit: int = 50) -> List[Dict[str, Any]]:
         """Get recent temporal extractions from last N days.
 
@@ -202,6 +205,7 @@ class TemporalCRUD(BaseRepository):
             self.logger.error(f"Failed to get recent temporal data: {e}")
             raise
 
+    @weave.op()
     def get_date_statistics(self) -> Dict[str, Any]:
         """Get temporal data statistics with minimal computation.
 

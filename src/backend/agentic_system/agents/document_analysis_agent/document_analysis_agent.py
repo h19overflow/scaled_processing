@@ -3,104 +3,85 @@ Document Analysis Agent for comprehensive document and data analysis using tempo
 """
 
 import os
-from pydantic_ai import Agent, RunContext
-from pydantic import BaseModel
 from typing import Optional, Dict, Any
+import weave
 
-from .document_analysis_prompt import DOCUMENT_ANALYSIS_PROMPT
-from ...tools import temporal_analysis_tools, line_item_analysis_tools
+from .document_analysis_model import DocumentAnalysisModel
 
 from dotenv import load_dotenv
 load_dotenv()
-import weave
+
 weave.init(project_name='scaled_processing')
-class DocumentAnalysisDeps(BaseModel):
-    """
-    Dependencies for the document analysis agent.
-    """
-    query: str
-
-
-document_analysis_agent = Agent(
-    'gemini-2.0-flash',
-    deps_type=DocumentAnalysisDeps,
-    tools=temporal_analysis_tools + line_item_analysis_tools,
-)
-
-
-@document_analysis_agent.system_prompt
-def dynamic_system_prompt(ctx: RunContext[DocumentAnalysisDeps]) -> str:
-    """
-    Create custom instructions for the document analysis agent.
-
-    Args:
-        ctx: The context containing the query to analyze
-
-    Returns:
-        str: The complete instructions for the AI agent
-    """
-    return DOCUMENT_ANALYSIS_PROMPT.format(query=ctx.deps.query)
 
 
 class DocumentAnalysisAgent:
     """
-    The main document analysis agent class for comprehensive document and data analysis.
+    The main document analysis agent class with token and cost tracking.
     """
 
     def __init__(self):
         """
-        Initialize the document analysis agent.
+        Initialize the document analysis agent with Weave model.
         """
         os.environ.setdefault("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
+        self.model = DocumentAnalysisModel()
 
     @weave.op()
-    async def run_query(self, query: str) -> Any:
+    async def run_query(self, query: str) -> Dict[str, Any]:
         """
-        Run a query and let the agent execute the appropriate tools.
+        Run a query with full cost and usage tracking.
 
         Args:
             query: The user's natural language query
 
         Returns:
-            Any: Raw tool outputs based on the query
+            Dict with tool results, usage stats, and costs
         """
-        try:
-            deps = DocumentAnalysisDeps(query=query)
-
-            result = await document_analysis_agent.run(
-                query,
-                deps=deps
-            )
-
-            return result.data
-
-        except Exception as e:
-            return {"error": f"Failed to execute query: {e}"}
+        return await self.model.run_document_analysis(query)
 
     @weave.op()
     async def get_tool_outputs(self, query: str) -> Dict[str, Any]:
         """
-        Get raw tool outputs for external processing.
+        Get raw tool outputs for external processing with cost tracking.
 
         Args:
             query: The user's natural language query
 
         Returns:
-            Dict with query and raw tool results
+            Dict with query, tool results, and cost information
         """
-        tool_outputs = await self.run_query(query)
+        result = await self.run_query(query)
         return {
             "query": query,
-            "tool_results": tool_outputs
+            "tool_results": result.get("tool_results", {}),
+            "usage": result.get("usage", {}),
+            "costs": result.get("costs", {}),
+            "cost_summary": self.model.get_cost_summary(result)
+        }
+
+    def get_pricing_info(self) -> Dict[str, float]:
+        """Get current pricing information."""
+        return {
+            "input_token_cost_per_million": self.model.input_token_cost_per_million,
+            "output_token_cost_per_million": self.model.output_token_cost_per_million,
+            "model_name": self.model.model_name
         }
 
 
 async def demo_document_analysis_agent():
-    """Demo function showing document analysis agent capabilities."""
-    print("📊 DOCUMENT ANALYSIS AGENT DEMO")
-    print("=" * 60)
+    """Demo function showing document analysis agent capabilities with cost tracking."""
+    print("📊 DOCUMENT ANALYSIS AGENT DEMO WITH COST TRACKING")
+    print("=" * 70)
 
     agent = DocumentAnalysisAgent()
+
+    # Show pricing info
+    pricing = agent.get_pricing_info()
+    print(f"💰 Pricing Info:")
+    print(f"   Model: {pricing['model_name']}")
+    print(f"   Input tokens: ${pricing['input_token_cost_per_million']:.2f} per 1M tokens")
+    print(f"   Output tokens: ${pricing['output_token_cost_per_million']:.2f} per 1M tokens")
+    print()
 
     demo_queries = [
         "Show me recent line items from the last 7 days",
@@ -110,25 +91,49 @@ async def demo_document_analysis_agent():
         "Show me documents from the last month"
     ]
 
+    total_cost = 0.0
+    total_tokens = 0
+
     for i, query in enumerate(demo_queries, 1):
         print(f"\n{i}. Query: '{query}'")
-        print("-" * 40)
+        print("-" * 50)
 
         try:
-            # Get raw tool outputs
+            # Get results with cost tracking
             result = await agent.get_tool_outputs(query)
-            print(f"Query: {result['query']}")
-            print(f"Tool Results: {result['tool_results']}")
 
-            # You can now process these raw results however you want
-            # For demo purposes, just show the raw data structure
+            print(f"✅ Query executed successfully")
+            print(f"🔧 Tool Results: {len(str(result['tool_results']))} characters of data")
+
+            # Show usage and costs
+            usage = result['usage']
+            costs = result['costs']
+
+            print(f"📊 Usage:")
+            print(f"   Input tokens: {usage.get('input_tokens', 0):,}")
+            print(f"   Output tokens: {usage.get('output_tokens', 0):,}")
+            print(f"   Total tokens: {usage.get('total_tokens', 0):,}")
+
+            print(f"💵 Cost:")
+            print(f"   Input cost: ${costs.get('input_cost_usd', 0):.6f}")
+            print(f"   Output cost: ${costs.get('output_cost_usd', 0):.6f}")
+            print(f"   Query total: ${costs.get('total_cost_usd', 0):.6f}")
+
+            # Accumulate totals
+            total_cost += costs.get('total_cost_usd', 0)
+            total_tokens += usage.get('total_tokens', 0)
 
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"❌ Error: {e}")
 
         print()
 
-    print("✅ Demo completed - Raw tool outputs retrieved!")
+    print("=" * 70)
+    print(f"📈 Session Summary:")
+    print(f"   Total tokens used: {total_tokens:,}")
+    print(f"   Total session cost: ${total_cost:.6f}")
+    print(f"   Average cost per query: ${total_cost/len(demo_queries):.6f}")
+    print("✅ Demo completed - All queries executed with cost tracking!")
 
 
 if __name__ == "__main__":
