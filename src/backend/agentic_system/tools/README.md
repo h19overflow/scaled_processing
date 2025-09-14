@@ -1,3 +1,4 @@
+---
 # Agentic System Tools - Comprehensive Examples
 
 This README provides detailed examples of tool outputs from our pydantic-ai tool wrappers. These tools interface directly with the TemporalCRUD and LineItemCRUD classes to provide structured data for agentic systems.
