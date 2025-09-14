@@ -2,21 +2,25 @@
 Custom Weave Model for Document Analysis Agent with token and cost tracking
 """
 
+
 from weave import Model
 import weave
 from typing import Dict, Any, List
 from pydantic_ai import Agent, RunContext
 from pydantic import BaseModel
-
-from .document_analysis_prompt import DOCUMENT_ANALYSIS_PROMPT
+from dotenv import load_dotenv
 from ...tools import temporal_analysis_tools, line_item_analysis_tools
+import logging
 
-
+load_dotenv()
+logger = logging.getLogger(f"{__name__}")
 class DocumentAnalysisDeps(BaseModel):
     """Dependencies for the document analysis agent."""
     query: str
 
 
+
+# TODO , AGENT GETS STUCK AND THE CODE CANNOT RUN , SO I AM THINKING IT's EITHER HE GETS CONFUSED OR IT IS A BUG, BUT HE WAS ABLE TO ANALYZE AND GET RESPONSES BEFORE.
 class DocumentAnalysisModel(Model):
     """
     Custom Weave Model for Document Analysis with token and cost tracking.
@@ -25,28 +29,57 @@ class DocumentAnalysisModel(Model):
     - Input tokens: $0.15 per 1,000,000 tokens
     - Output tokens: $0.60 per 1,000,000 tokens
     """
-
     model_name: str = "gemini-2.0-flash"
     input_token_cost_per_million: float = 0.15
     output_token_cost_per_million: float = 0.40
 
+
     def __init__(self, **data):
         super().__init__(**data)
+
         # Initialize agent once as class field for performance
         self._cached_agent = self._create_agent()
+
 
     def _create_agent(self):
         """Create the pydantic-ai agent once during initialization."""
         agent = Agent(
             self.model_name,
             deps_type=DocumentAnalysisDeps,
-            tools=temporal_analysis_tools + line_item_analysis_tools
+            tools= line_item_analysis_tools+temporal_analysis_tools
         )
 
         # Set up the system prompt
         @agent.system_prompt
         def dynamic_system_prompt(ctx: RunContext[DocumentAnalysisDeps]) -> str:
-            return DOCUMENT_ANALYSIS_PROMPT.format(query=ctx.deps.query)
+            document_analysis_prompt = """
+            You are a Document Analysis Agent that calls the appropriate tools based on user queries.
+
+            ## Your Mission
+            Call the correct tools to retrieve data. Do NOT provide analysis or interpretation - just call the tools and let them return their raw results.
+            Do not call multiple tools , Only use one tool.
+            ## Available Tools
+
+            ### 🕐 Temporal Analysis Tools
+            - **get_documents_by_date_range** - For date range queries
+            - **get_documents_by_date_type** - For specific date type queries
+            - **get_recent_temporal_data** - For recent temporal data
+            - **get_temporal_statistics** - For temporal statistics
+
+            ### 🛒 Line Item Analysis Tools
+            - **get_line_items_by_document** - For document-specific line items
+            - **get_line_items_by_amount_range** - For price range filtering
+            - **get_recent_line_items** - For recent purchases
+            - **search_line_items_by_description** - For product searches
+            - **get_line_item_statistics** - For line item statistics
+
+            ## Instructions
+            1. Analyze the user query
+            2. Call the appropriate tool(s)
+
+            User Query: {query}
+            """
+            return document_analysis_prompt.format(query=ctx.deps.query)
 
         return agent
 
@@ -102,72 +135,80 @@ class DocumentAnalysisModel(Model):
             Dict with tool results, usage stats, and cost information
         """
         try:
+            logger.info(f"Running document analysis for query: {query}")
+
             # Use cached agent (initialized once) for performance
             deps = DocumentAnalysisDeps(query=query)
-
-            # Calculate input tokens (query + prompt)
-            full_prompt = DOCUMENT_ANALYSIS_PROMPT.format(query=query)
-            input_tokens = self.simple_token_count(full_prompt + query)
 
             # Execute the cached agent
             result = await self._cached_agent.run(query, deps=deps)
 
-            # Extract ONLY raw tool results (no agent interpretation)
-            raw_tool_results = self._extract_raw_tool_results(result)
+            logger.info(f"Query executed successfully")
 
-            # Since we only call tools and return raw results, there are NO LLM output tokens
-            # Tool outputs are database results, not LLM-generated content
-            output_tokens = 0  # No LLM output - just tool execution
+            # Extract tool results from the agent response
+            tool_results = self._extract_raw_tool_results(result)
 
-            # Calculate costs (only input tokens since no LLM output)
+            # Calculate input tokens (rough estimate)
+            input_tokens = self.simple_token_count(query)
+            output_tokens = self.simple_token_count(str(tool_results))
+            total_tokens = input_tokens + output_tokens
+
+            # Calculate costs
             costs = self.calculate_costs(input_tokens, output_tokens)
 
             return {
                 "usage": {
                     "input_tokens": input_tokens,
                     "output_tokens": output_tokens,
-                    "total_tokens": input_tokens + output_tokens,
+                    "total_tokens": total_tokens,
                 },
                 "costs": costs,
                 "model": self.model_name,
-                "tool_results": raw_tool_results,
+                "results": tool_results,
                 "query": query
             }
 
         except Exception as e:
-            # Calculate input tokens for error case
-            full_prompt = DOCUMENT_ANALYSIS_PROMPT.format(query=query)
-            input_tokens = self.simple_token_count(full_prompt + query)
-
-            # No output tokens for errors either - just tool execution failure
-            output_tokens = 0
-            costs = self.calculate_costs(input_tokens, output_tokens)
-
+            logger.error(f"Failed to run document analysis: {e}")
+            # Return error dictionary instead of None
             return {
                 "usage": {
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "total_tokens": input_tokens + output_tokens,
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "total_tokens": 0,
                 },
-                "costs": costs,
+                "costs": {
+                    "input_cost_usd": 0.0,
+                    "output_cost_usd": 0.0,
+                    "total_cost_usd": 0.0
+                },
                 "model": self.model_name,
-                "tool_results": [{"error": f"Failed to execute query: {e}"}],
+                "results": [{"error": f"Failed to run document analysis: {str(e)}"}],
                 "query": query
             }
 
     @weave.op()
     def predict(self, query: str) -> Dict[str, Any]:
-        """
-        Synchronous prediction interface for Weave compatibility.
-
-        Args:
-            query: User's natural language query
-
-        Returns:
-            Dict with analysis results and cost tracking
-        """
+        """Synchronous prediction interface for Weave compatibility."""
         import asyncio
-        return asyncio.run(self.run_document_analysis(query))
+
+        try:
+            # Check if there's already an event loop running
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If loop is running, we need to handle differently
+                    import nest_asyncio
+                    nest_asyncio.apply()
+                    return asyncio.run(self.run_document_analysis(query))
+                else:
+                    return loop.run_until_complete(self.run_document_analysis(query))
+            except RuntimeError:
+                # No event loop exists, create one
+                return asyncio.run(self.run_document_analysis(query))
+        except Exception as e:
+            self.logger.error(f"Error in predict method: {e}")
+            return self._error_response(query, str(e))
 
     # HELPER FUNCTIONS
     def get_cost_summary(self, results: Dict[str, Any]) -> str:
@@ -189,3 +230,46 @@ Cost Summary:
             "costs": results.get("costs", {}),
             "model": results.get("model", self.model_name)
         }
+
+def demo_document_analysis_agent():
+    """Demo function showing document analysis agent capabilities with cost tracking."""
+    print("📊 DOCUMENT ANALYSIS AGENT DEMO WITH COST TRACKING")
+    print("=" * 70)
+
+    agent = DocumentAnalysisModel()
+
+    # Show pricing info
+    demo_queries = [
+        "Show me recent line items from the last 7 days",
+        "What are our most expensive purchases over $500?",
+        "Give me statistics on temporal data",
+        "Find all products containing 'adhesive' in their description",
+        "Show me documents from the last month"
+    ]
+
+    total_cost = 0.0
+    total_tokens = 0
+
+    for i, query in enumerate(demo_queries, 1):
+        print(f"\n{i}. Query: '{query}'")
+        print("-" * 50)
+
+        try:
+            # Get results with cost tracking
+            result = agent.predict(query)
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+        print()
+
+    print("=" * 70)
+    print(f"📈 Session Summary:")
+    print(f"   Total tokens used: {total_tokens:,}")
+    print(f"   Total session cost: ${total_cost:.6f}")
+    print(f"   Average cost per query: ${total_cost/len(demo_queries):.6f}")
+    print("✅ Demo completed - All queries executed with cost tracking!")
+
+
+if __name__ == "__main__":
+
+    demo_document_analysis_agent()
