@@ -100,7 +100,7 @@ async def document_processing_flow(
         
         document_id = duplicate_result["document_id"]
         
-        docling_result = docling_processing_task(raw_file_path, document_id, user_id)
+        docling_result = docling_processing_task(raw_file_path, document_id)
         if docling_result["status"] != "completed":
             return docling_result
         

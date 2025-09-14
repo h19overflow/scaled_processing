@@ -37,14 +37,14 @@ class InvoiceWithItems(BaseModel):
 class DoclingProcessor:
     """Smart document processor with format detection and adaptive pipelines."""
     
-    def __init__(self, temp_base_dir: str = "data/temp/docling"):
+    def __init__(self, base_extraction_path: str = "data/extractions/docling"):
         """Initialize DoclingProcessor with file-based I/O.
         
         Args:
-            temp_base_dir: Base directory for temporary processing files
+            base_extraction_path: Base directory for temporary processing files
         """
         self.logger = logging.getLogger(__name__)
-        self.temp_base_dir = Path(temp_base_dir)
+        self.temp_base_dir = Path(base_extraction_path)
         self.temp_base_dir.mkdir(parents=True, exist_ok=True)
         
         if not DOCLING_AVAILABLE:
@@ -124,42 +124,42 @@ class DoclingProcessor:
             # Save as clean JSON
             with open(processing_dir/f"{document_id}_table_json", "w", encoding="utf-8") as f:
                 json.dump(tables_data, f, indent=2, ensure_ascii=False)
-
+            # FUTURE - Add table extraction to docling
             print(f"Saved {len(tables_data)} tables as clean JSON!")
             # Create an extractor instance with allowed document formats
-            extractor = DocumentExtractor(
-                allowed_formats=[InputFormat.IMAGE, InputFormat.PDF]
-            )
-            result = extractor.extract(
-                source=str(raw_path),
-                template=InvoiceWithItems,  # Import your model as shown previously
-            )
-
-            # Save the page-level extracted results as JSON (each page is a dict)
-            extraction_json_path = processing_dir / f"{document_id}_extracted.json"
-            with open(extraction_json_path, "w", encoding="utf-8") as f:
-                page_data = [page.extracted_data for page in result.pages]
-                json.dump(page_data, f, indent=2, ensure_ascii=False)
-
-            print(f"Saved structured extraction as {extraction_json_path.name}")
-
-            # --- Optionally, save line items for all pages as a single flat list (if desired) ---
-            all_line_items = []
-            for page in result.pages:
-                if 'line_items' in page.extracted_data:
-                    all_line_items.extend(page.extracted_data['line_items'])
-
-            line_items_path = processing_dir / f"{document_id}_all_line_items.json"
-            with open(line_items_path, "w", encoding="utf-8") as f:
-                json.dump(all_line_items, f, indent=2, ensure_ascii=False)
-
-            print(f"Saved all line items as {line_items_path.name}")
-            # Step 6: Get file metadata
+            # extractor = DocumentExtractor(
+            #     allowed_formats=[InputFormat.IMAGE, InputFormat.PDF]
+            # )
+            # result = extractor.extract(
+            #     source=str(raw_path),
+            #     template=InvoiceWithItems,  # Import your model as shown previously
+            # )
+            #
+            # # Save the page-level extracted results as JSON (each page is a dict)
+            # extraction_json_path = processing_dir / f"{document_id}_extracted.json"
+            # with open(extraction_json_path, "w", encoding="utf-8") as f:
+            #     page_data = [page.extracted_data for page in result.pages]
+            #     json.dump(page_data, f, indent=2, ensure_ascii=False)
+            #
+            # print(f"Saved structured extraction as {extraction_json_path.name}")
+            #
+            # # --- Optionally, save line items for all pages as a single flat list (if desired) ---
+            # all_line_items = []
+            # for page in result.pages:
+            #     if 'line_items' in page.extracted_data:
+            #         all_line_items.extend(page.extracted_data['line_items'])
+            #
+            # line_items_path = processing_dir / f"{document_id}_all_line_items.json"
+            # with open(line_items_path, "w", encoding="utf-8") as f:
+            #     json.dump(all_line_items, f, indent=2, ensure_ascii=False)
+            #
+            # print(f"Saved all line items as {line_items_path.name}")
+            # # Step 6: Get file metadata
             file_info = self._get_file_info(raw_path, conv_result.document)
-            
-            self.logger.info(f"✅ Docling extraction completed: {markdown_path}")
-            self.logger.info(f"📁 Images extracted to: {images_dir}")
-            
+            #
+            # self.logger.info(f"✅ Docling extraction completed: {markdown_path}")
+            # self.logger.info(f"📁 Images extracted to: {images_dir}")
+            #
             return {
                 "status": "completed",
                 "processed_markdown_path": str(markdown_path),

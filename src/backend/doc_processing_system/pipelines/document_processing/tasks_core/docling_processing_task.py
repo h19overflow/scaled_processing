@@ -14,7 +14,6 @@ from src.backend.doc_processing_system.pipelines.document_processing.utils.docli
 def docling_processing_task(
     raw_file_path: str,
     document_id: str,
-    user_id: str = "default"
 ) -> Dict[str, Any]:
     """Extract document content using Docling with path-based output.
     
