@@ -252,9 +252,9 @@ flowchart TB
         H --> I[Structured JSON Output]
     end
 
-    subgraph "Zero-Cost Benefits"
-        J[No LLM API Calls]
-        K[Rule-Based Extraction]
+    subgraph "Processing Benefits"
+        J[Optimized API Usage]
+        K[Intelligent Extraction]
         L[High Accuracy Parsing]
     end
 
@@ -264,11 +264,11 @@ flowchart TB
 ```
 
 **LangExtract Advantages:**
-- **Zero API Costs**: No LLM calls required for extraction
-- **High Accuracy**: Rule-based extraction with 95%+ accuracy
+- **Optimized Processing**: Intelligent extraction with cost-effective API usage
+- **High Accuracy**: Advanced extraction algorithms with 95%+ accuracy
 - **Classification Routing**: Dynamic config generation based on document type
 - **Structured Output**: Clean JSON format with tables, line items, and metadata
-- **Scalable Processing**: Handles thousands of documents without rate limits
+- **Scalable Processing**: Handles thousands of documents efficiently
 
 ## ⚡ Horizontal Scaling
 
@@ -461,7 +461,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Prefect**: Robust workflow orchestration and monitoring
 - **Chonkie**: Cutting-edge chunking framework for advanced text segmentation
-- **LangExtract**: Zero-cost structured extraction engine
+- **LangExtract**: Advanced structured extraction engine
 - **PostgreSQL**: Reliable structured data storage
 - **Weaviate**: Advanced vector database for RAG systems
 - **Docling**: Advanced document processing capabilities
