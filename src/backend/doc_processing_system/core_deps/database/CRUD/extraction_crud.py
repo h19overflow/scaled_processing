@@ -15,41 +15,69 @@ class ExtractionCRUD(BaseRepository):
     """CRUD operations for extraction result entities."""
     
     def create(self, result: ExtractionResult) -> str:
-        """Create extraction result and return document_id.
-        
+        """Create extraction result with upsert logic (INSERT or UPDATE).
+
         Args:
             result: ExtractionResult object to create
-            
+
         Returns:
             str: Document ID of the created extraction result
-            
+
         Raises:
             Exception: If extraction result creation fails
         """
         try:
             with self.connection_manager.get_session() as session:
-                result_model = StructuredDocumentModel(
-                    document_id=self._validate_uuid(result.document_id),
-                    document_name=result.document_name,
-                    extraction_class=result.extraction_class,
-                    extraction_text=result.extraction_text,
-                    attributes=result.attributes,
-                    alignment_status=result.alignment_status,
-                    extraction_index=result.extraction_index,
-                    group_index=result.group_index,
-                    description=result.description,
-                    char_start_pos=result.char_start_pos,
-                    char_end_pos=result.char_end_pos
-                )
-                
-                session.add(result_model)
-                session.flush()
-                result_id = str(result_model.document_id)
-                
-                self._log_operation("Created extraction result", result_id, 
-                                  f"document: {result.document_name}, class: {result.extraction_class}")
+                # Check if extraction already exists
+                existing = session.query(StructuredDocumentModel).filter(
+                    and_(
+                        StructuredDocumentModel.document_id == self._validate_uuid(result.document_id),
+                        StructuredDocumentModel.extraction_index == result.extraction_index
+                    )
+                ).first()
+
+                if existing:
+                    # Update existing record
+                    existing.document_name = result.document_name
+                    existing.extraction_class = result.extraction_class
+                    existing.extraction_text = result.extraction_text
+                    existing.attributes = result.attributes
+                    existing.alignment_status = result.alignment_status
+                    existing.group_index = result.group_index
+                    existing.description = result.description
+                    existing.char_start_pos = result.char_start_pos
+                    existing.char_end_pos = result.char_end_pos
+
+                    session.flush()
+                    result_id = str(existing.document_id)
+
+                    self._log_operation("Updated extraction result", result_id,
+                                      f"document: {result.document_name}, class: {result.extraction_class}")
+                else:
+                    # Create new record
+                    result_model = StructuredDocumentModel(
+                        document_id=self._validate_uuid(result.document_id),
+                        document_name=result.document_name,
+                        extraction_class=result.extraction_class,
+                        extraction_text=result.extraction_text,
+                        attributes=result.attributes,
+                        alignment_status=result.alignment_status,
+                        extraction_index=result.extraction_index,
+                        group_index=result.group_index,
+                        description=result.description,
+                        char_start_pos=result.char_start_pos,
+                        char_end_pos=result.char_end_pos
+                    )
+
+                    session.add(result_model)
+                    session.flush()
+                    result_id = str(result_model.document_id)
+
+                    self._log_operation("Created extraction result", result_id,
+                                      f"document: {result.document_name}, class: {result.extraction_class}")
+
                 return result_id
-        
+
         except Exception as e:
             self.logger.error(f"Failed to create extraction result: {e}")
             raise
