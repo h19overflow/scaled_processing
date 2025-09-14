@@ -4,20 +4,109 @@ Demo script for the modular Vanna agent system
 
 import os
 import sys
+import json
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Add the current directory to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from vanna_orchestrator import VannaOrchestrator
+try:
+    from vanna_orchestrator import VannaOrchestrator
+except ImportError:
+    from src.backend.agentic_system.agents.vanna_agent.vanna_orchestrator import VannaOrchestrator
 
 load_dotenv()
+
+
+def save_results_to_json(results, filename="demo_results.json"):
+    """Save demo results to JSON file"""
+    try:
+        # Convert pandas DataFrames to dictionaries for JSON serialization
+        json_results = {
+            "timestamp": datetime.now().isoformat(),
+            "demo_info": results.get("demo_info", {}),
+            "database_info": results.get("database_info", {}),
+            "training_summary": results.get("training_summary", {}),
+            "query_results": [],
+            "performance_metrics": results.get("performance_metrics", {}),
+            "status": results.get("status", "unknown")
+        }
+
+        # Process query results
+        if "query_results" in results:
+            query_data = results["query_results"]
+            if "results" in query_data:
+                for result in query_data["results"]:
+                    json_result = {
+                        "question": result["question"],
+                        "success": result["success"],
+                        "execution_time": result["execution_time"]
+                    }
+
+                    if result["success"]:
+                        json_result["sql"] = result["sql"]
+                        json_result["row_count"] = int(result["row_count"])  # Convert to native int
+                        # Convert DataFrame to dict if it exists
+                        if hasattr(result["result"], "to_dict"):
+                            # Convert pandas DataFrame to native Python types
+                            df_sample = result["result"].head()
+                            # Convert all numpy/pandas types to native Python types
+                            sample_records = []
+                            for record in df_sample.to_dict(orient="records"):
+                                clean_record = {}
+                                for k, v in record.items():
+                                    if hasattr(v, "item"):  # numpy scalar
+                                        clean_record[k] = v.item()
+                                    elif v is None or v != v:  # None or NaN
+                                        clean_record[k] = None
+                                    else:
+                                        clean_record[k] = str(v) if not isinstance(v, (int, float, bool, str)) else v
+                                sample_records.append(clean_record)
+                            json_result["sample_data"] = sample_records
+                        else:
+                            json_result["sample_data"] = []
+                    else:
+                        json_result["error"] = result.get("error", "Unknown error")
+
+                    json_results["query_results"].append(json_result)
+
+            # Add summary stats - convert to native Python types
+            json_results["query_summary"] = {
+                "total_questions": int(query_data.get("total_questions", 0)),
+                "successful_queries": int(query_data.get("successful_queries", 0)),
+                "failed_queries": int(query_data.get("failed_queries", 0)),
+                "total_execution_time": float(query_data.get("total_execution_time", 0)),
+                "average_time_per_question": float(query_data.get("average_time_per_question", 0))
+            }
+
+        # Save to JSON file
+        filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(json_results, f, indent=2, ensure_ascii=False)
+
+        print(f"✅ Results saved to {filepath}")
+        return filepath
+
+    except Exception as e:
+        print(f"❌ Failed to save results to JSON: {e}")
+        return None
 
 
 def main():
     """Main demo function"""
     print("🚀 Vanna Agent Modular Demo")
     print("=" * 50)
+
+    # Initialize results dictionary
+    demo_results = {
+        "demo_info": {
+            "name": "Vanna Agent Modular Demo",
+            "version": "1.0.0",
+            "description": "Demo of modular Vanna agent with FAISS vector store and PostgreSQL"
+        },
+        "status": "started"
+    }
 
     # PostgreSQL connection string for the provided Docker setup
     CONNECTION_STRING = "postgresql://postgres:postgres@localhost:5444/document_processing"
@@ -38,6 +127,7 @@ def main():
         # Get database info
         print("\n📊 Database Information:")
         db_info = orchestrator.get_database_info()
+        demo_results["database_info"] = db_info
         print(f"   - Database type: {db_info['type']}")
         print(f"   - Number of tables: {len(db_info['tables'])}")
         print(f"   - Tables: {', '.join(db_info['tables'][:5])}{'...' if len(db_info['tables']) > 5 else ''}")
@@ -46,6 +136,7 @@ def main():
         if db_info['tables']:
             print("\n🎯 Training Vanna on database schema...")
             training_summary = orchestrator.train_on_schema()
+            demo_results["training_summary"] = training_summary
             print("✅ Training completed!")
             print(f"   - Training items: {training_summary.get('total_training_items', 'N/A')}")
             print(f"   - Tables analyzed: {training_summary.get('tables_analyzed', 'N/A')}")
@@ -61,6 +152,7 @@ def main():
 
             # Process demo questions
             results = orchestrator.ask_multiple_questions(demo_questions)
+            demo_results["query_results"] = results
 
             print(f"\n📈 Query Results Summary:")
             print(f"   - Total questions: {results['total_questions']}")
@@ -156,6 +248,7 @@ def main():
         # Performance metrics
         print("\n📈 Performance Metrics:")
         metrics = orchestrator.get_performance_metrics()
+        demo_results["performance_metrics"] = metrics
 
         if 'database_metrics' in metrics and metrics['database_metrics'].get('total_queries', 0) > 0:
             db_metrics = metrics['database_metrics']
@@ -170,10 +263,20 @@ def main():
                 print(f"   Query Interface:")
                 print(f"     - Cache hit rate: {qi_metrics['cache_hit_rate']:.1f}%")
 
+        demo_results["status"] = "completed"
         print("\n✅ Demo completed successfully!")
+
+        # Save results to JSON
+        save_results_to_json(demo_results)
 
     except Exception as e:
         print(f"\n❌ Demo failed: {e}")
+        demo_results["status"] = "failed"
+        demo_results["error"] = str(e)
+
+        # Save error results to JSON
+        save_results_to_json(demo_results, "demo_results_error.json")
+
         import traceback
         traceback.print_exc()
 

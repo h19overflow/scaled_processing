@@ -3,13 +3,16 @@ Main orchestrator for the Vanna agent system
 """
 
 import logging
+import json
+import os
+from datetime import datetime
 from typing import Dict, Optional
 from dotenv import load_dotenv
 
-from advanced_vanna import AdvancedVanna
-from database_manager import DatabaseManager
-from schema_analyzer import SchemaAnalyzer
-from query_interface import OptimizedQueryInterface
+from src.backend.agentic_system.agents.vanna_agent.advanced_vanna import AdvancedVanna
+from src.backend.agentic_system.agents.vanna_agent.database_manager import DatabaseManager
+from src.backend.agentic_system.agents.vanna_agent.schema_analyzer import SchemaAnalyzer
+from src.backend.agentic_system.agents.vanna_agent.query_interface import OptimizedQueryInterface
 
 load_dotenv()
 
@@ -95,6 +98,74 @@ class VannaOrchestrator:
                 'error': str(e),
                 'training_data_available': False
             }
+
+    def save_session_results(self, results: Dict, filename: str = None) -> str:
+        """Save session results to JSON file"""
+        if filename is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"vanna_session_{timestamp}.json"
+
+        try:
+            # Create results directory if it doesn't exist
+            results_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
+            os.makedirs(results_dir, exist_ok=True)
+
+            filepath = os.path.join(results_dir, filename)
+
+            # Prepare results with metadata
+            output_results = {
+                "timestamp": datetime.now().isoformat(),
+                "session_metadata": {
+                    "orchestrator": "VannaOrchestrator",
+                    "vector_store": "FAISS",
+                    "llm_model": "Gemini",
+                    "database_type": self._db_manager.get_connection_details().get('type', 'unknown')
+                },
+                "results": results
+            }
+
+            # Save to JSON file
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(output_results, f, indent=2, ensure_ascii=False, default=str)
+
+            self.logger.info(f"Session results saved to {filepath}")
+            return filepath
+
+        except Exception as e:
+            self.logger.error(f"Failed to save session results: {e}")
+            return None
+
+    def export_training_data(self, filename: str = None) -> str:
+        """Export training data to JSON file"""
+        if filename is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"training_data_{timestamp}.json"
+
+        try:
+            training_data = self._vn.get_training_data()
+
+            # Create results directory if it doesn't exist
+            results_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
+            os.makedirs(results_dir, exist_ok=True)
+
+            filepath = os.path.join(results_dir, filename)
+
+            training_export = {
+                "timestamp": datetime.now().isoformat(),
+                "training_data_count": len(training_data),
+                "database_info": self.get_database_info(),
+                "training_data": training_data
+            }
+
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(training_export, f, indent=2, ensure_ascii=False, default=str)
+
+            self.logger.info(f"Training data exported to {filepath}")
+            return filepath
+
+        except Exception as e:
+            self.logger.error(f"Failed to export training data: {e}")
+            return None
 
     # HELPER FUNCTIONS
 

@@ -36,18 +36,13 @@ class SchemaAnalyzer:
         schema_queries = {
             'postgresql': """
                 SELECT
-                    table_schema,
                     table_name,
                     column_name,
                     data_type,
-                    is_nullable,
-                    column_default,
-                    character_maximum_length,
-                    numeric_precision,
-                    numeric_scale
+                    is_nullable
                 FROM information_schema.columns
                 WHERE table_schema NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
-                ORDER BY table_schema, table_name, ordinal_position
+                ORDER BY table_name, ordinal_position
             """,
             'mysql': """
                 SELECT
@@ -136,17 +131,37 @@ class SchemaAnalyzer:
         self.logger.info("Extracting database schema...")
         schema_df = self.auto_extract_schema()
 
-        # Generate intelligent training plan
-        training_plan = self.vn.get_training_plan_generic(schema_df)
-        self.logger.info(f"Generated training plan with {len(training_plan)} items")
+        # Generate manual training data from schema
+        self.logger.info(f"Schema dataframe columns: {list(schema_df.columns)}")
+        self.logger.info(f"Schema dataframe shape: {schema_df.shape}")
 
-        # Execute training plan in batches for better performance
-        batch_size = 10
-        for i in range(0, len(training_plan), batch_size):
-            batch = training_plan[i:i + batch_size]
-            self.logger.info(f"Training batch {i // batch_size + 1}/{(len(training_plan) + batch_size - 1) // batch_size}")
-            self.vn.train(plan=batch)
-            time.sleep(0.5)  # Rate limiting
+        # Create manual training data from schema
+        training_count = 0
+        for table_name in schema_df['table_name'].unique():
+            table_columns = schema_df[schema_df['table_name'] == table_name]
+
+            # Create DDL statement for the table
+            ddl = f"CREATE TABLE {table_name} ("
+            column_definitions = []
+
+            for _, row in table_columns.iterrows():
+                col_def = f"{row['column_name']} {row['data_type']}"
+                if row['is_nullable'] == 'NO':
+                    col_def += " NOT NULL"
+                column_definitions.append(col_def)
+
+            ddl += ", ".join(column_definitions) + ");"
+
+            # Train on DDL
+            self.vn.train(ddl=ddl)
+            training_count += 1
+
+            # Add documentation about the table
+            doc = f"Table {table_name} contains columns: {', '.join(table_columns['column_name'].tolist())}"
+            self.vn.train(documentation=doc)
+            training_count += 1
+
+        self.logger.info(f"Created {training_count} manual training items from schema")
 
         # Step 2: Extract and train on relationships
         self.logger.info("Analyzing table relationships...")
