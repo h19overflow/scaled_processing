@@ -1,0 +1,98 @@
+[
+  {
+    "table_id": 0,
+    "data": [
+      {
+        "Blok (kWh)": "200",
+        "Penggunaan (kWh)": "69",
+        "Kadar (RM)": "0.43500",
+        "Amaun (RM)": "30.02"
+      },
+      {
+        "Blok (kWh)": "Jumlah",
+        "Penggunaan (kWh)": "69",
+        "Kadar (RM)": "",
+        "Amaun (RM)": "30.02"
+      }
+    ],
+    "columns": [
+      "Blok (kWh)",
+      "Penggunaan (kWh)",
+      "Kadar (RM)",
+      "Amaun (RM)"
+    ],
+    "shape": [
+      2,
+      4
+    ]
+  },
+  {
+    "table_id": 1,
+    "data": [
+      {
+        "Keterangan": "RM",
+        "Tanpa ST": "30.02",
+        "Dengan ST": "0.00",
+        "Jumlah": "30.02"
+      },
+      {
+        "Keterangan": "RM",
+        "Tanpa ST": "2.55",
+        "Dengan ST": "0.00",
+        "Jumlah": "2.55"
+      },
+      {
+        "Keterangan": "RM",
+        "Tanpa ST": "32.57",
+        "Dengan ST": "0.00",
+        "Jumlah": "32.57"
+      },
+      {
+        "Keterangan": "RM",
+        "Tanpa ST": "",
+        "Dengan ST": "",
+        "Jumlah": "0.48"
+      },
+      {
+        "Keterangan": "",
+        "Tanpa ST": "RM",
+        "Dengan ST": "RM",
+        "Jumlah": "33.05"
+      }
+    ],
+    "columns": [
+      "Keterangan",
+      "Keterangan",
+      "Tanpa ST",
+      "Dengan ST",
+      "Jumlah"
+    ],
+    "shape": [
+      5,
+      5
+    ]
+  },
+  {
+    "table_id": 2,
+    "data": [
+      {
+        "No. Meter": "M 7162013149",
+        "Bacaan Meter.Dahulu": "2,849",
+        "Bacaan Meter.Semasa": "2,918",
+        "Penggunaan.": "69",
+        "Unit": "kWh"
+      }
+    ],
+    "columns": [
+      "No. Meter",
+      "Bacaan Meter.Dahulu",
+      "Bacaan Meter.Semasa",
+      "Penggunaan.",
+      "Unit"
+    ],
+    "shape": [
+      1,
+      5
+    ]
+  }
+]
