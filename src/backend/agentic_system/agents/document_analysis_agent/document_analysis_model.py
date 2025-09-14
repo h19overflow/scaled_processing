@@ -28,10 +28,15 @@ class DocumentAnalysisModel(Model):
 
     model_name: str = "gemini-2.0-flash"
     input_token_cost_per_million: float = 0.15
-    output_token_cost_per_million: float = 0.60
+    output_token_cost_per_million: float = 0.40
 
-    def _initialize_agent(self):
-        """Initialize the pydantic-ai agent."""
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Initialize agent once as class field for performance
+        self._cached_agent = self._create_agent()
+
+    def _create_agent(self):
+        """Create the pydantic-ai agent once during initialization."""
         agent = Agent(
             self.model_name,
             deps_type=DocumentAnalysisDeps,
@@ -74,18 +79,15 @@ class DocumentAnalysisModel(Model):
             Dict with tool results, usage stats, and cost information
         """
         try:
-            # Initialize agent for this request
-            agent = self._initialize_agent()
-
-            # Prepare input
+            # Use cached agent (initialized once) for performance
             deps = DocumentAnalysisDeps(query=query)
 
             # Calculate input tokens (query + prompt)
             full_prompt = DOCUMENT_ANALYSIS_PROMPT.format(query=query)
             input_tokens = self.simple_token_count(query + full_prompt)
 
-            # Execute the agent
-            result = await agent.run(query, deps=deps)
+            # Execute the cached agent
+            result = await self._cached_agent.run(query, deps=deps)
 
             # Calculate output tokens from tool results
             output_data = result.data if hasattr(result, 'data') else {}
