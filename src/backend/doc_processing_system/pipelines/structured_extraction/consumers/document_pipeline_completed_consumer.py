@@ -60,18 +60,29 @@ class StructuringConsumer(ConsumerHandler):
             num_consumers=6,
         )
         self.logger = logging.getLogger(__name__)
+        self.logger.info("🚀 StructuringConsumer initialized - waiting for messages on topic: document_pipeline_completed")
 
     def handle_message(self, topic: str, key: str, value: str) -> None:
         """Handle incoming document pipeline completed message."""
         try:
+            self.logger.info(f"🔍 Raw message received (full): {value}")
             message = json.loads(value)
-            
+
             # Extract data from the message
             data = message.get("data", {})
             event_type = message.get("event_type")
-            
+
+            self.logger.info(f"📋 Message structure:")
+            self.logger.info(f"  - Event type: {event_type}")
+            self.logger.info(f"  - Data keys: {list(data.keys())}")
+            self.logger.info(f"  - Filename: {data.get('filename', 'MISSING')}")
+            self.logger.info(f"  - Has processed_content: {'processed_content' in data}")
+            if 'processed_content' in data:
+                content_len = len(data.get('processed_content', ''))
+                self.logger.info(f"  - Content length: {content_len}")
+
             self.logger.info(f"Received {event_type} event for document: {data.get('filename', 'unknown')}")
-            
+
             # Validate processed content exists
             if not data.get('processed_content'):
                 self.logger.error(f"SKIPPING - No processed content in message for {data.get('filename', 'unknown')}")
@@ -132,7 +143,6 @@ class StructuringConsumer(ConsumerHandler):
 
 def main():
     """Main function to run the structured extraction consumer."""
-    from confluent_kafka.admin import AdminClient
     document_consumer = StructuringConsumer()
     document_consumer.start()
 

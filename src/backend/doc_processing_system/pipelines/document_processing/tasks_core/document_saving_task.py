@@ -36,7 +36,20 @@ def document_saving_task(
     """
     logger = get_run_logger()
     logger.info(f"💾 Saving processed document: {document_id}")
-    
+
+    # DEBUG: Confirm function is being called
+    import os
+    debug_dir = "debugging_document"
+    os.makedirs(debug_dir, exist_ok=True)
+
+    entry_debug_file = os.path.join(debug_dir, f"ENTRY_{document_id}_function_called.txt")
+    with open(entry_debug_file, 'w', encoding='utf-8') as f:
+        f.write(f"document_saving_task CALLED at {datetime.now().isoformat()}\n")
+        f.write(f"Document ID: {document_id}\n")
+        f.write(f"Vision enhanced path: {vision_enhanced_markdown_path}\n")
+        f.write(f"Raw file path: {raw_file_path}\n")
+    logger.info(f"🐛 DEBUG ENTRY: Created entry debug file {entry_debug_file}")
+
     try:
         # Read vision-enhanced content from file
         enhanced_markdown_path = Path(vision_enhanced_markdown_path)
@@ -80,13 +93,44 @@ def document_saving_task(
                 logger.error(f"Failed to read saved file: {e}")
                 final_processed_content = processed_content  # Fallback to original
         
+        # DEBUG: Save final_processed_content to debugging folder
+        import os
+        debug_dir = "debugging_document"
+        os.makedirs(debug_dir, exist_ok=True)
+
+        debug_file = os.path.join(debug_dir, f"{document_id}_final_processed_content.txt")
+        try:
+            with open(debug_file, 'w', encoding='utf-8') as f:
+                f.write(f"=== DEBUG INFO ===\n")
+                f.write(f"Document ID: {document_id}\n")
+                f.write(f"Original file: {raw_file_path}\n")
+                f.write(f"Vision enhanced file: {vision_enhanced_markdown_path}\n")
+                f.write(f"Saved file path: {save_result.get('processed_file_path', 'N/A')}\n")
+                f.write(f"Content length: {len(final_processed_content)}\n")
+                f.write(f"Content is empty: {len(final_processed_content) == 0}\n")
+                f.write(f"\n=== ACTUAL CONTENT ===\n")
+                f.write(final_processed_content)
+            logger.info(f"🐛 DEBUG: Saved final_processed_content to {debug_file}")
+        except Exception as e:
+            logger.error(f"Failed to save debug file: {e}")
+
         # Now prepare Kafka metadata with the ACTUAL saved content
         kafka_metadata = metadata.copy()
         kafka_metadata["processed_content"] = final_processed_content
-        
+
+        # DEBUG: Log what we're sending
+        logger.info(f"🚀 Preparing to send Kafka message:")
+        logger.info(f"  - Metadata keys: {list(kafka_metadata.keys())}")
+        logger.info(f"  - Filename: {kafka_metadata.get('filename', 'MISSING')}")
+        logger.info(f"  - Content length: {len(final_processed_content)}")
+        logger.info(f"  - Content is empty: {len(final_processed_content) == 0}")
+        logger.info(f"  - Key (file name): {file_path_obj.name}")
+
         # Create a kafka message and send it using the ProducerHandler
         try:
             message = create_message(event_type="document_pipeline_completed", data=kafka_metadata, source="document_processing")
+            logger.info(f"📨 Created message (first 300 chars): {message[:300]}...")
+
             kafka_producer = ProducerHandler("localhost:9092")
 
             result = kafka_producer.produce_message(topic="document_pipeline_completed",key= file_path_obj.name,value=message)

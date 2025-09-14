@@ -36,16 +36,17 @@ def get_markdown_path_for_processing(docling_result: Dict[str, Any], vision_resu
         return docling_result["processed_markdown_path"]
 
 
-def send_completion_message(document_id: str, raw_file_path: str, user_id: str, processing_steps: Dict[str, Any]) -> None:
+def send_completion_message(document_id: str, raw_file_path: str, user_id: str, processing_steps: Dict[str, Any], processed_content: str = "") -> None:
     """Send document_pipeline_completed message."""
     try:
         # Create metadata for completion message
         file_path_obj = Path(raw_file_path)
         metadata = {
+            "filename": file_path_obj.name,  # Match the field name from document_saving_task
             "document_id": document_id,
             "user_id": user_id,
-            "file_name": file_path_obj.name,
-            "file_path": raw_file_path,
+            "raw_file_path": raw_file_path,
+            "processed_content": processed_content,  # Add the missing processed content
             "processing_steps": processing_steps,
             "completed_at": str(datetime.now())
         }
@@ -119,6 +120,12 @@ async def document_processing_flow(
 
         # Early return if chunking is disabled
         if not enable_chunking:
+            # Get the processed content from the docling result
+            markdown_path = get_markdown_path_for_processing(docling_result, vision_result, enable_vision_enhancement)
+            content_path = Path(markdown_path)
+            with open(content_path, 'r', encoding='utf-8') as f:
+                processed_content = f.read()
+
             processing_steps = {
                 "duplicate_detection": duplicate_result.get("status"),
                 "docling_extraction": docling_result.get("status"),
@@ -127,9 +134,9 @@ async def document_processing_flow(
                 "document_saving": "disabled",
                 "weaviate_storage": "disabled"
             }
-            
-            # Send completion message
-            send_completion_message(document_id, raw_file_path, user_id, processing_steps)
+
+            # Send completion message with processed content
+            send_completion_message(document_id, raw_file_path, user_id, processing_steps, processed_content)
             
             return {
                 "status": "completed",

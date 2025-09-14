@@ -8,11 +8,31 @@ import json
 from pathlib import Path
 from typing import Dict, Any
 from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption, PowerpointFormatOption
-from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions, PaginatedPipelineOptions
 from docling_core.types.doc import ImageRefMode
+from docling.datamodel.base_models import InputFormat
+from docling.document_extractor import  DocumentExtractor
 DOCLING_AVAILABLE = True
+from typing import List
+from pydantic import BaseModel, Field
 
+class LineItem(BaseModel):
+    description: str = Field(examples=["Widget"])
+    sku: str = Field(examples=["WGT-001"])
+    quantity: int = Field(examples=[2])
+    unit_price: float = Field(examples=[19.99])
+    subtotal: float = Field(examples=[39.98])
+    tax: float = Field(examples=[2.40])
+    notes: str = Field(default="", examples=["Urgent delivery"])
+
+
+class InvoiceWithItems(BaseModel):
+    invoice_number: str = Field(examples=["A123"])
+    date: str = Field(examples=["2025-09-14"])
+    supplier: str = Field(examples=["Acme Corp"])
+    total: float = Field(examples=[123.45])
+    vat: float = Field(examples=[3.45])
+    line_items: List[LineItem] = Field(default_factory=list)
 
 class DoclingProcessor:
     """Smart document processor with format detection and adaptive pipelines."""
@@ -86,7 +106,7 @@ class DoclingProcessor:
                 image_mode=ImageRefMode.EMBEDDED
             )
 
-            # Step 4: Export JSON with embedded images
+            # Step 4: Export Tables JSON with embedded images
             tables_data = []
             for table_ix, table in enumerate(conv_result.document.tables):
                 # Convert to DataFrame to strip metadata
@@ -106,10 +126,34 @@ class DoclingProcessor:
                 json.dump(tables_data, f, indent=2, ensure_ascii=False)
 
             print(f"Saved {len(tables_data)} tables as clean JSON!")
+            # Create an extractor instance with allowed document formats
+            extractor = DocumentExtractor(
+                allowed_formats=[InputFormat.IMAGE, InputFormat.PDF]
+            )
+            result = extractor.extract(
+                source=str(raw_path),
+                template=InvoiceWithItems,  # Import your model as shown previously
+            )
 
-            # Step 5: Export images to directory
-            self._extract_images_to_directory(conv_result.document, images_dir)
-            
+            # Save the page-level extracted results as JSON (each page is a dict)
+            extraction_json_path = processing_dir / f"{document_id}_extracted.json"
+            with open(extraction_json_path, "w", encoding="utf-8") as f:
+                page_data = [page.extracted_data for page in result.pages]
+                json.dump(page_data, f, indent=2, ensure_ascii=False)
+
+            print(f"Saved structured extraction as {extraction_json_path.name}")
+
+            # --- Optionally, save line items for all pages as a single flat list (if desired) ---
+            all_line_items = []
+            for page in result.pages:
+                if 'line_items' in page.extracted_data:
+                    all_line_items.extend(page.extracted_data['line_items'])
+
+            line_items_path = processing_dir / f"{document_id}_all_line_items.json"
+            with open(line_items_path, "w", encoding="utf-8") as f:
+                json.dump(all_line_items, f, indent=2, ensure_ascii=False)
+
+            print(f"Saved all line items as {line_items_path.name}")
             # Step 6: Get file metadata
             file_info = self._get_file_info(raw_path, conv_result.document)
             
