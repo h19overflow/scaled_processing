@@ -184,3 +184,7 @@ class VannaOrchestrator:
     def _get_query_interface(self):
         """Get the query interface instance"""
         return self._query_interface
+
+    @property
+    def vn(self):
+        return self._vn

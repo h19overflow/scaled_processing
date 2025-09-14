@@ -4,7 +4,6 @@ Schema analyzer for automatically extracting and training on database schemas
 
 import pandas as pd
 from typing import Dict, List
-import time
 import logging
 from dotenv import load_dotenv
 
@@ -29,7 +28,7 @@ class SchemaAnalyzer:
             self.logger.setLevel(logging.INFO)
 
     def auto_extract_schema(self) -> pd.DataFrame:
-        """Intelligently extract schema based on database type"""
+        """Intelligently extract schema based on a database type"""
         db_type = self.db_details['type']
 
         # Database-specific schema queries
@@ -43,39 +42,7 @@ class SchemaAnalyzer:
                 FROM information_schema.columns
                 WHERE table_schema NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
                 ORDER BY table_name, ordinal_position
-            """,
-            'mysql': """
-                SELECT
-                    table_schema,
-                    table_name,
-                    column_name,
-                    data_type,
-                    is_nullable,
-                    column_default,
-                    character_maximum_length,
-                    numeric_precision,
-                    numeric_scale,
-                    column_key,
-                    extra
-                FROM information_schema.columns
-                WHERE table_schema NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')
-                ORDER BY table_schema, table_name, ordinal_position
-            """,
-            'sqlite': """
-                SELECT
-                    '' as table_schema,
-                    m.name as table_name,
-                    p.name as column_name,
-                    p.type as data_type,
-                    CASE WHEN p.[notnull] = 0 THEN 'YES' ELSE 'NO' END as is_nullable,
-                    p.dflt_value as column_default,
-                    NULL as character_maximum_length,
-                    NULL as numeric_precision,
-                    NULL as numeric_scale
-                FROM sqlite_master m
-                LEFT OUTER JOIN pragma_table_info(m.name) p ON m.name != p.name
-                WHERE m.type = 'table' AND m.name NOT LIKE 'sqlite_%'
-                ORDER BY m.name, p.cid
+            
             """
         }
 

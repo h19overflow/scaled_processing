@@ -20,6 +20,7 @@ class AdvancedVanna(FAISS, GoogleGeminiChat):
     def __init__(self, config: Dict = None):
         """Initialize AdvancedVanna with optimized configurations"""
         # FAISS configuration - use absolute path
+        self.config = config
         import os
         faiss_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'vanna_faiss_db')
         os.makedirs(faiss_path, exist_ok=True)
