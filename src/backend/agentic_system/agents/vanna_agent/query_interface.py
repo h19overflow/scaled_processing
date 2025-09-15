@@ -124,3 +124,10 @@ class OptimizedQueryInterface:
             'cached_queries': len(self.vn.query_cache),
             'cache_keys': list(self.vn.query_cache.keys())
         }
+
+
+if __name__ == "__main__":
+    from src.backend.agentic_system.agents.vanna_agent.advanced_vanna import AdvancedVanna
+    vn = AdvancedVanna()
+    qi = OptimizedQueryInterface(vn)
+    qi.smart_ask("What are the top 5 most expensive products?")

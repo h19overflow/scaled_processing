@@ -74,3 +74,7 @@ class AdvancedVanna(FAISS, GoogleGeminiChat):
     def run_sql(self, sql: str):
         """Run SQL query - will be overridden by database manager"""
         raise NotImplementedError("SQL execution should be handled by DatabaseManager")
+
+if __name__ == "__main__":
+    vanna = AdvancedVanna()
+    vanna.get_training_data()

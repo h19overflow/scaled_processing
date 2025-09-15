@@ -1,6 +1,7 @@
 """
 Schema analyzer for automatically extracting and training on database schemas
 """
+import os
 
 import pandas as pd
 from typing import Dict, List
@@ -153,11 +154,27 @@ class SchemaAnalyzer:
 
         # Step 4: Add common business patterns
         business_patterns = [
-            "Active records typically have status = 'active' or deleted_at IS NULL",
-            "Timestamps like created_at, updated_at track record lifecycle",
-            "Foreign key columns typically end with '_id'",
-            "Aggregations often use SUM, COUNT, AVG for reporting",
-            "Date ranges commonly use BETWEEN for filtering"
+            "This applies to the structured_documents table.",
+            "Each record represents a single line item extracted from an invoice or similar document.",
+            "The table contains a JSON column named 'attributes' that stores the following fields for each line item:",
+            "  - description: String. Text description of the product or line item (e.g., '3M 203 GP Masking Tape 24mm x 55m 36 rolls/case').",
+            "  - quantity: String or integer. Number of units for this line item. May be missing; if missing, assume quantity is 1.",
+            "  - unit_price: String or numeric. Price of a single unit for this item.",
+            "  - total: String or numeric. Total price for this line item (ideally quantity * unit_price).",
+            "  - currency: String currency code for the line (e.g., 'USD').",
+            "The attributes JSON column of each row always follows this structure. JSON keys are always lowercase.",
+            "Active records typically have status = 'active' or deleted_at IS NULL.",
+            "Timestamps like created_at, updated_at track record lifecycle.",
+            "Foreign key columns typically end with '_id'.",
+            "Aggregations often use SUM, COUNT, AVG for reporting.",
+            "Date ranges commonly use BETWEEN for filtering.",
+            "filename stores the source file name (e.g., 'batch2-0372.jpg') for traceability.",
+            "Each line item can be uniquely identified by (filename, line_item_id).",
+            "If quantity is missing in attributes, assume quantity is 1 when calculating total.",
+            "total should equal quantity × unit_price; inconsistencies should be flagged as errors.",
+            "Item descriptions may contain package or quantity hints (e.g., '36 rolls/case') but should be treated as free text.",
+            "Queries may require filtering by JSON attributes (e.g., description, quantity, total) using JSON query syntax.",
+            "When querying, always extract relevant info from the attributes JSON column."
         ]
 
         for pattern in business_patterns:
@@ -176,3 +193,11 @@ class SchemaAnalyzer:
 
         self.logger.info(f"Training Summary: {summary}")
         return summary
+
+if __name__=="__main__":
+    from src.backend.agentic_system.agents.vanna_agent.advanced_vanna import AdvancedVanna
+    from src.backend.agentic_system.agents.vanna_agent.database_manager import DatabaseManager
+    vn = AdvancedVanna()
+    dbm = DatabaseManager(connection_string=os.getenv("POSTGRES_DSN"))
+    sa = SchemaAnalyzer(dbm, vn)
+    sa.run_advanced_training()

@@ -1,7 +1,7 @@
 """
 Database manager for handling database connections and SQL execution
 """
-
+import os
 import time
 import logging
 import pandas as pd
@@ -96,3 +96,11 @@ class DatabaseManager:
             'fastest_query': df_metrics['execution_time'].min(),
             'slowest_query': df_metrics['execution_time'].max()
         }
+
+
+if __name__ == "__main__":
+    dbm = DatabaseManager(connection_string=os.getenv("POSTGRES_DSN"))
+    print(
+        dbm.get_connection_details()
+    )
+    print(dbm.inspector.get_table_names())
