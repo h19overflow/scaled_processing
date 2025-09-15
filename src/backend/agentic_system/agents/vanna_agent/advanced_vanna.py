@@ -7,6 +7,7 @@ import time
 import logging
 from typing import Dict
 from dotenv import load_dotenv
+from pandas.core.interchange.dataframe_protocol import DataFrame
 
 from vanna.faiss import FAISS
 from vanna.google import GoogleGeminiChat
@@ -76,5 +77,7 @@ class AdvancedVanna(FAISS, GoogleGeminiChat):
         raise NotImplementedError("SQL execution should be handled by DatabaseManager")
 
 if __name__ == "__main__":
+    from pandas import DataFrame
     vanna = AdvancedVanna()
-    vanna.get_training_data()
+    training_data = DataFrame(vanna.get_training_data())
+    training_data.to_csv("training_data.csv")
