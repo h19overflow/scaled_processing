@@ -15,15 +15,18 @@ class FileDetectionHandler(FileSystemEventHandler):
     def on_created(self, event):
         if event.is_directory:
             return
-            
-        file_path = event.src_path
-        self.logger.info(f"File detected: {file_path}")
-        
+
+        # Normalize path to use consistent separators
+        raw_path = event.src_path
+        file_path = str(Path(raw_path).resolve())  # This converts to OS-appropriate format
+        self.logger.info(f"File detected (raw): {raw_path}")
+        self.logger.info(f"File detected (normalized): {file_path}")
+
         try:
             # Get file metadata
             stat = os.stat(file_path)
             metadata = {
-                "file_path": file_path,
+                "file_path": file_path,  # Use normalized path
                 "file_name": os.path.basename(file_path),
                 "file_size": stat.st_size,
                 "file_extension": Path(file_path).suffix.lower(),

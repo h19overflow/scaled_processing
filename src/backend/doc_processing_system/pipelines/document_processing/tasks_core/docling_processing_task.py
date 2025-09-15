@@ -4,11 +4,16 @@ Extracts rich Markdown and images using DoclingProcessor with strict path-based 
 """
 
 from typing import Dict, Any
+import sys
 
 from prefect import task, get_run_logger
 
-from src.backend.doc_processing_system.pipelines.document_processing.utils.docling_processor import DoclingProcessor
+# Clear any cached DoclingProcessor modules to ensure we get the right one
+modules_to_clear = [k for k in sys.modules.keys() if 'docling_processor' in k.lower()]
+for module in modules_to_clear:
+    del sys.modules[module]
 
+from src.backend.doc_processing_system.pipelines.document_processing.utils.docling_processor import DoclingProcessor
 
 @task(name="docling-processing", retries=2)
 def docling_processing_task(
@@ -36,13 +41,28 @@ def docling_processing_task(
     
     try:
         # Initialize DoclingProcessor
+        logger.info(f"🔥 BEFORE DoclingProcessor() init")
         processor = DoclingProcessor()
-        
+        logger.info(f"🔥 AFTER DoclingProcessor() init SUCCESS")
+
+        logger.info(f"📄 Processing document: {document_id}")
+        logger.info(f"📄 Raw file path received: {raw_file_path}")
+
+        # Use Path to handle normalization properly - avoids escape sequence issues
+        from pathlib import Path
+        path_obj = Path(raw_file_path)
+        final_path = str(path_obj.resolve())
+        logger.info(f"📄 Original file path: {raw_file_path}")
+        logger.info(f"📄 Normalized file path: {final_path}")
+        logger.info(f"📄 Path exists: {path_obj.exists()}")
+
         # Extract document with Docling
+        logger.info(f"🔥 BEFORE processor.extract_document() call")
         extraction_result = processor.extract_document(
-            raw_file_path=raw_file_path,
+            raw_file_path=final_path,
             document_id=document_id,
         )
+        logger.info(f"🔥 AFTER processor.extract_document() call - Status: {extraction_result.get('status')}")
         
         if extraction_result["status"] == "completed":
             logger.info(f"✅ Docling processing completed for: {document_id}")

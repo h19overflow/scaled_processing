@@ -8,8 +8,6 @@ from .document_crud import DocumentCRUD
 from .chunk_crud import ChunkCRUD
 from .extraction_crud import ExtractionCRUD
 from .query_crud import QueryCRUD
-from .temporal_crud import TemporalCRUD
-from .line_item_crud import LineItemCRUD
 
 __all__ = [
     'BaseRepository',
@@ -17,6 +15,4 @@ __all__ = [
     'ChunkCRUD',
     'ExtractionCRUD',
     'QueryCRUD',
-    'TemporalCRUD',
-    'LineItemCRUD'
 ]

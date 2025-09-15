@@ -100,26 +100,31 @@ async def document_processing_flow(
         
         document_id = duplicate_result["document_id"]
         
+        logger.info(f"📄 STEP 2: Starting Docling processing for {document_id}")
         docling_result = docling_processing_task(raw_file_path, document_id)
+        logger.info(f"✅ STEP 2 COMPLETE: Docling processing - Status: {docling_result.get('status')}")
         if docling_result["status"] != "completed":
             return docling_result
         
         # Vision enhancement (optional)
         vision_result = None
         if enable_vision_enhancement:
-            logger.info("🔄 Vision enhancement enabled - processing images...")
+            logger.info(f"👁️ STEP 3: Starting vision enhancement for {document_id}")
             vision_result = await markdown_vision_task(
                 processed_markdown_path=docling_result["processed_markdown_path"],
                 document_id=document_id,
                 file_info=docling_result["file_info"]
             )
+            logger.info(f"✅ STEP 3 COMPLETE: Vision enhancement - Status: {vision_result.get('status') if vision_result else 'None'}")
             if vision_result["status"] != "completed":
                 return vision_result
         else:
-            logger.info("⏭️ Vision enhancement disabled - skipping image processing")
+            logger.info(f"⏭️ STEP 3 SKIPPED: Vision enhancement disabled")
 
         # Early return if chunking is disabled
+        logger.info(f"🔄 STEP 4: Checking chunking enabled: {enable_chunking}")
         if not enable_chunking:
+            logger.info(f"⏭️ STEP 4 SKIPPED: Chunking disabled - preparing early return")
             # Get the processed content from the docling result
             markdown_path = get_markdown_path_for_processing(docling_result, vision_result, enable_vision_enhancement)
             content_path = Path(markdown_path)

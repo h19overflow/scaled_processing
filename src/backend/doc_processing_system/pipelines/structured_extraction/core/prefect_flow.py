@@ -6,7 +6,6 @@ import asyncio
 from ..config.settings import Settings
 from ..models.state import PipelineState
 from ..tasks_core.chunking import chunk_document
-from ..tasks_core.classification import classify_document
 from ..tasks_core.config_gen import generate_config
 from ..tasks_core.database_storage import store_in_database
 
@@ -43,11 +42,14 @@ def structured_extraction_flow(initial_state: PipelineState):
     # Create new PipelineState object for classification
     temp_state = PipelineState(**state_dict)
     
-    # Run classification (async task)
-    classification_result = asyncio.run(classify_document(temp_state))
-    
+    # Run classification (async task)-> automated for invoices for now
+    updated_state = {
+        "classification": 'invoice',
+        "classification_confidence": 0.95,
+        "status": "classified"
+    }
     # Update state with classification results  
-    state_dict.update(classification_result)
+    state_dict.update(updated_state)
     logger.info(f"After classification: status={state_dict.get('status')}, classification={state_dict.get('classification')}")
     
     # Check if classification was successful

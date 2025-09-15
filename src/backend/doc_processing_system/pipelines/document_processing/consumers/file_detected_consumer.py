@@ -29,29 +29,36 @@ class FileDetectedConsumer(ConsumerHandler):
     
     def handle_message(self, topic: str, key: str, value: str) -> None:
         """Handle Kafka message and trigger document processing."""
+        self.logger.info(f"🔥 RECEIVED MESSAGE: topic={topic}, key={key}")
         message = json.loads(value)
         metadata = message["data"]
         file_path = metadata["file_path"]
 
-        self.logger.info(f"Processing: {metadata['file_name']}")
+        self.logger.info(f"🔥 PROCESSING: {metadata['file_name']} at path: {file_path}")
         
         # Create new event loop for async processing
+        self.logger.info(f"🔥 CREATING EVENT LOOP for {metadata['file_name']}")
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        
+
         try:
+            self.logger.info(f"🔥 STARTING FLOW EXECUTION for {metadata['file_name']}")
             result = loop.run_until_complete(
                 process_document_with_flow(
                     raw_file_path=file_path,
                     user_id=self.user_id,
                     enable_weaviate_storage=False,
                     weaviate_collection="rag_documents",
-                    enable_vision_enhancement=self.enable_vision_enhancement,
-                    enable_chunking=self.enable_chunking
+                    enable_vision_enhancement=False,
+                    enable_chunking=False
                 )
             )
-            self.logger.info(f"Completed processing: {metadata['file_name']} - {result.get('status')}")
+            self.logger.info(f"🔥 FLOW COMPLETED: {metadata['file_name']} - Status: {result.get('status')}")
+        except Exception as e:
+            self.logger.error(f"🔥 FLOW FAILED: {metadata['file_name']} - Error: {e}")
+            raise
         finally:
+            self.logger.info(f"🔥 CLOSING EVENT LOOP for {metadata['file_name']}")
             loop.close()
 
 
