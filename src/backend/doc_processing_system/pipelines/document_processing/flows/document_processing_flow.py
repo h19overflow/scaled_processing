@@ -12,7 +12,6 @@ from src.backend.doc_processing_system.pipelines.document_processing.tasks_core 
     duplicate_detection_task,
     docling_processing_task,
     document_saving_task,
-    chonkie_chunking_task,
 )
 
 
@@ -130,15 +129,7 @@ async def document_processing_flow(
                 "processing_steps": processing_steps
             }
 
-        logger.info("🔄 STEP 3: Chunking enabled - processing text into chunks...")
-        chunking_result = chonkie_chunking_task(
-            text_content=content,
-            document_id=document_id,
-            page_count=page_count,
-            raw_file_path=raw_file_path
-        )
-        if chunking_result["status"] != "completed":
-            return chunking_result
+
 
         logger.info("🔄 STEP 4: Saving document metadata...")
         save_result = document_saving_task(
@@ -155,7 +146,6 @@ async def document_processing_flow(
         processing_steps = {
             "duplicate_detection": duplicate_result.get("status"),
             "docling_extraction": docling_result.get("status"),
-            "chunking": chunking_result.get("status"),
             "document_saving": save_result.get("save_result", {}).get("status")
         }
 
@@ -165,7 +155,6 @@ async def document_processing_flow(
         return {
             "status": "completed",
             "document_id": document_id,
-            "chunking_result": chunking_result,
             "processing_steps": processing_steps
         }
             

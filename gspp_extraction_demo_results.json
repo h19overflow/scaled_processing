@@ -1,0 +1,265 @@
+{
+  "demo_timestamp": "2025-09-16T13:04:06.526211",
+  "description": "GSPP Billing Table Extraction Demo Results",
+  "approach": "Simplified Direct Indexing",
+  "original_table_structure": {
+    "table_count": 3,
+    "tables": [
+      {
+        "table_id": 0,
+        "shape": [
+          5,
+          4
+        ],
+        "columns": [
+          "Penerangan",
+          "Penggunaan",
+          "Kadar (RM)",
+          "Amaun (RM)"
+        ],
+        "sample_row": {
+          "Penerangan": "Puncak (kWh)",
+          "Penggunaan": "56,531.00",
+          "Kadar (RM)": "0.5660",
+          "Amaun (RM)": "31,996.55"
+        },
+        "row_count": 5
+      },
+      {
+        "table_id": 1,
+        "shape": [
+          7,
+          5
+        ],
+        "columns": [
+          "Keterangan",
+          "Keterangan",
+          "Tanpa ST",
+          "Dengan ST",
+          "Jumlah"
+        ],
+        "sample_row": {
+          "Keterangan": "RM",
+          "Tanpa ST": "116,272.65",
+          "Dengan ST": "0.00",
+          "Jumlah": "116,272.65"
+        },
+        "row_count": 7
+      },
+      {
+        "table_id": 2,
+        "shape": [
+          7,
+          5
+        ],
+        "columns": [
+          "No. Meter.",
+          "Bacaan Meter.Dahulu",
+          "Bacaan Meter.Semasa",
+          "Penggunaan",
+          "Unit"
+        ],
+        "sample_row": {
+          "No. Meter.": "M 821702898",
+          "Bacaan Meter.Dahulu": "0",
+          "Bacaan Meter.Semasa": "56,531",
+          "Penggunaan": "56,531",
+          "Unit": "kWh P"
+        },
+        "row_count": 7
+      }
+    ]
+  },
+  "direct_extraction_test": {
+    "description": "Testing individual field mappings with direct paths",
+    "results": [
+      {
+        "field_name": "puncak_penggunaan",
+        "description": "Peak usage from table 0, row 0",
+        "extraction_path": "data[0]['Penggunaan']",
+        "raw_value": 56531.0,
+        "field_type": "float",
+        "success": true
+      },
+      {
+        "field_name": "jumlah_amaun",
+        "description": "Total amount from table 0, row 4",
+        "extraction_path": "data[4]['Amaun (RM)']",
+        "raw_value": 152021.15,
+        "field_type": "float",
+        "success": true
+      },
+      {
+        "field_name": "total_bill_amount",
+        "description": "Final bill total from table 1, row 6",
+        "extraction_path": "data[6]['Jumlah']",
+        "raw_value": 217314.45,
+        "field_type": "float",
+        "success": true
+      },
+      {
+        "field_name": "meter_number",
+        "description": "Meter number from table 2, row 0",
+        "extraction_path": "data[0]['No. Meter.']",
+        "raw_value": "M 821702898",
+        "field_type": "string",
+        "success": true
+      }
+    ]
+  },
+  "service_integration_test": {
+    "description": "Testing full TableStorageService integration",
+    "results": [
+      {
+        "field_name": "puncak_penggunaan",
+        "english_translation": "Peak usage (kWh)",
+        "extraction_text": "56531.0",
+        "table_id": 0,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "puncak_amaun",
+        "english_translation": "Peak amount (RM)",
+        "extraction_text": "31996.55",
+        "table_id": 0,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "pertengahan_puncak_penggunaan",
+        "english_translation": "Mid-peak usage (kWh)",
+        "extraction_text": "137705.0",
+        "table_id": 0,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "pertengahan_puncak_amaun",
+        "english_translation": "Mid-peak amount (RM)",
+        "extraction_text": "45855.77",
+        "table_id": 0,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "luar_puncak_penggunaan",
+        "english_translation": "Off-peak usage (kWh)",
+        "extraction_text": "170757.0",
+        "table_id": 0,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "luar_puncak_amaun",
+        "english_translation": "Off-peak amount (RM)",
+        "extraction_text": "38420.33",
+        "table_id": 0,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "kehendak_maksima",
+        "english_translation": "Maximum demand (kW)",
+        "extraction_text": "1007.0",
+        "table_id": 0,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "kehendak_maksima_amaun",
+        "english_translation": "Maximum demand amount (RM)",
+        "extraction_text": "35748.5",
+        "table_id": 0,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "jumlah_amaun",
+        "english_translation": "Total amount (RM)",
+        "extraction_text": "152021.15",
+        "table_id": 0,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "energy_charge_tanpa_st",
+        "english_translation": "Energy charge without ST (RM)",
+        "extraction_text": "116272.65",
+        "table_id": 1,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "demand_charge_tanpa_st",
+        "english_translation": "Demand charge without ST (RM)",
+        "extraction_text": "35748.5",
+        "table_id": 1,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "total_bill_amount",
+        "english_translation": "Total bill amount (RM)",
+        "extraction_text": "217314.45",
+        "table_id": 1,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "meter_number",
+        "english_translation": "Meter number",
+        "extraction_text": "M 821702898",
+        "table_id": 2,
+        "field_type": "string",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "puncak_bacaan_semasa",
+        "english_translation": "Peak current reading",
+        "extraction_text": "56531.0",
+        "table_id": 2,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "pertengahan_puncak_bacaan_semasa",
+        "english_translation": "Mid-peak current reading",
+        "extraction_text": "137705.0",
+        "table_id": 2,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      },
+      {
+        "field_name": "luar_puncak_bacaan_semasa",
+        "english_translation": "Off-peak current reading",
+        "extraction_text": "170757.0",
+        "table_id": 2,
+        "field_type": "float",
+        "extraction_class": "table_field",
+        "alignment_status": "match_exact"
+      }
+    ]
+  },
+  "summary": {
+    "direct_test_fields": 4,
+    "direct_test_success": 4,
+    "service_test_fields": 16,
+    "total_extracted_fields": 16
+  }
+}

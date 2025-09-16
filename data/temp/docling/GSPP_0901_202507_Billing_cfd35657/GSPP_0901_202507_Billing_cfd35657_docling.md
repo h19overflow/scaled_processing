@@ -2,61 +2,23 @@
 
 ## ALAMAT POS
 
-GSPP HOLDINGS SDN. BHD.
-
-LOT 7090A, JLN SALAK BKT CHANGGANG 42700 BANTING
+GSPP HOLDINGS SDN. BHD LOT 709OA, JLN SALAK BKT CHANGGANG 42700 BANTING
 
 SELANGOR
+
+Sila imbas bagi pembayaran di Kios @Kedai Tenaga
+
+220175210901000844284963000000021731445
 
 Jumlah Bil Anda (RM)
 
 217,314.45
 
+KLIK DI SINI UNTUK PEMBAYARAN
+
 Sila bayar sebelum
 
 31 Jul 2025
-
-KLIK DI SINI UNTUK PEMBAYARAN
-
-## Caj Elektrik Anda Bagi Tempoh 6 Bulan
-
-## Caj Bulanan (RM)
-
-JAN-25
-
-(BS) RM224,037.00
-
-(BS) RM229,139.85
-
-FEB-25
-
-(BS) RM190,598.55
-
-MAC-25
-
-(BS) RM188,689.25
-
-APR-25
-
-(BS) RM229,505.30
-
-MEI-25
-
-(BS) RM217,314.45
-
-JUN-25
-
-BS - Bacaan Sebenar, BA - Bacaan Anggaran
-
-Bersihkan penapis penyaman udara dan bilah kipas secara berkala untuk pengaliran udara Yang lancar dan rumah yang lebih nyaman.
-
-Tenaga: 101
-
-mytnb commy
-
-Sila imbas bagi pembayaran di Kios @Kedai Tenaga
-
-220175210901000844284963000000021731445
 
 ## Ringkasan Bil Anda:
 
@@ -72,15 +34,13 @@ Bacaan Sebenar
 
 ## TARIF
 
-E1:Perindustrian ETOU
+El:Perindustrian ETOU
 
-BAYARAN BAGI TEMPOH 01.06.2025 - 30.06.2025
+BAYARAN BAGI TEMPOH 01.06.2025 30.06.2025
 
 RM229,505.30
 
-Biller Code:
-
-5454
+Biller Code: 5454
 
 Ref-1:
 
@@ -94,25 +54,43 @@ Caj Semasa (RM)
 
 217,314.45
 
-Untuk maklumat terperinci, sila rujuk di muka surat sebelah
+Untuk maklumat terperinci , sila rujuk di muka surat sebelah
 
-## Maklumat Tambahan Untuk Anda
+## Caj Elektrik Anda Bagi Tempoh 6 Bulan
 
-Kehendak Maksima Tertinggi
+## Caj Bulanan (RM)
 
-Beban Diisytiharkan
+BS) RM224,037.00
 
-Faktor Beban
+JAN-25
 
-Angkadar Kuasa
+BS) RM229,139.85
 
-0.95
+FEB-25
 
-0.50
+(BS) RM19O,598.55
 
-1,328.00kW
+MAC-25
 
-2,042.60kW
+(BS) RM188,689.25
+
+APR-25
+
+BS) RM229,505.30
+
+MEI-25
+
+(BS) RM217,314.45
+
+JUN-25
+
+BS Bacaan Sebenar , BA Bacaan Anggaran
+
+Bersihkan penapis penyaman udara dan bilah kipas secara berkala untuk pengaliran udara yang lancar dan rumah yang lebih nyaman.
+
+Tenaga: 101
+
+mytnb commy
 
 Pelarasan Penggenapan (RM)
 
@@ -124,7 +102,7 @@ TARIKH BIL
 
 TEMPOH BIL
 
-01.06.2025 - 30.06.2025 (30 Hari)
+01.06.2025 30.06.2025 (30 Hari)
 
 NO. INVOIS
 
@@ -133,4 +111,20 @@ NO. INVOIS
 DEPOSIT SEKURITI
 
 RM581,080.00
+
+## Maklumat Tambahan Untuk Anda
+
+Beban Diisytiharkan
+
+Kehendak Maksima Tertinggi
+
+1,328.OOkW
+
+Faktor Beban
+
+0.50
+
+Angkadar Kuasa
+
+0.95
 

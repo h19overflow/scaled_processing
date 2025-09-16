@@ -1,24 +1,25 @@
 """
 Database storage task for structured extraction results.
-Processes langxtract JSON output and stores it in the database.
+Processes langxtract JSON output and table extractions, stores them in the database.
 """
 
-import json
 import uuid
 from typing import Dict, Any
 from datetime import datetime
+from pathlib import Path
 from prefect import task
 
 from ..models.state import PipelineState
 from ....core_deps.database import ExtractionCRUD, ConnectionManager
 from ....data_models.extraction import ExtractionResult
+from ....pipelines.document_processing.utils.table_extraction import TableStorageService
 
 @task(name="database-storage",
       retries=2,
       retry_delay_seconds=10,
-      description="Store structured extraction results in database.")
+      description="Store structured extraction and table results in database.")
 def store_in_database(state: PipelineState) -> dict[str, Any] | None:
-    """Store extraction results in database."""
+    """Store extraction results and table extractions in database."""
     try:
         # Get extraction results from state
         extraction_data = getattr(state, 'extractions', None)
@@ -68,11 +69,11 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         # Initialize database components
         connection_manager = ConnectionManager()
         extraction_crud = ExtractionCRUD(connection_manager)
-        
-        # Store each extraction
+
+        # Store structured extractions
         stored_count = 0
         stored_ids = []
-        
+
         for extraction in extractions:
             try:
                 # Convert document_id to proper UUID format
@@ -85,6 +86,19 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.error(f"Failed to store extraction: {e}")
+                continue
+
+        # Process and store table extractions
+        table_results = _process_table_extractions(state, document_id, document_name)
+        for table_result in table_results:
+            try:
+                result_id = extraction_crud.create(table_result)
+                stored_ids.append(result_id)
+                stored_count += 1
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to store table extraction: {e}")
                 continue
         
         return {
@@ -106,6 +120,38 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         }
 
 # HELPER FUNCTIONS
+
+def _process_table_extractions(state: PipelineState, document_id: str, document_name: str) -> list[ExtractionResult]:
+    """Process table extractions from state processing directory."""
+    try:
+        # Get processing directory from state
+        processing_dir = getattr(state, 'processing_directory', None)
+        if not processing_dir:
+            return []
+
+        processing_path = Path(processing_dir)
+        if not processing_path.exists():
+            return []
+
+        # Initialize table storage service
+        table_service = TableStorageService()
+
+        # Process table extractions
+        table_results = table_service.process_table_extraction(
+            document_id, document_name, processing_path
+        )
+
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Processed {len(table_results)} table extractions for {document_id}")
+
+        return table_results
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to process table extractions: {e}")
+        return []
 
 def _convert_to_uuid(document_id: str) -> str:
     """Convert document_id string to a deterministic UUID format."""

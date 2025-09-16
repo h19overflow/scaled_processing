@@ -89,19 +89,18 @@ class DoclingProcessor:
             self._clean_markdown_image_placeholders(markdown_path)
 
 
-            # Step 4: Export JSON with embedded images
+            # Step 4: Export JSON
             tables_data = []
             conv_result_tables = converter.convert(str(raw_path))
             for table_ix, table in enumerate(conv_result_tables.document.tables):
                 # Convert to DataFrame to strip metadata
                 df = table.export_to_dataframe()
 
+
                 # Create clean table object
                 clean_table = {
                     "table_id": table_ix,
-                    "data": df.to_dict('records'),  # Clean row data
-                    "columns": df.columns.tolist(),  # Column names
-                    "shape": df.shape  # Dimensions
+                    "data": df.to_dict('records'),
                 }
                 tables_data.append(clean_table)
 
@@ -160,12 +159,13 @@ class DoclingProcessor:
         """Initialize converters for different document formats."""
         # High-quality PDF configuration
         pdf_config = PdfPipelineOptions()
-        pdf_config.images_scale = 2.0
+        pdf_config.images_scale = 4.0
         pdf_config.generate_page_images = False
         pdf_config.do_ocr = True
+        pdf_config.ocr_options.force_full_page_ocr=True
         pdf_config.do_table_structure = True
         pdf_config.table_structure_options.mode = TableFormerMode.ACCURATE  # Use accurate mode for better table handling
-        pdf_config.table_structure_options.do_cell_matching = True
+        pdf_config.table_structure_options.do_cell_matching = False
         pdf_config.generate_picture_images = False
 
         # Balanced Office format configuration

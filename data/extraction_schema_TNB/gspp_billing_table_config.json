@@ -1,0 +1,150 @@
+{
+  "document_type": "gspp_billing",
+  "description": "Table extraction configuration for GSPP billing documents",
+  "field_mappings": [
+    {
+      "field_name": "puncak_penggunaan",
+      "english_translation": "Peak usage (kWh)",
+      "table_id": 0,
+      "extraction_path": "data[0]['Penggunaan']",
+      "example_value": "56,531.00",
+      "field_type": "float",
+      "is_required": true
+    },
+    {
+      "field_name": "puncak_amaun",
+      "english_translation": "Peak amount (RM)",
+      "table_id": 0,
+      "extraction_path": "data[0]['Amaun (RM)']",
+      "example_value": "31,996.55",
+      "field_type": "float",
+      "is_required": false
+    },
+    {
+      "field_name": "pertengahan_puncak_penggunaan",
+      "english_translation": "Mid-peak usage (kWh)",
+      "table_id": 0,
+      "extraction_path": "data[1]['Penggunaan']",
+      "example_value": "137,705.00",
+      "field_type": "float",
+      "is_required": true
+    },
+    {
+      "field_name": "pertengahan_puncak_amaun",
+      "english_translation": "Mid-peak amount (RM)",
+      "table_id": 0,
+      "extraction_path": "data[1]['Amaun (RM)']",
+      "example_value": "45,855.77",
+      "field_type": "float",
+      "is_required": false
+    },
+    {
+      "field_name": "luar_puncak_penggunaan",
+      "english_translation": "Off-peak usage (kWh)",
+      "table_id": 0,
+      "extraction_path": "data[2]['Penggunaan']",
+      "example_value": "170,757.00",
+      "field_type": "float",
+      "is_required": true
+    },
+    {
+      "field_name": "luar_puncak_amaun",
+      "english_translation": "Off-peak amount (RM)",
+      "table_id": 0,
+      "extraction_path": "data[2]['Amaun (RM)']",
+      "example_value": "38,420.33",
+      "field_type": "float",
+      "is_required": false
+    },
+    {
+      "field_name": "kehendak_maksima",
+      "english_translation": "Maximum demand (kW)",
+      "table_id": 0,
+      "extraction_path": "data[3]['Penggunaan']",
+      "example_value": "1,007.00",
+      "field_type": "float",
+      "is_required": true
+    },
+    {
+      "field_name": "kehendak_maksima_amaun",
+      "english_translation": "Maximum demand amount (RM)",
+      "table_id": 0,
+      "extraction_path": "data[3]['Amaun (RM)']",
+      "example_value": "35,748.50",
+      "field_type": "float",
+      "is_required": false
+    },
+    {
+      "field_name": "jumlah_amaun",
+      "english_translation": "Total amount (RM)",
+      "table_id": 0,
+      "extraction_path": "data[4]['Amaun (RM)']",
+      "example_value": "152,021.15",
+      "field_type": "float",
+      "is_required": true
+    },
+    {
+      "field_name": "energy_charge_tanpa_st",
+      "english_translation": "Energy charge without ST (RM)",
+      "table_id": 1,
+      "extraction_path": "data[0]['Tanpa ST']",
+      "example_value": "116,272.65",
+      "field_type": "float",
+      "is_required": false
+    },
+    {
+      "field_name": "demand_charge_tanpa_st",
+      "english_translation": "Demand charge without ST (RM)",
+      "table_id": 1,
+      "extraction_path": "data[1]['Tanpa ST']",
+      "example_value": "35,748.50",
+      "field_type": "float",
+      "is_required": false
+    },
+    {
+      "field_name": "total_bill_amount",
+      "english_translation": "Total bill amount (RM)",
+      "table_id": 1,
+      "extraction_path": "data[6]['Jumlah']",
+      "example_value": "217,314.45",
+      "field_type": "float",
+      "is_required": true
+    },
+    {
+      "field_name": "meter_number",
+      "english_translation": "Meter number",
+      "table_id": 2,
+      "extraction_path": "data[0]['No. Meter.']",
+      "example_value": "M 821702898",
+      "field_type": "string",
+      "is_required": false
+    },
+    {
+      "field_name": "puncak_bacaan_semasa",
+      "english_translation": "Peak current reading",
+      "table_id": 2,
+      "extraction_path": "data[0]['Bacaan Meter.Semasa']",
+      "example_value": "56,531",
+      "field_type": "float",
+      "is_required": false
+    },
+    {
+      "field_name": "pertengahan_puncak_bacaan_semasa",
+      "english_translation": "Mid-peak current reading",
+      "table_id": 2,
+      "extraction_path": "data[1]['Bacaan Meter.Semasa']",
+      "example_value": "137,705",
+      "field_type": "float",
+      "is_required": false
+    },
+    {
+      "field_name": "luar_puncak_bacaan_semasa",
+      "english_translation": "Off-peak current reading",
+      "table_id": 2,
+      "extraction_path": "data[2]['Bacaan Meter.Semasa']",
+      "example_value": "170,757",
+      "field_type": "float",
+      "is_required": false
+    }
+  ]
+}
