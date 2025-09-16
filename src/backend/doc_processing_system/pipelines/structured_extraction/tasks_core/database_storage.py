@@ -124,7 +124,7 @@ def _convert_to_uuid(document_id: str) -> str:
 def _create_extraction_result(document_id: str, document_name: str, extraction: Dict[str, Any]) -> ExtractionResult:
     """Create ExtractionResult object from extraction data."""
     char_interval = extraction.get("char_interval", {})
-    
+
     # Handle CharInterval object or dictionary
     if hasattr(char_interval, 'start_pos') and hasattr(char_interval, 'end_pos'):
         # It's a CharInterval object
@@ -138,13 +138,20 @@ def _create_extraction_result(document_id: str, document_name: str, extraction: 
         # Fallback
         char_start = 0
         char_end = 0
-    
+
+    # Handle attributes - ensure it's always a dictionary, never None
+    attributes = extraction.get("attributes")
+    if attributes is None:
+        attributes = {}
+    elif not isinstance(attributes, dict):
+        attributes = {}
+
     return ExtractionResult(
         document_id=document_id,
         document_name=document_name,
         extraction_class=extraction.get("extraction_class", "unknown"),
         extraction_text=extraction.get("extraction_text", ""),
-        attributes=extraction.get("attributes", {}),
+        attributes=attributes,
         alignment_status=extraction.get("alignment_status", "unknown"),
         extraction_index=extraction.get("extraction_index", 0),
         group_index=extraction.get("group_index", 0),

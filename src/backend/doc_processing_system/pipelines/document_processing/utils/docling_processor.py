@@ -85,6 +85,10 @@ class DoclingProcessor:
                 image_mode=ImageRefMode.EMBEDDED
             )
 
+            # Step 4.5: Clean up image placeholders from markdown
+            self._clean_markdown_image_placeholders(markdown_path)
+
+
             # Step 4: Export JSON with embedded images
             tables_data = []
             for table_ix, table in enumerate(conv_result.document.tables):
@@ -129,16 +133,41 @@ class DoclingProcessor:
             return self._error_result("Extraction failed", raw_file_path, error_details=str(e))
 
     # HELPER FUNCTIONS
+    def _clean_markdown_image_placeholders(self, markdown_path: Path):
+        """Remove image placeholder comments that cause noise in extraction."""
+        try:
+            # Read the markdown file
+            with open(markdown_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Remove the specific image placeholder pattern
+            import re
+            pattern = r'<!-- 🖼️❌ Image not available\. Please use `PdfPipelineOptions\(generate_picture_images=True\)` -->'
+            cleaned_content = re.sub(pattern, '', content)
+
+            # Also remove any extra blank lines that might remain
+            cleaned_content = re.sub(r'\n\s*\n\s*\n', '\n\n', cleaned_content)
+
+            # Write back the cleaned content
+            with open(markdown_path, 'w', encoding='utf-8') as f:
+                f.write(cleaned_content)
+
+            self.logger.info(f"🧹 Cleaned image placeholders from: {markdown_path.name}")
+
+        except Exception as e:
+            self.logger.warning(f"Failed to clean image placeholders: {e}")
+
     def _initialize_converters(self) -> Dict[str, DocumentConverter]:
         """Initialize converters for different document formats."""
         # High-quality PDF configuration
         pdf_config = PdfPipelineOptions()
         pdf_config.images_scale = 2.0
-        pdf_config.generate_page_images = True
+        pdf_config.generate_page_images = False
         pdf_config.do_ocr = True
         pdf_config.do_table_structure = True
         pdf_config.table_structure_options.mode = TableFormerMode.ACCURATE  # Use accurate mode for better table handling
-        pdf_config.table_structure_options.do_cell_matching = True  # Enable cell matching for improved accuracy
+        pdf_config.table_structure_options.do_cell_matching = True
+        pdf_config.generate_picture_images = False
 
         # Balanced Office format configuration
         office_config = PaginatedPipelineOptions()

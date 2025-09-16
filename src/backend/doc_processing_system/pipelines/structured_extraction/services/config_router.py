@@ -4,359 +4,474 @@ from typing import Tuple, List
 from dotenv import load_dotenv
 load_dotenv()
 
-def route_classification(classification: str) -> Tuple[str, List[lx.data.ExampleData]]:
-    """Routes classification to appropriate extraction function"""
-    if classification == "contract":
-        return contract_extraction()
-    elif classification == "invoice":
-        return invoice_extraction()
-    elif classification == "legal":
-        return legal_extraction()
-    elif classification == 'report':
-        return report_extraction()
-    else:
-        return "Unknown classification", []
 
-def contract_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
-    extraction_prompt = textwrap.dedent("""
-    Extract the following contract information.
-    For all date fields, output both the original string and the normalized ISO 8601 format (YYYY-MM-DD) if possible.
-    For durations (payment terms, periods), output the value in both text and as an integer number of days.
-    - Party names and roles
-    - Contract dates (start, end, signing)
-    - Key terms and conditions
-    - Payment terms and amounts
-    - Termination clauses (with date fields normalized)
-    """).strip()
 
-    examples = [
-        lx.data.ExampleData(
-            text=(
-                "This Service Agreement is entered into on January 15, 2024, between TechCorp Inc. (Client) "
-                "and DataSolutions LLC (Provider). The agreement period is from February 1, 2024 to December 31, 2024. "
-                "Payment of $50,000 due within 30 days of invoice date. Can be terminated after 90 days."
-            ),
-            extractions=[
-                lx.data.Extraction(
-                    extraction_class="party",
-                    extraction_text="TechCorp Inc.",
-                    attributes={"role": "Client"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="party",
-                    extraction_text="DataSolutions LLC",
-                    attributes={"role": "Provider"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="date",
-                    extraction_text="January 15, 2024",
-                    attributes={"type": "agreement_signed", "iso_date": "2024-01-15"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="date",
-                    extraction_text="February 1, 2024",
-                    attributes={"type": "start_date", "iso_date": "2024-02-01"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="date",
-                    extraction_text="December 31, 2024",
-                    attributes={"type": "end_date", "iso_date": "2024-12-31"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="payment_terms",
-                    extraction_text="30 days",
-                    attributes={"due_period_text": "30 days", "due_period_days": 30}
-                ),
-                lx.data.Extraction(
-                    extraction_class="termination_clause",
-                    extraction_text="Can be terminated after 90 days",
-                    attributes={"termination_period_text": "90 days", "termination_period_days": 90}
-                ),
-            ]
-        )
-    ]
-    return extraction_prompt, examples
+
 
 def invoice_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
     extraction_prompt = textwrap.dedent("""
-    Extract the following invoice information comprehensively. For each date, provide both the original text and ISO 8601 (YYYY-MM-DD). Normalize payment terms and due periods as integer days where possible. Always include "USD" currency for all monetary amounts.
-    
-    COMPANY & CONTACT INFORMATION:
-    - Vendor details (name, address, phone, fax, email, website, tax IDs, DUNS number)
-    - Customer/Bill-to details (name, address, contact info, department)
-    - Ship-to details if different from bill-to
-    
-    PEOPLE & ROLES:
-    - Contact persons with roles (account managers, project managers, supervisors)
-    - Sales representatives and territory information
-    
-    INVOICE IDENTIFIERS:
-    - Invoice number and date
-    - Purchase order numbers and contract references
-    - Project codes, quote references, customer account numbers
-    
-    FINANCIAL DETAILS:
-    - Line items with descriptions, quantities, unit prices, and totals (all with USD currency)
-    - Tax amounts, subtotals, and final totals (all with USD currency)
-    - Discounts and their percentages/amounts
-    - Shipping and handling costs
-    
-    PAYMENT & REMITTANCE:
-    - Payment terms, due dates, and payment methods
-    - Banking details (routing numbers, account numbers, wire transfer info)
-    - Remittance addresses and instructions
-    
-    BUSINESS TERMS & COMPLIANCE:
-    - Service periods and warranty terms
-    - Contract references and legal clauses
-    - Compliance notes and policy references
-    
-    DOCUMENT STRUCTURE:
-    - Section headers (BILL TO, SHIP TO, REMIT TO, etc.)
-    - Notes and special instructions
+    Extract Malaysian bill/invoice information from MARKDOWN-FORMATTED utility bills. Pay special attention to:
+
+    MARKDOWN DOCUMENT STRUCTURE:
+    - Headers starting with ## (e.g., ## ALAMAT POS, ## NO. AKAUN)
+    - Table structures with | separators
+    - Text that appears after section headers
+    - Values in table cells and standalone text blocks
+
+    CRITICAL MALAYSIAN BILL FIELDS TO EXTRACT:
+    - sumber_bil (Bill source): Company name providing the utility service
+    - alamat_pos (Postal address): Customer's complete mailing address
+    - no_invois (Invoice number): Unique invoice/bill identifier
+    - no_akaun (Account number): Customer's account number
+    - baki_terdahulu (Previous balance): Outstanding amount from previous bill
+    - caj_semasa (Current charges): Current period charges or "Caj Semasa"
+    - deposit_sekuriti (Security deposit): Security deposit amount
+    - jumlah_bil (Total bill): Total amount due - look for "Jumlah Bil Anda"
+    - tarikh_bil (Bill date): Date the bill was issued - "TARIKH BIL"
+    - bayar_sebelum (Pay before): Payment due date - "Sila bayar sebelum"
+    - tempoh_bil (Bill period): Time frame covered - "TEMPOH BIL"
+    - bayaran_bagi_tempoh (Payment for the period): Payment amount for specific period
+    - amaun_bayaran_bagi_tempoh (Payment amount for the period): Specific payment amount
+    - biller_code (Biller code): Billing company code - "Biller Code"
+    - ref_1 (Reference 1): Reference number - "Ref-1"
+    - pelarasan_penggenapan (Rounding adjustment): Rounding adjustments - "Pelarasan Penggenapan"
+    - tarikh_akhir_jelaskan_tunggakan (Final date to settle arrears): Final settlement date
+    - amaun_rm_tunggakan (Arrears amount in RM): Outstanding arrears amount
+
+    EXTRACTION GUIDELINES:
+    - Look for values that appear immediately after field labels
+    - Extract data from table cells, especially in "Ringkasan Bil" tables
+    - Handle both standalone text and tabular data
+    - Recognize Malaysian date formats (15.07.2025, 14 Ogos 2025)
+    - Extract RM currency amounts with proper formatting
+    - Pay attention to section headers that indicate field locations
     """).strip()
 
     examples = [
         lx.data.ExampleData(
-            text="Invoice #INV-2024-001 dated March 15, 2024. Bill To: ABC Company. Due: April 14, 2024. Terms: Net 30.",
+            text="""## Bil Elektrik Anda
+
+## ALAMAT POS
+
+ACME MANUFACTURING SDN BHD
+
+LOT 12345, JALAN INDUSTRI
+
+SHAH ALAM 40000 SELANGOR
+
+Jumlah Bil Anda (RM)
+
+89,567.50
+
+Sila bayar sebelum
+
+15 Ogos 2024
+
+## NO. AKAUN
+
+123456789012
+
+BAYARAN BAGI TEMPOH 01.07.2024 - 31.07.2024
+
+RM2,450.00
+
+Biller Code:
+
+5454
+
+Ref-1:
+
+123456789012
+
+| Ringkasan Bil Anda:   |              |
+|-----------------------|--------------|
+| Baki Terdahulu        | RM0.00       |
+| Caj Semasa NEM        | RM89,567.50  |
+| Pelarasan Penggenapan | -RM0.00      |
+
+TARIKH BIL
+
+15.08.2024
+
+TEMPOH BIL
+
+01.07.2024 - 31.07.2024 (31 Hari)
+
+NO. INVOIS
+
+000123456789
+
+DEPOSIT SEKURITI
+
+RM150,000.00""",
             extractions=[
                 lx.data.Extraction(
-                    extraction_class="invoice_number",
-                    extraction_text="INV-2024-001",
-                    attributes={"type": "invoice_id"}
+                    extraction_class="sumber_bil",
+                    extraction_text="ACME MANUFACTURING SDN BHD",
+                    attributes={"bill_source": "ACME MANUFACTURING SDN BHD", "type": "customer_company"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="invoice_date",
-                    extraction_text="March 15, 2024",
-                    attributes={"type": "issue_date", "iso_date": "2024-03-15"}
+                    extraction_class="alamat_pos",
+                    extraction_text="LOT 12345, JALAN INDUSTRI\n\nSHAH ALAM 40000 SELANGOR",
+                    attributes={"postal_address": "LOT 12345, JALAN INDUSTRI, SHAH ALAM 40000 SELANGOR"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="customer",
-                    extraction_text="ABC Company",
-                    attributes={"type": "bill_to", "company_name": "ABC Company"}
+                    extraction_class="jumlah_bil",
+                    extraction_text="89,567.50",
+                    attributes={"total_bill": 89567.50, "currency": "MYR"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="due_date",
-                    extraction_text="April 14, 2024",
-                    attributes={"iso_date": "2024-04-14"}
+                    extraction_class="bayar_sebelum",
+                    extraction_text="15 Ogos 2024",
+                    attributes={"pay_before": "15 Ogos 2024", "iso_date": "2024-08-15"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="payment_terms",
-                    extraction_text="Net 30",
-                    attributes={"due_period_text": "Net 30", "due_period_days": 30}
+                    extraction_class="no_akaun",
+                    extraction_text="123456789012",
+                    attributes={"account_number": "123456789012"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="bayaran_bagi_tempoh",
+                    extraction_text="01.07.2024 - 31.07.2024",
+                    attributes={"payment_for_period": "01.07.2024 - 31.07.2024", "start_date": "2024-07-01", "end_date": "2024-07-31"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="amaun_bayaran_bagi_tempoh",
+                    extraction_text="RM2,450.00",
+                    attributes={"payment_amount_for_period": 2450.00, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="biller_code",
+                    extraction_text="5454",
+                    attributes={"biller_code": "5454"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="ref_1",
+                    extraction_text="123456789012",
+                    attributes={"reference_1": "123456789012", "type": "account_reference"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="baki_terdahulu",
+                    extraction_text="RM0.00",
+                    attributes={"previous_balance": 0.00, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="caj_semasa",
+                    extraction_text="RM89,567.50",
+                    attributes={"current_charges": 89567.50, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="pelarasan_penggenapan",
+                    extraction_text="-RM0.00",
+                    attributes={"rounding_adjustment": 0.00, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="tarikh_bil",
+                    extraction_text="15.08.2024",
+                    attributes={"bill_date": "15.08.2024", "iso_date": "2024-08-15"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="tempoh_bil",
+                    extraction_text="01.07.2024 - 31.07.2024 (31 Hari)",
+                    attributes={"bill_period": "01.07.2024 - 31.07.2024", "start_date": "2024-07-01", "end_date": "2024-07-31"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="no_invois",
+                    extraction_text="000123456789",
+                    attributes={"invoice_number": "000123456789"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="deposit_sekuriti",
+                    extraction_text="RM150,000.00",
+                    attributes={"security_deposit": 150000.00, "currency": "MYR"}
                 ),
             ]
         ),
         lx.data.ExampleData(
-            text="TechServices LLC, Tax ID: 12-3456789. Bill To: GlobalCorp Inc, IT Dept. Invoice #INV-2024-0156 dated June 10, 2024. Consulting: 40hrs x $85 = $3,400. Tax: $272. Total: $3,672. Net 30 days.",
+            text="""## NO. AKAUN
+
+210987654321
+
+## ALAMAT PREMIS
+
+TECH SOLUTIONS SDN BHD
+
+LOT 9876, JALAN TEKNOLOGI MAJU 40150 KLANG SELANGOR
+
+## MAKLUMAT BAYARAN AKHIR
+
+Amaun : RM3,456.75
+
+Tarikh  : 25.09.2024
+
+| Ringkasan Bil Anda:   |              |
+|-----------------------|--------------|
+| Baki Terdahulu        | RM150.25     |
+| Caj Semasa            | RM3,306.50   |
+| Pelarasan Penggenapan | RM0.00       |
+| Jumlah Bil Anda       | RM3,456.75   |
+
+TARIKH BIL
+
+20.09.2024
+
+TEMPOH BIL
+
+20.08.2024 - 19.09.2024 (30 Hari)
+
+NO. INVOIS
+
+000987654321
+
+Ref-1:
+
+TECH123
+
+Biller Code:
+
+5454""",
             extractions=[
                 lx.data.Extraction(
-                    extraction_class="vendor",
-                    extraction_text="TechServices LLC",
-                    attributes={"company_name": "TechServices LLC", "tax_id": "12-3456789"}
+                    extraction_class="no_akaun",
+                    extraction_text="210987654321",
+                    attributes={"account_number": "210987654321"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="customer",
-                    extraction_text="GlobalCorp Inc",
-                    attributes={"company_name": "GlobalCorp Inc", "department": "IT Dept"}
+                    extraction_class="sumber_bil",
+                    extraction_text="TECH SOLUTIONS SDN BHD",
+                    attributes={"bill_source": "TECH SOLUTIONS SDN BHD", "type": "customer_company"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="invoice_number",
-                    extraction_text="INV-2024-0156",
-                    attributes={"type": "invoice_id"}
+                    extraction_class="alamat_pos",
+                    extraction_text="LOT 9876, JALAN TEKNOLOGI MAJU 40150 KLANG SELANGOR",
+                    attributes={"postal_address": "LOT 9876, JALAN TEKNOLOGI MAJU 40150 KLANG SELANGOR"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="invoice_date",
-                    extraction_text="June 10, 2024",
-                    attributes={"type": "issue_date", "iso_date": "2024-06-10"}
+                    extraction_class="amaun_bayaran_bagi_tempoh",
+                    extraction_text="RM3,456.75",
+                    attributes={"payment_amount_for_period": 3456.75, "currency": "MYR"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="line_item",
-                    extraction_text="Consulting: 40hrs x $85 = $3,400",
-                    attributes={
-                        "description": "Consulting",
-                        "quantity": 40.00,
-                        "unit": "Hours",
-                        "unit_price": 85.00,
-                        "total": 3400.00,
-                        "currency": "USD"
-                    }
+                    extraction_class="tarikh_akhir_jelaskan_tunggakan",
+                    extraction_text="25.09.2024",
+                    attributes={"final_arrears_settlement_date": "25.09.2024", "iso_date": "2024-09-25"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="tax",
-                    extraction_text="$272",
-                    attributes={"amount": 272.00, "currency": "USD", "type": "tax"}
+                    extraction_class="baki_terdahulu",
+                    extraction_text="RM150.25",
+                    attributes={"previous_balance": 150.25, "currency": "MYR"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="total_amount",
-                    extraction_text="$3,672",
-                    attributes={"amount": 3672.00, "currency": "USD"}
+                    extraction_class="caj_semasa",
+                    extraction_text="RM3,306.50",
+                    attributes={"current_charges": 3306.50, "currency": "MYR"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="payment_terms",
-                    extraction_text="Net 30 days",
-                    attributes={"due_period_text": "Net 30 days", "due_period_days": 30}
+                    extraction_class="pelarasan_penggenapan",
+                    extraction_text="RM0.00",
+                    attributes={"rounding_adjustment": 0.00, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="jumlah_bil",
+                    extraction_text="RM3,456.75",
+                    attributes={"total_bill": 3456.75, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="tarikh_bil",
+                    extraction_text="20.09.2024",
+                    attributes={"bill_date": "20.09.2024", "iso_date": "2024-09-20"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="tempoh_bil",
+                    extraction_text="20.08.2024 - 19.09.2024 (30 Hari)",
+                    attributes={"bill_period": "20.08.2024 - 19.09.2024", "start_date": "2024-08-20", "end_date": "2024-09-19"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="no_invois",
+                    extraction_text="000987654321",
+                    attributes={"invoice_number": "000987654321"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="ref_1",
+                    extraction_text="TECH123",
+                    attributes={"reference_1": "TECH123", "type": "customer_reference"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="biller_code",
+                    extraction_text="5454",
+                    attributes={"biller_code": "5454"}
                 ),
             ]
         ),
         lx.data.ExampleData(
-            text="ACME LLC, DUNS: 987654321. BILL TO: MegaCorp, Attn: Robert Chen CFO. Invoice ACM-2024-001, Dec 5, 2024. Consulting 120hrs x $150 = $18,000. Tax: $1,575. Total: $19,575. REMIT TO: Chase Bank 021000021.",
+            text="""## Bil Elektrik Anda
+
+## ALAMAT POS
+
+GLOBAL INDUSTRIES SDN BHD
+
+LOT 55555, JALAN PERINDUSTRIAN UTAMA
+
+SUBANG JAYA 47500 SELANGOR
+
+Jumlah Bil Anda (RM)
+
+45,678.90
+
+Sila bayar sebelum
+
+30 September 2024
+
+## NO. AKAUN
+
+555444333222
+
+BAYARAN BAGI TEMPOH 01.09.2024 - 30.09.2024
+
+RM1,234.56
+
+Biller Code:
+
+5454
+
+Ref-1:
+
+555444333222
+
+| Ringkasan Bil Anda:     |              |
+|-------------------------|--------------|
+| Baki Terdahulu          | RM500.00     |
+| Caj Semasa NEM          | RM45,178.90  |
+| Pelarasan Penggenapan   | RM0.00       |
+| Amaun RM Tunggakan      | RM0.00       |
+
+TARIKH BIL
+
+25.09.2024
+
+TEMPOH BIL
+
+01.09.2024 - 30.09.2024 (30 Hari)
+
+NO. INVOIS
+
+000555444333
+
+DEPOSIT SEKURITI
+
+RM200,000.00
+
+MAKLUMAT BAYARAN AKHIR
+
+Tarikh : 10.10.2024""",
             extractions=[
                 lx.data.Extraction(
-                    extraction_class="vendor",
-                    extraction_text="ACME LLC",
-                    attributes={"company_name": "ACME LLC", "duns_number": "987654321"}
+                    extraction_class="sumber_bil",
+                    extraction_text="GLOBAL INDUSTRIES SDN BHD",
+                    attributes={"bill_source": "GLOBAL INDUSTRIES SDN BHD", "type": "customer_company"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="section_header",
-                    extraction_text="BILL TO:",
-                    attributes={"section_type": "billing_address"}
+                    extraction_class="alamat_pos",
+                    extraction_text="LOT 55555, JALAN PERINDUSTRIAN UTAMA\n\nSUBANG JAYA 47500 SELANGOR",
+                    attributes={"postal_address": "LOT 55555, JALAN PERINDUSTRIAN UTAMA, SUBANG JAYA 47500 SELANGOR"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="customer",
-                    extraction_text="MegaCorp",
-                    attributes={"company_name": "MegaCorp"}
+                    extraction_class="jumlah_bil",
+                    extraction_text="45,678.90",
+                    attributes={"total_bill": 45678.90, "currency": "MYR"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="contact_person",
-                    extraction_text="Robert Chen",
-                    attributes={"name": "Robert Chen", "role": "CFO", "type": "customer_contact"}
+                    extraction_class="bayar_sebelum",
+                    extraction_text="30 September 2024",
+                    attributes={"pay_before": "30 September 2024", "iso_date": "2024-09-30"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="invoice_number",
-                    extraction_text="ACM-2024-001",
-                    attributes={"type": "invoice_id"}
+                    extraction_class="no_akaun",
+                    extraction_text="555444333222",
+                    attributes={"account_number": "555444333222"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="invoice_date",
-                    extraction_text="Dec 5, 2024",
-                    attributes={"type": "issue_date", "iso_date": "2024-12-05"}
+                    extraction_class="bayaran_bagi_tempoh",
+                    extraction_text="01.09.2024 - 30.09.2024",
+                    attributes={"payment_for_period": "01.09.2024 - 30.09.2024", "start_date": "2024-09-01", "end_date": "2024-09-30"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="line_item",
-                    extraction_text="Consulting 120hrs x $150 = $18,000",
-                    attributes={
-                        "description": "Consulting",
-                        "quantity": 120.00,
-                        "unit": "Hours",
-                        "unit_price": 150.00,
-                        "total": 18000.00,
-                        "currency": "USD"
-                    }
+                    extraction_class="amaun_bayaran_bagi_tempoh",
+                    extraction_text="RM1,234.56",
+                    attributes={"payment_amount_for_period": 1234.56, "currency": "MYR"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="tax",
-                    extraction_text="$1,575",
-                    attributes={"amount": 1575.00, "currency": "USD", "type": "tax"}
+                    extraction_class="biller_code",
+                    extraction_text="5454",
+                    attributes={"biller_code": "5454"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="total_amount",
-                    extraction_text="$19,575",
-                    attributes={"amount": 19575.00, "currency": "USD"}
+                    extraction_class="ref_1",
+                    extraction_text="555444333222",
+                    attributes={"reference_1": "555444333222", "type": "account_reference"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="section_header",
-                    extraction_text="REMIT TO:",
-                    attributes={"section_type": "remittance_address"}
+                    extraction_class="baki_terdahulu",
+                    extraction_text="RM500.00",
+                    attributes={"previous_balance": 500.00, "currency": "MYR"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="banking_details",
-                    extraction_text="Chase Bank 021000021",
-                    attributes={"bank_name": "Chase Bank", "routing_number": "021000021", "type": "wire_transfer"}
-                )
+                    extraction_class="caj_semasa",
+                    extraction_text="RM45,178.90",
+                    attributes={"current_charges": 45178.90, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="pelarasan_penggenapan",
+                    extraction_text="RM0.00",
+                    attributes={"rounding_adjustment": 0.00, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="amaun_rm_tunggakan",
+                    extraction_text="RM0.00",
+                    attributes={"arrears_amount": 0.00, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="tarikh_bil",
+                    extraction_text="25.09.2024",
+                    attributes={"bill_date": "25.09.2024", "iso_date": "2024-09-25"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="tempoh_bil",
+                    extraction_text="01.09.2024 - 30.09.2024 (30 Hari)",
+                    attributes={"bill_period": "01.09.2024 - 30.09.2024", "start_date": "2024-09-01", "end_date": "2024-09-30"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="no_invois",
+                    extraction_text="000555444333",
+                    attributes={"invoice_number": "000555444333"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="deposit_sekuriti",
+                    extraction_text="RM200,000.00",
+                    attributes={"security_deposit": 200000.00, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="tarikh_akhir_jelaskan_tunggakan",
+                    extraction_text="10.10.2024",
+                    attributes={"final_arrears_settlement_date": "10.10.2024", "iso_date": "2024-10-10"}
+                ),
             ]
         )
     ]
     return extraction_prompt, examples
 
-def legal_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
-    extraction_prompt = textwrap.dedent("""
-    Extract the following legal information. For all dates (e.g., hearings, filings), output the original and the normalized ISO 8601 (YYYY-MM-DD) format.
-    For deadlines/durations, provide both the string and number of days.
-    - Case numbers and court details
-    - Legal entities and parties involved
-    - Key dates and deadlines (filed, hearing, judgment)
-    - Legal citations and references
-    - Judgments and decisions
-    """).strip()
 
-    examples = [
-        lx.data.ExampleData(
-            text="Case No. 2024-CV-12345. Hearing on May 15, 2024. Summary Judgment filed April 10, 2024; response due in 21 days.",
-            extractions=[
-                lx.data.Extraction(
-                    extraction_class="case_number",
-                    extraction_text="2024-CV-12345",
-                    attributes={"type": "civil_case"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="hearing_date",
-                    extraction_text="May 15, 2024",
-                    attributes={"iso_date": "2024-05-15"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="filed_date",
-                    extraction_text="April 10, 2024",
-                    attributes={"iso_date": "2024-04-10"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="response_deadline",
-                    extraction_text="21 days",
-                    attributes={"deadline_text": "21 days", "deadline_days": 21}
-                ),
-            ]
-        )
-    ]
-    return extraction_prompt, examples
-
-def report_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
-    extraction_prompt = textwrap.dedent("""
-    Extract the following report information. For all report dates and periods, output both the original text and the normalized ISO 8601 (YYYY-MM-DD) or precise period info suitable for database ingestion.
-    - Report title and date (with normalized date)
-    - Author and organization
-    - Key findings and conclusions
-    - Data points and statistics
-    - Recommendations and next steps
-    """).strip()
-
-    examples = [
-        lx.data.ExampleData(
-            text="Q3 2024 Financial Report prepared by Finance Department on October 1, 2024.",
-            extractions=[
-                lx.data.Extraction(
-                    extraction_class="report_title",
-                    extraction_text="Q3 2024 Financial Report",
-                    attributes={"period": "Q3 2024", "period_start": "2024-07-01", "period_end": "2024-09-30"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="report_date",
-                    extraction_text="October 1, 2024",
-                    attributes={"type": "preparation_date", "iso_date": "2024-10-01"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="author",
-                    extraction_text="Finance Department",
-                    attributes={"organization": "Finance Department"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="key_findings",
-                    extraction_text="Revenue increased by 15% compared to Q2 2024, reaching $2.5M.",
-                    attributes={"period": "Q2 2024", "period_start": "2023-10-01", "period_end": "2023-12-31"}
-                )
-            ]
-        )
-    ]
-    return extraction_prompt, examples
 
 def process_document(text: str, doc_type: str):
     """Process document using langextract with appropriate routing and temporal normalization"""
-    prompt, examples = route_classification(doc_type)
+    prompt, examples = invoice_extraction()
     result = lx.extract(
         text_or_documents=text,
         prompt_description=prompt,
         examples=examples,
         model_id="gemini-2.0-flash",
         max_workers=20,
+
     )
     lx.io.save_annotated_documents(iter([result]), output_name="test.jsonl")
     return result
