@@ -16,9 +16,7 @@ from .models import (
 from .CRUD import (
     BaseRepository,
     DocumentCRUD,
-    ChunkCRUD,
     ExtractionCRUD,
-    QueryCRUD
 )
 
 __all__ = [
@@ -34,7 +32,5 @@ __all__ = [
     # CRUD Operations
     "BaseRepository",
     "DocumentCRUD",
-    "ChunkCRUD",
     "ExtractionCRUD",
-    "QueryCRUD"
 ]

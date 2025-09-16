@@ -47,10 +47,7 @@ class FileDetectedConsumer(ConsumerHandler):
                 process_document_with_flow(
                     raw_file_path=file_path,
                     user_id=self.user_id,
-                    enable_weaviate_storage=False,
-                    weaviate_collection="rag_documents",
-                    enable_vision_enhancement=False,
-                    enable_chunking=False
+                    enable_chunking=False,
                 )
             )
             self.logger.info(f"🔥 FLOW COMPLETED: {metadata['file_name']} - Status: {result.get('status')}")

@@ -45,7 +45,13 @@
       "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
       "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
       "Read(/C:\\Users\\Adonis\\OneDrive\\Desktop\\DataScience\\scaled_processing\\src\\backend\\doc_processing_system\\pipelines\\structured_extraction\\demo/**)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(Get-Process python)",
+      "Bash(Where-Object {$_rocessName -eq \"python\"})",
+      "Bash(Format-Table Id,ProcessName,StartTime -AutoSize)",
+      "Bash(tasklist)",
+      "Bash(fc:*)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []

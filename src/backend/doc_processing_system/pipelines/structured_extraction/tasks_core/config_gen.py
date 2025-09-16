@@ -28,7 +28,7 @@ def generate_config(state: PipelineState) -> dict[str, Any] | None:
         
         if getattr(state, 'document_text', None) and LANGEXTRACT_AVAILABLE:
             # Pass classification directly to process_document - it will handle routing internally
-            results = process_document(getattr(state, 'document_text'), classification)
+            results = process_document(getattr(state, 'document_text'))
             
             # Convert AnnotatedDocument to dict format expected by PipelineState
             if hasattr(results, 'extractions'):

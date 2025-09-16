@@ -14,7 +14,7 @@ from src.backend.doc_processing_system.core_deps.database.connection_manager imp
 
 
 @task(name="duplicate-detection", retries=2)
-def duplicate_detection_task(raw_file_path: str, user_id: str = "default") -> Dict[str, Any]:
+def duplicate_detection_task(raw_file_path: str) -> Dict[str, Any]:
     """
     Fast duplicate detection using file hash only - no heavy ML models.
     

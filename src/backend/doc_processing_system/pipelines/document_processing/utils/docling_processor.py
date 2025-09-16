@@ -72,7 +72,7 @@ class DoclingProcessor:
 
             # Step 3: Convert document with appropriate pipeline
             converter = self._get_converter_for_format(doc_format)
-            conv_result = converter.convert(str(raw_path))
+            conv_result = converter.convert(str(raw_path),page_range=(1,1))
 
             if conv_result.status.name != "SUCCESS":
                 return self._error_result("Docling conversion failed", raw_file_path,
@@ -91,7 +91,8 @@ class DoclingProcessor:
 
             # Step 4: Export JSON with embedded images
             tables_data = []
-            for table_ix, table in enumerate(conv_result.document.tables):
+            conv_result_tables = converter.convert(str(raw_path))
+            for table_ix, table in enumerate(conv_result_tables.document.tables):
                 # Convert to DataFrame to strip metadata
                 df = table.export_to_dataframe()
 
@@ -110,8 +111,6 @@ class DoclingProcessor:
 
             print(f"Saved {len(tables_data)} tables as clean JSON!")
 
-            # Step 5: Export images to directory
-            self._extract_images_to_directory(conv_result.document, images_dir)
 
             # Step 6: Get file metadata
             file_info = self._get_file_info(raw_path, conv_result.document)
