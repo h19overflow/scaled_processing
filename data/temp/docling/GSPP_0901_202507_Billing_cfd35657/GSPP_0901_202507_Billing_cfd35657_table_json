@@ -18,7 +18,7 @@
         "Penerangan": "Luar Puncak (kWh)",
         "Penggunaan": "170,757.00",
         "Kadar (RM)": "0.2250",
-        "Amaun (RM)": "38,420.33"
+        "Amaun (RM)": "420.33 38,"
       },
       {
         "Penerangan": "Kehendak Maksima (kW)",
@@ -32,16 +32,6 @@
         "Kadar (RM)": "",
         "Amaun (RM)": "152,021.15"
       }
-    ],
-    "columns": [
-      "Penerangan",
-      "Penggunaan",
-      "Kadar (RM)",
-      "Amaun (RM)"
-    ],
-    "shape": [
-      5,
-      4
     ]
   },
   {
@@ -57,7 +47,7 @@
         "Keterangan": "RM",
         "Tanpa ST": "35,748.50",
         "Dengan ST": "0.00",
-        "Jumlah": "35,748.50"
+        "Jumlah": "748.50 35,"
       },
       {
         "Keterangan": "RM",
@@ -89,82 +79,60 @@
         "Dengan ST": "217,314.45",
         "Jumlah": "217,314.45"
       }
-    ],
-    "columns": [
-      "Keterangan",
-      "Keterangan",
-      "Tanpa ST",
-      "Dengan ST",
-      "Jumlah"
-    ],
-    "shape": [
-      7,
-      5
     ]
   },
   {
     "table_id": 2,
     "data": [
       {
-        "No. Meter.": "M 821702898",
-        "Bacaan Meter.Dahulu": "0",
+        "No. Meter.No. Meter": "M 821702898",
+        "Bacaan Meter.Dahulu": "",
         "Bacaan Meter.Semasa": "56,531",
         "Penggunaan": "56,531",
         "Unit": "kWh P"
       },
       {
-        "No. Meter.": "M 821702898",
+        "No. Meter.No. Meter": "M 821702898",
         "Bacaan Meter.Dahulu": "0",
         "Bacaan Meter.Semasa": "137,705",
         "Penggunaan": "137,705",
         "Unit": "kWh MP"
       },
       {
-        "No. Meter.": "M 821702898",
+        "No. Meter.No. Meter": "M",
         "Bacaan Meter.Dahulu": "0",
         "Bacaan Meter.Semasa": "170,757",
         "Penggunaan": "170,757",
-        "Unit": "kWh O"
+        "Unit": "kWh 0"
       },
       {
-        "No. Meter.": "M 821702898",
-        "Bacaan Meter.Dahulu": "0",
+        "No. Meter.No. Meter": "M",
+        "Bacaan Meter.Dahulu": "",
         "Bacaan Meter.Semasa": "1,007",
         "Penggunaan": "1,007",
         "Unit": "kW P"
       },
       {
-        "No. Meter.": "M 821702898",
-        "Bacaan Meter.Dahulu": "0",
+        "No. Meter.No. Meter": "M 821702898",
+        "Bacaan Meter.Dahulu": "",
         "Bacaan Meter.Semasa": "991",
         "Penggunaan": "991",
         "Unit": "kW MP"
       },
       {
-        "No. Meter.": "M 821702898",
-        "Bacaan Meter.Dahulu": "0",
+        "No. Meter.No. Meter": "M",
+        "Bacaan Meter.Dahulu": "",
         "Bacaan Meter.Semasa": "954",
         "Penggunaan": "954",
-        "Unit": "kW O"
+        "Unit": "kW 0"
       },
       {
-        "No. Meter.": "M 821702898",
+        "No. Meter.No. Meter": "M",
         "Bacaan Meter.Dahulu": "0",
         "Bacaan Meter.Semasa": "123,294",
         "Penggunaan": "123,294",
         "Unit": "kVARh"
       }
-    ],
-    "columns": [
-      "No. Meter.",
-      "Bacaan Meter.Dahulu",
-      "Bacaan Meter.Semasa",
-      "Penggunaan",
-      "Unit"
-    ],
-    "shape": [
-      7,
-      5
     ]
   }
 ]

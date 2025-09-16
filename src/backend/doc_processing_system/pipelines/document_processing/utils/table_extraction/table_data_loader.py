@@ -16,6 +16,24 @@ class TableDataLoader:
         """Initialize table data loader."""
         self.logger = logging.getLogger(__name__)
 
+
+#TODO Beban Diisytiharkan 950.00kW
+# Kehendak Maksima Tertinggi 819.00kW
+# NOT CAPTURED in 0602_202507
+# AMAUN COLUMN AND KADAR NOT CAPTURED IN THE ANDA GUNA TABLE
+# INFO IS IN THE JSON BUT not LOADED     {
+#         "Penerangan": "Puncak (kWh)",
+#         "Penggunaan": "141,779.00",
+#         "Kadar (RM)": "0.35500",
+#         "Amaun (RM)": "50,331.55"},
+#  {,
+#         "Penerangan": "Jumlah",
+#         "Penggunaan": "277,411.00",
+#         "Kadar (RM)": "",
+#         "Amaun (RM)": "106,526.96"
+#       }
+#     ]
+
     def load_table_data(self, table_file: Path) -> Optional[List[Dict[str, Any]]]:
         """Load table data from JSON file.
 
@@ -139,111 +157,16 @@ class TableDataLoader:
         }
 
         try:
+            # Scan all tables for flexible content-pattern extraction
             for table in records:
                 if 'data' not in table:
                     continue
 
                 table_data = table['data']
-                table_id = table.get('table_id', -1)
+                self._extract_from_table(table_data, output)
 
-                # Table 2: Extract technical parameters by index
-                if table_id == 2:
-                    if len(table_data) >= 5:
-                        # Extract MAQ from column header (key name "57,413.00")
-                        row_0_keys = list(table_data[0].keys())
-                        if len(row_0_keys) >= 2:
-                            maq_header = row_0_keys[1]  # "57,413.00"
-                            output['maq_kwh'] = self._safe_float(maq_header.replace(',', ''))
-
-                        # Extract values from the second column (index 1)
-                        row_0_values = list(table_data[0].values())
-                        # Row 0: Average SMP
-                        if len(row_0_values) >= 2:
-                            output['average_smp'] = self._safe_float(row_0_values[1])
-
-                        # Row 1: Beban Diisytiharkan
-                        if len(table_data) > 1:
-                            row_1_values = list(table_data[1].values())
-                            if len(row_1_values) >= 2:
-                                output['beban_diisytiharkan_kw'] = self._extract_numeric(row_1_values[1])
-
-                        # Row 2: Kehendak Maksima Tertinggi
-                        if len(table_data) > 2:
-                            row_2_values = list(table_data[2].values())
-                            if len(row_2_values) >= 2:
-                                output['kehendak_maksima_tertinggi_kw'] = self._extract_numeric(row_2_values[1])
-
-                        # Row 3: Faktor Beban
-                        if len(table_data) > 3:
-                            row_3_values = list(table_data[3].values())
-                            if len(row_3_values) >= 2:
-                                output['faktor_beban'] = self._safe_float(row_3_values[1])
-
-                        # Row 4: Angkadar Kuasa
-                        if len(table_data) > 4:
-                            row_4_values = list(table_data[4].values())
-                            if len(row_4_values) >= 2:
-                                output['angkadar_kuasa'] = self._safe_float(row_4_values[1])
-
-                # Table 3: Extract usage and charges by index
-                elif table_id == 3:
-                    if len(table_data) >= 4:
-                        # Row 0: Puncak (kWh)
-                        if len(table_data) > 0:
-                            row_values = list(table_data[0].values())
-                            if len(row_values) >= 4:
-                                output['jumlah_penggunaan_puncak'] = self._safe_float(row_values[1])
-                                output['jumlah_caj_tenaga_puncak'] = self._safe_float(row_values[3])
-
-                        # Row 1: Luar Puncak (kWh)
-                        if len(table_data) > 1:
-                            row_values = list(table_data[1].values())
-                            if len(row_values) >= 4:
-                                output['jumlah_penggunaan_luar_puncak'] = self._safe_float(row_values[1])
-                                output['jumlah_caj_tenaga_luar_puncak'] = self._safe_float(row_values[3])
-
-                        # Row 2: Kehendak Maksima (kW)
-                        if len(table_data) > 2:
-                            row_values = list(table_data[2].values())
-                            if len(row_values) >= 2:
-                                output['jumlah_permintaan_maksima'] = self._safe_float(row_values[1])
-
-                # Table 5: Extract charges breakdown by index
-                elif table_id == 5:
-                    charge_types = [
-                        ('caj_afa_tanpa_st', 'caj_afa_dengan_st', 'jumlah_caj_afa'),
-                        ('caj_kapasiti_tanpa_st', 'caj_kapasiti_dengan_st', 'jumlah_caj_kapasiti'),
-                        ('caj_rangkaian_tanpa_st', 'caj_rangkaian_dengan_st', 'jumlah_caj_rangkaian'),
-                        ('caj_peruncitan_tanpa_st', 'caj_peruncitan_dengan_st', 'jumlah_caj_peruncitan')
-                    ]
-
-                    for i, (tanpa_key, dengan_key, jumlah_key) in enumerate(charge_types):
-                        if i < len(table_data):
-                            row_values = list(table_data[i].values())
-                            if len(row_values) >= 4:
-                                tanpa_st = self._safe_float(row_values[1])
-                                dengan_st = self._safe_float(row_values[2])
-                                output[tanpa_key] = tanpa_st
-                                output[dengan_key] = dengan_st
-                                output[jumlah_key] = tanpa_st + dengan_st
-
-                # Table 6: Extract meter readings by index
-                elif table_id == 6:
-                    for i, row in enumerate(table_data):
-                        row_values = list(row.values())
-                        if len(row_values) >= 5:
-                            unit = row_values[4]
-                            consumption = row_values[3]
-
-                            if 'kWh P (I)' in unit:  # Peak usage (row 1)
-                                output['penggunaan_puncak_tanpa_st'] = self._safe_float(consumption)
-
-                            elif 'kWh 0 (I)' in unit:  # Off-peak usage (row 2)
-                                output['penggunaan_luar_puncak_tanpa_st'] = self._safe_float(consumption)
-
-            # Calculate totals
-            output['jumlah_penggunaan'] = output['jumlah_penggunaan_puncak'] + output['jumlah_penggunaan_luar_puncak']
-            output['penggunaan_tanpa_st'] = output['penggunaan_puncak_tanpa_st'] + output['penggunaan_luar_puncak_tanpa_st']
+            # Calculate totals after all extraction
+            self._calculate_totals(output)
 
             # Structured printing
             self._print_structured_results(output)
@@ -251,6 +174,174 @@ class TableDataLoader:
             self.logger.error(f"Error extracting billing data: {e}")
 
         return output
+
+    def _extract_from_table(self, table_data, output):
+        """Extract data from a single table using pattern recognition."""
+        if not table_data:
+            return
+
+        # Check if this is a technical parameters table (has MAQ structure)
+        self._extract_technical_parameters(table_data, output)
+
+        # Check if this is a usage data table
+        self._extract_usage_data(table_data, output)
+
+        # Check if this is a charge breakdown table
+        self._extract_charge_breakdown(table_data, output)
+
+        # Check if this is a meter readings table
+        self._extract_meter_readings(table_data, output)
+
+    def _extract_technical_parameters(self, table_data, output):
+        """Extract technical parameters like MAQ, Load Factor, etc."""
+        for row in table_data:
+            # Look for MAQ as column header (edge case)
+            for key, value in row.items():
+                # Check if key looks like MAQ (numeric with comma)
+                if ',' in key and key.replace(',', '').replace('.', '').isdigit():
+                    output['maq_kwh'] = self._safe_float(key.replace(',', ''))
+
+                # Check for technical parameter patterns in values
+                if 'Average System Marginal Price' in str(value) or 'SMP' in str(value):
+                    # Find the corresponding value (usually in the same row)
+                    row_values = list(row.values())
+                    for val in row_values:
+                        if val != value and val and self._is_numeric(val):
+                            output['average_smp'] = self._safe_float(val)
+                            break
+
+                elif 'Beban Diisytiharkan' in str(value):
+                    # Look in the same row for kW value
+                    for val in row.values():
+                        if 'kW' in str(val) and val != value:
+                            output['beban_diisytiharkan_kw'] = self._extract_numeric(val)
+                            break
+
+                elif 'Kehendak Maksima Tertinggi' in str(value):
+                    # Look in the same row for kW value
+                    for val in row.values():
+                        if 'kW' in str(val) and val != value:
+                            output['kehendak_maksima_tertinggi_kw'] = self._extract_numeric(val)
+                            break
+
+                elif 'Faktor Beban' in str(value):
+                    row_values = list(row.values())
+                    for val in row_values:
+                        if val != value and val and self._is_numeric(val):
+                            output['faktor_beban'] = self._safe_float(val)
+                            break
+
+                elif 'Angkadar Kuasa' in str(value):
+                    row_values = list(row.values())
+                    for val in row_values:
+                        if val != value and val and self._is_numeric(val):
+                            output['angkadar_kuasa'] = self._safe_float(val)
+                            break
+
+    def _extract_usage_data(self, table_data, output):
+        """Extract usage data (Peak, Mid-Peak, Off-Peak)."""
+        for row in table_data:
+            for key, value in row.items():
+                # Look for usage patterns
+                if 'Puncak (kWh)' in str(value) and 'Luar' not in str(value) and 'Pertengahan' not in str(value):
+                    # Peak usage
+                    if 'Penggunaan' in row:
+                        output['jumlah_penggunaan_puncak'] = self._safe_float(row['Penggunaan'])
+                    if 'Amaun (RM)' in row:
+                        output['jumlah_caj_tenaga_puncak'] = self._safe_float(row['Amaun (RM)'])
+
+                elif 'Luar Puncak (kWh)' in str(value):
+                    # Off-peak usage
+                    if 'Penggunaan' in row:
+                        output['jumlah_penggunaan_luar_puncak'] = self._safe_float(row['Penggunaan'])
+                    if 'Amaun (RM)' in row:
+                        output['jumlah_caj_tenaga_luar_puncak'] = self._safe_float(row['Amaun (RM)'])
+
+                elif 'Pertengahan Puncak (kWh)' in str(value):
+                    # Mid-peak usage (add to peak for now)
+                    if 'Penggunaan' in row:
+                        current_peak = output.get('jumlah_penggunaan_puncak', 0.0)
+                        output['jumlah_penggunaan_puncak'] = current_peak + self._safe_float(row['Penggunaan'])
+                    if 'Amaun (RM)' in row:
+                        current_peak_charge = output.get('jumlah_caj_tenaga_puncak', 0.0)
+                        output['jumlah_caj_tenaga_puncak'] = current_peak_charge + self._safe_float(row['Amaun (RM)'])
+
+                elif 'Kehendak Maksima (kW)' in str(value):
+                    # Maximum demand
+                    if 'Penggunaan' in row:
+                        output['jumlah_permintaan_maksima'] = self._safe_float(row['Penggunaan'])
+
+    def _extract_charge_breakdown(self, table_data, output):
+        """Extract charge breakdown (Tanpa ST/Dengan ST)."""
+        # Check if this table has charge breakdown structure
+        has_tanpa_st = any('Tanpa ST' in str(row) for row in table_data)
+        has_dengan_st = any('Dengan ST' in str(row) for row in table_data)
+
+        if not (has_tanpa_st and has_dengan_st):
+            return
+
+        # Map charges by row order
+        charge_mappings = [
+            ('caj_afa_tanpa_st', 'caj_afa_dengan_st', 'jumlah_caj_afa'),
+            ('caj_kapasiti_tanpa_st', 'caj_kapasiti_dengan_st', 'jumlah_caj_kapasiti'),
+            ('caj_rangkaian_tanpa_st', 'caj_rangkaian_dengan_st', 'jumlah_caj_rangkaian'),
+            ('caj_peruncitan_tanpa_st', 'caj_peruncitan_dengan_st', 'jumlah_caj_peruncitan')
+        ]
+
+        valid_rows = [row for row in table_data if 'Tanpa ST' in row and 'Dengan ST' in row and row.get('Tanpa ST') and row.get('Dengan ST')]
+
+        for i, (tanpa_key, dengan_key, jumlah_key) in enumerate(charge_mappings):
+            if i < len(valid_rows):
+                row = valid_rows[i]
+                tanpa_st = self._safe_float(row.get('Tanpa ST', ''))
+                dengan_st = self._safe_float(row.get('Dengan ST', ''))
+
+                if tanpa_st > 0 or dengan_st > 0:  # Only assign if we have valid data
+                    output[tanpa_key] = tanpa_st
+                    output[dengan_key] = dengan_st
+                    output[jumlah_key] = tanpa_st + dengan_st
+
+    def _extract_meter_readings(self, table_data, output):
+        """Extract meter readings by unit pattern matching."""
+        for row in table_data:
+            unit = row.get('Unit', '')
+
+            # Look for consumption column (could be unnamed or named differently)
+            consumption_value = None
+            for key, value in row.items():
+                if key in ['Penggunaan', ''] and value and value != unit:
+                    consumption_value = value
+                    break
+
+            if consumption_value:
+                if 'kWh P (I)' in unit:  # Peak usage
+                    output['penggunaan_puncak_tanpa_st'] = self._safe_float(consumption_value)
+                elif 'kWh 0 (I)' in unit:  # Off-peak usage
+                    output['penggunaan_luar_puncak_tanpa_st'] = self._safe_float(consumption_value)
+
+    def _calculate_totals(self, output):
+        """Calculate derived totals."""
+        # Usage totals
+        output['jumlah_penggunaan'] = output['jumlah_penggunaan_puncak'] + output['jumlah_penggunaan_luar_puncak']
+        output['penggunaan_tanpa_st'] = output['penggunaan_puncak_tanpa_st'] + output['penggunaan_luar_puncak_tanpa_st']
+
+        # If meter readings exist but usage data is missing, copy from meter readings
+        if output['penggunaan_puncak_tanpa_st'] > 0 and output['jumlah_penggunaan_puncak'] == 0:
+            output['jumlah_penggunaan_puncak'] = output['penggunaan_puncak_tanpa_st']
+
+        if output['penggunaan_luar_puncak_tanpa_st'] > 0 and output['jumlah_penggunaan_luar_puncak'] == 0:
+            output['jumlah_penggunaan_luar_puncak'] = output['penggunaan_luar_puncak_tanpa_st']
+
+    def _is_numeric(self, value):
+        """Check if a value can be converted to a number."""
+        if not value:
+            return False
+        try:
+            cleaned = str(value).replace(',', '').replace('RM', '').replace('~', '').strip()
+            float(cleaned)
+            return True
+        except (ValueError, TypeError):
+            return False
 
     # HELPER FUNCTIONS
     def _safe_float(self, value):
@@ -333,7 +424,28 @@ class TableDataLoader:
 if __name__ == "__main__":
     try:
         loader = TableDataLoader()
-        result=loader.load_table_data(Path(r"C:\Users\User\Projects\scaled_processing\data\temp\docling\GSPP_0602_202507_Billing_eabe7387\GSPP_0602_202507_Billing_eabe7387_table_json"))
-        print(loader.extract_billing_data(records=result))
+
+        # Test with first invoice format
+        print("=" * 50)
+        print("TESTING FIRST INVOICE FORMAT")
+        print("=" * 50)
+        result1 = loader.load_table_data(Path(r"C:\Users\User\Projects\scaled_processing\data\temp\docling\GSPP_0602_202507_Billing_eabe7387\GSPP_0602_202507_Billing_eabe7387_table_json"))
+        output1 = loader.extract_billing_data(records=result1)
+
+        print("\n" + "=" * 50)
+        print("TESTING SECOND INVOICE FORMAT")
+        print("=" * 50)
+        # Test with second invoice format
+        result2 = loader.load_table_data(Path(r"C:\Users\User\Projects\scaled_processing\data\temp\docling\GSPP_0901_202507_Billing_cfd35657\GSPP_0901_202507_Billing_cfd35657_table_json"))
+        output2 = loader.extract_billing_data(records=result2)
+
+        print("\n" + "=" * 50)
+        print("COMPARISON SUMMARY")
+        print("=" * 50)
+        print(f"First invoice - Total Usage: {output1['jumlah_penggunaan']:,.0f} kWh")
+        print(f"Second invoice - Total Usage: {output2['jumlah_penggunaan']:,.0f} kWh")
+        print(f"First invoice - MAQ: {output1['maq_kwh']:,.0f} kWh")
+        print(f"Second invoice - MAQ: {output2['maq_kwh']:,.0f} kWh")
+
     except Exception as e:
         print(e)
