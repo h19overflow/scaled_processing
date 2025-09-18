@@ -12,7 +12,7 @@ def grant_gmail_permissions():
     # Add Gmail API service account as publisher
     policy.bindings.add(
         role="roles/pubsub.publisher",
-        members=["serviceAccount:gmail-api-push@system.gserviceaccount.com"]
+        members=["serviceAccount:gmail-monitor-sa@gmail-monitor-project-472511.iam.gserviceaccount.com"]
     )
 
     publisher.set_iam_policy(request={"resource": topic_path, "policy": policy})
