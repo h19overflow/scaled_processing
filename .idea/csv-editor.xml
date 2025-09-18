@@ -3,6 +3,13 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
+        <entry key="\data\temp\docling\GSPP_0602_202507_Billing_eabe7387\GSPP_0602_202507_Billing_eabe7387_billing_data.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\dumpDataPreview">
           <value>
             <Attribute>

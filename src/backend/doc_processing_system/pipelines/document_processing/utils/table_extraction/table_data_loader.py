@@ -5,6 +5,8 @@ Handles different JSON formats and validates table structure.
 
 import json
 import logging
+import csv
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
@@ -15,24 +17,6 @@ class TableDataLoader:
     def __init__(self):
         """Initialize table data loader."""
         self.logger = logging.getLogger(__name__)
-
-
-#TODO Beban Diisytiharkan 950.00kW
-# Kehendak Maksima Tertinggi 819.00kW
-# NOT CAPTURED in 0602_202507
-# AMAUN COLUMN AND KADAR NOT CAPTURED IN THE ANDA GUNA TABLE
-# INFO IS IN THE JSON BUT not LOADED     {
-#         "Penerangan": "Puncak (kWh)",
-#         "Penggunaan": "141,779.00",
-#         "Kadar (RM)": "0.35500",
-#         "Amaun (RM)": "50,331.55"},
-#  {,
-#         "Penerangan": "Jumlah",
-#         "Penggunaan": "277,411.00",
-#         "Kadar (RM)": "",
-#         "Amaun (RM)": "106,526.96"
-#       }
-#     ]
 
     def load_table_data(self, table_file: Path) -> Optional[List[Dict[str, Any]]]:
         """Load table data from JSON file.
@@ -194,12 +178,15 @@ class TableDataLoader:
 
     def _extract_technical_parameters(self, table_data, output):
         """Extract technical parameters like MAQ, Load Factor, etc."""
+        found_params = []
+
         for row in table_data:
             # Look for MAQ as column header (edge case)
             for key, value in row.items():
                 # Check if key looks like MAQ (numeric with comma)
                 if ',' in key and key.replace(',', '').replace('.', '').isdigit():
                     output['maq_kwh'] = self._safe_float(key.replace(',', ''))
+                    found_params.append(f"MAQ: {output['maq_kwh']:.2f} kWh (from column header)")
 
                 # Check for technical parameter patterns in values
                 if 'Average System Marginal Price' in str(value) or 'SMP' in str(value):
@@ -208,20 +195,25 @@ class TableDataLoader:
                     for val in row_values:
                         if val != value and val and self._is_numeric(val):
                             output['average_smp'] = self._safe_float(val)
+                            found_params.append(f"Average SMP: {output['average_smp']:.4f}")
                             break
 
                 elif 'Beban Diisytiharkan' in str(value):
                     # Look in the same row for kW value
                     for val in row.values():
                         if 'kW' in str(val) and val != value:
-                            output['beban_diisytiharkan_kw'] = self._extract_numeric(val)
+                            extracted_val = self._extract_numeric(val)
+                            output['beban_diisytiharkan_kw'] = extracted_val
+                            found_params.append(f"Declared Load: {extracted_val:.2f} kW (from '{val}')")
                             break
 
                 elif 'Kehendak Maksima Tertinggi' in str(value):
                     # Look in the same row for kW value
                     for val in row.values():
                         if 'kW' in str(val) and val != value:
-                            output['kehendak_maksima_tertinggi_kw'] = self._extract_numeric(val)
+                            extracted_val = self._extract_numeric(val)
+                            output['kehendak_maksima_tertinggi_kw'] = extracted_val
+                            found_params.append(f"Highest Max Demand: {extracted_val:.2f} kW (from '{val}')")
                             break
 
                 elif 'Faktor Beban' in str(value):
@@ -229,6 +221,7 @@ class TableDataLoader:
                     for val in row_values:
                         if val != value and val and self._is_numeric(val):
                             output['faktor_beban'] = self._safe_float(val)
+                            found_params.append(f"Load Factor: {output['faktor_beban']:.4f}")
                             break
 
                 elif 'Angkadar Kuasa' in str(value):
@@ -236,7 +229,13 @@ class TableDataLoader:
                     for val in row_values:
                         if val != value and val and self._is_numeric(val):
                             output['angkadar_kuasa'] = self._safe_float(val)
+                            found_params.append(f"Power Factor: {output['angkadar_kuasa']:.4f}")
                             break
+
+        if found_params:
+            self.logger.info(f"Technical parameters found: {', '.join(found_params)}")
+        else:
+            self.logger.warning("No technical parameters found in any table")
 
     def _extract_usage_data(self, table_data, output):
         """Extract usage data (Peak, Mid-Peak, Off-Peak)."""
@@ -248,14 +247,22 @@ class TableDataLoader:
                     if 'Penggunaan' in row:
                         output['jumlah_penggunaan_puncak'] = self._safe_float(row['Penggunaan'])
                     if 'Amaun (RM)' in row:
-                        output['jumlah_caj_tenaga_puncak'] = self._safe_float(row['Amaun (RM)'])
+                        amount = self._safe_float(row['Amaun (RM)'])
+                        output['jumlah_caj_tenaga_puncak'] = amount
+                        # Map to energy charge fields (peak charges go to "tanpa ST")
+                        output['caj_tenaga_puncak_tanpa_st'] = amount
+                        output['jumlah_caj_tenaga_puncak'] = amount
 
                 elif 'Luar Puncak (kWh)' in str(value):
                     # Off-peak usage
                     if 'Penggunaan' in row:
                         output['jumlah_penggunaan_luar_puncak'] = self._safe_float(row['Penggunaan'])
                     if 'Amaun (RM)' in row:
-                        output['jumlah_caj_tenaga_luar_puncak'] = self._safe_float(row['Amaun (RM)'])
+                        amount = self._safe_float(row['Amaun (RM)'])
+                        output['jumlah_caj_tenaga_luar_puncak'] = amount
+                        # Map to energy charge fields (off-peak charges go to "tanpa ST")
+                        output['caj_tenaga_luar_puncak_tanpa_st'] = amount
+                        output['jumlah_caj_tenaga_luar_puncak'] = amount
 
                 elif 'Pertengahan Puncak (kWh)' in str(value):
                     # Mid-peak usage (add to peak for now)
@@ -263,8 +270,11 @@ class TableDataLoader:
                         current_peak = output.get('jumlah_penggunaan_puncak', 0.0)
                         output['jumlah_penggunaan_puncak'] = current_peak + self._safe_float(row['Penggunaan'])
                     if 'Amaun (RM)' in row:
+                        amount = self._safe_float(row['Amaun (RM)'])
                         current_peak_charge = output.get('jumlah_caj_tenaga_puncak', 0.0)
-                        output['jumlah_caj_tenaga_puncak'] = current_peak_charge + self._safe_float(row['Amaun (RM)'])
+                        current_peak_charge_tanpa_st = output.get('caj_tenaga_puncak_tanpa_st', 0.0)
+                        output['jumlah_caj_tenaga_puncak'] = current_peak_charge + amount
+                        output['caj_tenaga_puncak_tanpa_st'] = current_peak_charge_tanpa_st + amount
 
                 elif 'Kehendak Maksima (kW)' in str(value):
                     # Maximum demand
@@ -357,15 +367,24 @@ class TableDataLoader:
             return 0.00
 
     def _extract_numeric(self, value):
-        """Extract numeric value from strings like '950.00kW'."""
+        """Extract numeric value from strings like '950.00kW' or '950.OOkW'."""
         if not value:
             return 0.00
 
         try:
-            # Remove units and convert to float
+            # Remove units and clean common character substitutions
             cleaned_value = str(value).replace('kW', '').replace('kWh', '').replace(',', '').strip()
+
+            # Handle common OCR errors: O instead of 0
+            cleaned_value = cleaned_value.replace('O', '0')
+
             return float(cleaned_value)
         except (ValueError, TypeError):
+            # If direct conversion fails, try to extract just the numeric part
+            import re
+            numbers = re.findall(r'\d+\.?\d*', str(value).replace('O', '0'))
+            if numbers:
+                return float(numbers[0])
             return 0.00
 
     def _print_structured_results(self, output):
@@ -419,6 +438,129 @@ class TableDataLoader:
 
         print("="*80)
 
+    def export_to_csv(self, output_data: Dict[str, Any], source_file_path: Path) -> Path:
+        """Export extracted billing data to CSV file in same directory as source JSON."""
+        try:
+            # Create CSV filename based on source file
+            csv_filename = source_file_path.name.replace('_table_json', '_billing_data.csv')
+            csv_path = source_file_path.parent / csv_filename
+
+            # Prepare structured data for CSV export
+            csv_data = []
+
+            # Add metadata row
+            csv_data.append({
+                'Category': 'METADATA',
+                'Field': 'source_file',
+                'Value': source_file_path.name,
+                'Unit': '',
+                'Notes': f'Extracted on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+            })
+
+            # Usage Data Section
+            usage_fields = [
+                ('penggunaan_puncak_tanpa_st', 'Peak Usage (Tanpa ST)', 'kWh'),
+                ('penggunaan_puncak_dengan_st', 'Peak Usage (Dengan ST)', 'kWh'),
+                ('jumlah_penggunaan_puncak', 'Total Peak Usage', 'kWh'),
+                ('penggunaan_luar_puncak_tanpa_st', 'Off-Peak Usage (Tanpa ST)', 'kWh'),
+                ('penggunaan_luar_puncak_dengan_st', 'Off-Peak Usage (Dengan ST)', 'kWh'),
+                ('jumlah_penggunaan_luar_puncak', 'Total Off-Peak Usage', 'kWh'),
+                ('jumlah_penggunaan', 'TOTAL USAGE', 'kWh')
+            ]
+
+            for field_key, field_name, unit in usage_fields:
+                csv_data.append({
+                    'Category': 'USAGE_DATA',
+                    'Field': field_name,
+                    'Value': f"{output_data[field_key]:.2f}",
+                    'Unit': unit,
+                    'Notes': ''
+                })
+
+            # Demand Data Section
+            demand_fields = [
+                ('permintaan_maksima_tanpa_st', 'Max Demand (Tanpa ST)', 'kW'),
+                ('permintaan_maksima_dengan_st', 'Max Demand (Dengan ST)', 'kW'),
+                ('jumlah_permintaan_maksima', 'Total Max Demand', 'kW')
+            ]
+
+            for field_key, field_name, unit in demand_fields:
+                csv_data.append({
+                    'Category': 'DEMAND_DATA',
+                    'Field': field_name,
+                    'Value': f"{output_data[field_key]:.2f}",
+                    'Unit': unit,
+                    'Notes': ''
+                })
+
+            # Technical Parameters Section
+            technical_fields = [
+                ('beban_diisytiharkan_kw', 'Declared Load', 'kW'),
+                ('kehendak_maksima_tertinggi_kw', 'Highest Max Demand', 'kW'),
+                ('faktor_beban', 'Load Factor', ''),
+                ('angkadar_kuasa', 'Power Factor', ''),
+                ('average_smp', 'Average SMP', 'RM/kWh'),
+                ('maq_kwh', 'Maximum Allowable Quantity (MAQ)', 'kWh')
+            ]
+
+            for field_key, field_name, unit in technical_fields:
+                csv_data.append({
+                    'Category': 'TECHNICAL_PARAMETERS',
+                    'Field': field_name,
+                    'Value': f"{output_data[field_key]:.4f}" if field_key in ['faktor_beban', 'angkadar_kuasa', 'average_smp'] else f"{output_data[field_key]:.2f}",
+                    'Unit': unit,
+                    'Notes': 'Missing from source' if output_data[field_key] == 0.0 and field_key in ['beban_diisytiharkan_kw', 'kehendak_maksima_tertinggi_kw', 'average_smp', 'maq_kwh'] else ''
+                })
+
+            # Charges Breakdown Section
+            charge_fields = [
+                ('caj_tenaga_puncak_tanpa_st', 'Energy Peak Charges (Tanpa ST)', 'RM'),
+                ('caj_tenaga_puncak_dengan_st', 'Energy Peak Charges (Dengan ST)', 'RM'),
+                ('jumlah_caj_tenaga_puncak', 'Total Energy Peak Charges', 'RM'),
+                ('caj_tenaga_luar_puncak_tanpa_st', 'Energy Off-Peak Charges (Tanpa ST)', 'RM'),
+                ('caj_tenaga_luar_puncak_dengan_st', 'Energy Off-Peak Charges (Dengan ST)', 'RM'),
+                ('jumlah_caj_tenaga_luar_puncak', 'Total Energy Off-Peak Charges', 'RM'),
+                ('caj_afa_tanpa_st', 'AFA Charges (Tanpa ST)', 'RM'),
+                ('caj_afa_dengan_st', 'AFA Charges (Dengan ST)', 'RM'),
+                ('jumlah_caj_afa', 'Total AFA Charges', 'RM'),
+                ('caj_kapasiti_tanpa_st', 'Capacity Charges (Tanpa ST)', 'RM'),
+                ('caj_kapasiti_dengan_st', 'Capacity Charges (Dengan ST)', 'RM'),
+                ('jumlah_caj_kapasiti', 'Total Capacity Charges', 'RM'),
+                ('caj_rangkaian_tanpa_st', 'Network Charges (Tanpa ST)', 'RM'),
+                ('caj_rangkaian_dengan_st', 'Network Charges (Dengan ST)', 'RM'),
+                ('jumlah_caj_rangkaian', 'Total Network Charges', 'RM'),
+                ('caj_peruncitan_tanpa_st', 'Retail Charges (Tanpa ST)', 'RM'),
+                ('caj_peruncitan_dengan_st', 'Retail Charges (Dengan ST)', 'RM'),
+                ('jumlah_caj_peruncitan', 'Total Retail Charges', 'RM')
+            ]
+
+            for field_key, field_name, unit in charge_fields:
+                csv_data.append({
+                    'Category': 'CHARGES_BREAKDOWN',
+                    'Field': field_name,
+                    'Value': f"{output_data[field_key]:.2f}",
+                    'Unit': unit,
+                    'Notes': ''
+                })
+
+            # Write CSV file
+            with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+                fieldnames = ['Category', 'Field', 'Value', 'Unit', 'Notes']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                for row in csv_data:
+                    writer.writerow(row)
+
+            self.logger.info(f"Exported billing data to CSV: {csv_path}")
+            print(f"\n✅ CSV exported successfully: {csv_path}")
+            return csv_path
+
+        except Exception as e:
+            self.logger.error(f"Failed to export CSV: {e}")
+            print(f"❌ CSV export failed: {e}")
+            return None
+
     # The input JSON data provided by the user
 
 if __name__ == "__main__":
@@ -429,15 +571,23 @@ if __name__ == "__main__":
         print("=" * 50)
         print("TESTING FIRST INVOICE FORMAT")
         print("=" * 50)
-        result1 = loader.load_table_data(Path(r"C:\Users\User\Projects\scaled_processing\data\temp\docling\GSPP_0602_202507_Billing_eabe7387\GSPP_0602_202507_Billing_eabe7387_table_json"))
+        file1_path = Path(r"C:\Users\User\Projects\scaled_processing\data\temp\docling\GSPP_0602_202507_Billing_eabe7387\GSPP_0602_202507_Billing_eabe7387_table_json")
+        result1 = loader.load_table_data(file1_path)
         output1 = loader.extract_billing_data(records=result1)
+
+        # Export to CSV
+        csv_path1 = loader.export_to_csv(output1, file1_path)
 
         print("\n" + "=" * 50)
         print("TESTING SECOND INVOICE FORMAT")
         print("=" * 50)
         # Test with second invoice format
-        result2 = loader.load_table_data(Path(r"C:\Users\User\Projects\scaled_processing\data\temp\docling\GSPP_0901_202507_Billing_cfd35657\GSPP_0901_202507_Billing_cfd35657_table_json"))
+        file2_path = Path(r"C:\Users\User\Projects\scaled_processing\data\temp\docling\GSPP_0901_202507_Billing_cfd35657\GSPP_0901_202507_Billing_cfd35657_table_json")
+        result2 = loader.load_table_data(file2_path)
         output2 = loader.extract_billing_data(records=result2)
+
+        # Export to CSV
+        csv_path2 = loader.export_to_csv(output2, file2_path)
 
         print("\n" + "=" * 50)
         print("COMPARISON SUMMARY")
