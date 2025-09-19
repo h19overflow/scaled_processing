@@ -77,7 +77,7 @@ async def setup_gmail_watch(app: FastAPI):
 
         watch_request = {
             'labelIds': ['INBOX'],
-            'topicName': 'projects/gmail-monitor-project/topics/gmail-notifications',
+            'topicName': 'projects/gmail-monitor-project-472511/topics/gmail-notifications',
             'labelFilterBehavior': 'INCLUDE'
         }
 

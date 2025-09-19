@@ -76,3 +76,62 @@ class GmailAuthManager:
         """
         credentials = self.get_credentials()    # Ensures we have valid, refreshed credentials
         return build('gmail', 'v1', credentials=credentials)  # Constructs Gmail service client, ready for use
+
+    def get_authorization_url(self, redirect_uri: str = 'http://localhost:8000/auth/callback'):
+        """
+        Get OAuth2 authorization URL for web-based flows.
+
+        Args:
+            redirect_uri: Where Google should redirect after user consent
+
+        Returns:
+            tuple: (authorization_url, state) for the OAuth flow
+        """
+        flow = Flow.from_client_secrets_file(
+            self.client_secrets_path,
+            scopes=self.SCOPES,
+            redirect_uri=redirect_uri
+        )
+
+        authorization_url, state = flow.authorization_url(
+            access_type='offline',  # Enable refresh tokens
+            include_granted_scopes='true',
+            prompt='consent'  # Force consent screen to get refresh token
+        )
+
+        return authorization_url, state
+
+    def exchange_code_for_tokens(self, code: str, state: str, redirect_uri: str = 'http://localhost:8000/auth/callback'):
+        """
+        Exchange authorization code for access/refresh tokens.
+
+        Args:
+            code: Authorization code from Google
+            state: State parameter for security
+            redirect_uri: Must match the one used in get_authorization_url
+
+        Returns:
+            google.oauth2.credentials.Credentials: The obtained credentials
+
+        Raises:
+            Exception: If no refresh token received or other OAuth errors
+        """
+        flow = Flow.from_client_secrets_file(
+            self.client_secrets_path,
+            scopes=self.SCOPES,
+            redirect_uri=redirect_uri
+        )
+
+        # Exchange authorization code for tokens
+        flow.fetch_token(code=code)
+        credentials = flow.credentials
+
+        # Check if we got a refresh token
+        if not credentials.refresh_token:
+            raise Exception("No refresh token received. User may have already authorized this app. Please revoke permissions and try again.")
+
+        # Save tokens to file
+        with open(self.token_path, 'w') as token_file:
+            token_file.write(credentials.to_json())
+
+        return credentials

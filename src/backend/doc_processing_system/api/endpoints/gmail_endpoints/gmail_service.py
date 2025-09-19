@@ -29,7 +29,7 @@ router = APIRouter(prefix="/gmail", tags=["Gmail Service"])
 
 class WatchRequest(BaseModel):
     """Gmail watch setup request."""
-    topic_name: str = "projects/gmail-monitor-project/topics/gmail-notifications"
+    topic_name: str = "projects/gmail-monitor-project-472511/topics/gmail-notifications"
     label_ids: List[str] = ["INBOX"]
     label_filter_behavior: str = "INCLUDE"
 
