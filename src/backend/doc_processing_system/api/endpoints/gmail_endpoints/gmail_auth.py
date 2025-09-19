@@ -11,10 +11,16 @@ Dependencies: GmailAuthManager for token management
 
 import os
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import RedirectResponse
 from google_auth_oauthlib.flow import Flow
 from dotenv import load_dotenv
+
+from src.backend.doc_processing_system.api.dependencies import (
+    get_auth_manager,
+    get_optional_gmail_service,
+    increment_request_count
+)
 
 load_dotenv()
 
@@ -26,26 +32,8 @@ router = APIRouter(prefix="/auth", tags=["Gmail Authentication"])
 oauth_state = None
 
 
-def get_auth_manager():
-    """Get the global auth manager instance."""
-    from src.backend.doc_processing_system.api.main import auth_manager
-    return auth_manager
-
-
-def get_gmail_service():
-    """Get the global gmail service instance."""
-    from src.backend.doc_processing_system.api.main import gmail_service
-    return gmail_service
-
-
-def set_gmail_service(service):
-    """Set the global gmail service instance."""
-    import src.backend.doc_processing_system.api.main as main_module
-    main_module.gmail_service = service
-
-
 @router.get("/login")
-async def auth_login():
+async def auth_login(_: None = Depends(increment_request_count)):
     """Start OAuth2 flow - redirect user to Google for consent."""
     global oauth_state
     try:
@@ -80,7 +68,13 @@ async def auth_login():
 
 
 @router.get("/callback")
-async def auth_callback(code: str, state: str):
+async def auth_callback(
+    code: str,
+    state: str,
+    request: Request,
+    auth_manager=Depends(get_auth_manager),
+    _: None = Depends(increment_request_count)
+):
     """Handle OAuth2 callback - exchange code for tokens."""
     global oauth_state
     try:
@@ -113,16 +107,14 @@ async def auth_callback(code: str, state: str):
             token_file.write(credentials.to_json())
 
         # Initialize gmail service now that we have tokens
-        current_service = get_gmail_service()
-        if not current_service:
+        if not request.app.state.gmail_service:
             from src.backend.doc_processing_system.services.gmail_email_listener.gmail_service import GmailService
-            auth_manager = get_auth_manager()
             new_service = GmailService(auth_manager)
-            set_gmail_service(new_service)
+            request.app.state.gmail_service = new_service
 
             # Setup Gmail watch
             from src.backend.doc_processing_system.api.main import setup_gmail_watch
-            await setup_gmail_watch()
+            await setup_gmail_watch(request.app)
 
         logger.info("OAuth2 flow completed successfully")
         return {"message": "Authentication successful! Gmail monitoring is now active."}
@@ -133,10 +125,12 @@ async def auth_callback(code: str, state: str):
 
 
 @router.get("/status")
-async def auth_status():
+async def auth_status(
+    gmail_service=Depends(get_optional_gmail_service),
+    _: None = Depends(increment_request_count)
+):
     """Check if Gmail authentication is configured."""
     token_path = os.getenv("GMAIL_TOKEN_PATH")
-    gmail_service = get_gmail_service()
 
     if token_path and os.path.exists(token_path):
         return {

@@ -14,18 +14,17 @@ Dependencies: GmailService for Gmail API operations
 import logging
 import asyncio
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
+
+from src.backend.doc_processing_system.api.dependencies import (
+    get_gmail_service,
+    increment_request_count
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/gmail", tags=["Gmail Service"])
-
-
-def get_gmail_service():
-    """Get the global gmail service instance."""
-    from src.backend.doc_processing_system.api.main import gmail_service
-    return gmail_service
 
 
 class WatchRequest(BaseModel):
@@ -48,12 +47,11 @@ class MessageSummary(BaseModel):
 @router.get("/messages", response_model=List[MessageSummary])
 async def list_messages(
     max_results: int = Query(10, ge=1, le=100),
-    query: Optional[str] = Query(None, description="Gmail search query")
+    query: Optional[str] = Query(None, description="Gmail search query"),
+    service=Depends(get_gmail_service),
+    _: None = Depends(increment_request_count)
 ):
     """List Gmail messages."""
-    service = get_gmail_service()
-    if not service:
-        raise HTTPException(status_code=503, detail="Gmail service not initialized. Use /auth/login first.")
 
     try:
         # Get messages list
@@ -111,11 +109,12 @@ async def list_messages(
 
 
 @router.get("/messages/{message_id}")
-async def get_message(message_id: str):
+async def get_message(
+    message_id: str,
+    service=Depends(get_gmail_service),
+    _: None = Depends(increment_request_count)
+):
     """Get full message details."""
-    service = get_gmail_service()
-    if not service:
-        raise HTTPException(status_code=503, detail="Gmail service not initialized. Use /auth/login first.")
 
     try:
         message = await service.get_message(message_id)
