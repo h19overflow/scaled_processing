@@ -7,7 +7,6 @@ Provides Gmail operations endpoints:
 - /messages/{message_id}/attachments: Get message attachments
 - /watch/setup: Setup Gmail watch
 - /watch/status: Check watch status
-
 Dependencies: GmailService for Gmail API operations
 """
 
@@ -79,7 +78,7 @@ async def get_message_attachments_endpoint(
 
 @router.post("/watch/setup")
 async def setup_watch_endpoint(
-    watch_request: WatchRequest,
+    watch_request: WatchRequest = WatchRequest(),
     service=Depends(get_gmail_service)
 ):
     """Setup Gmail watch for push notifications."""

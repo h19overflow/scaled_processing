@@ -43,11 +43,17 @@ async def lifespan(app: FastAPI):
 
         app.state.auth_manager = GmailAuthManager(client_secrets_path, token_path)
 
-        # Only create gmail_service and setup watch if tokens exist
-        if os.path.exists(token_path) and auto_setup_watch:
+        # Create gmail_service if tokens exist, regardless of auto_setup_watch setting
+        if os.path.exists(token_path):
             app.state.gmail_service = GmailService(app.state.auth_manager)
-            await setup_gmail_watch(app)
-            logger.info("Gmail monitoring started successfully")
+            logger.info("Gmail service initialized from saved tokens")
+
+            # Only setup watch if auto_setup_watch is enabled
+            if auto_setup_watch:
+                await setup_gmail_watch(app)
+                logger.info("Gmail monitoring started successfully")
+            else:
+                logger.info("Gmail service ready (auto-watch disabled)")
         else:
             logger.info("Gmail tokens not found. Use /auth/login to authenticate first.")
 

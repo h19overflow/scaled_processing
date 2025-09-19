@@ -3,6 +3,24 @@ Watch operations utilities for Gmail service endpoints.
 
 Handles Gmail watch setup and status monitoring.
 Dependencies: GmailService for Gmail API operations.
+
+The WatchRequest object contains the following key fields :
+
+topicName (required): A fully qualified Google Cloud Pub/Sub topic name where Gmail will publish notifications. Format: "projects/your-project-id/topics/your-topic-name"
+
+labelIds (optional): Array of Gmail label IDs to filter which changes trigger notifications. If empty, all changes are monitored
+
+labelFilterAction or labelFilterBehavior (optional): Determines filtering behavior - typically "INCLUDE" or "EXCLUDE"
+
+Example POST Request Body
+Here's what you should send to your endpoint :
+
+json
+{
+  "topicName": "projects/myproject/topics/mytopic",
+  "labelIds": ["INBOX"],
+  "labelFilterBehavior": "INCLUDE"
+}
 """
 
 import logging
