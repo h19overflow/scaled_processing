@@ -8,13 +8,13 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 load_dotenv()
-from src.backend.doc_processing_system.services.gmail_email_listener.gmail_service import GmailService
-from src.backend.doc_processing_system.services.gmail_email_listener.gmail_auth_manager import GmailAuthManager
+from src.backend.doc_processing_system.services.gmail_email_listener.cloud.gmail_service import GmailService
+from src.backend.doc_processing_system.services.gmail_email_listener.cloud.gmail_auth_manager import GmailAuthManager
 
 # Import routers
-from src.backend.doc_processing_system.api.endpoints.gmail_auth import router as gmail_auth_router
-from src.backend.doc_processing_system.api.endpoints.gmail_service import router as gmail_service_router
-from src.backend.doc_processing_system.api.endpoints.health import router as health_router
+from src.backend.api.endpoints.gmail_endpoints.gmail_auth import router as gmail_auth_router
+from src.backend.api.endpoints.gmail_endpoints.gmail_service import router as gmail_service_router
+from src.backend.api.endpoints.health import router as health_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

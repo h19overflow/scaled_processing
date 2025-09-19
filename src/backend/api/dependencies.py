@@ -5,9 +5,9 @@ Provides clean access to app services without global variables.
 Used by routers to get Gmail services, auth managers, etc.
 """
 
-from fastapi import Depends, HTTPException, Request
-from src.backend.doc_processing_system.services.gmail_email_listener.gmail_service import GmailService
-from src.backend.doc_processing_system.services.gmail_email_listener.gmail_auth_manager import GmailAuthManager
+from fastapi import HTTPException, Request
+from src.backend.doc_processing_system.services.gmail_email_listener.cloud.gmail_service import GmailService
+from src.backend.doc_processing_system.services.gmail_email_listener.cloud.gmail_auth_manager import GmailAuthManager
 
 
 def get_auth_manager(request: Request) -> GmailAuthManager:

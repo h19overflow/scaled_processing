@@ -8,12 +8,11 @@ Handles OAuth2 flow for Gmail API access:
 
 Dependencies: GmailAuthManager for token management
 """
-
 import logging
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import RedirectResponse
 
-from src.backend.doc_processing_system.api.dependencies import (
+from src.backend.api.dependencies import (
     get_auth_manager,
     get_optional_gmail_service
 )
@@ -43,7 +42,7 @@ async def auth_login(auth_manager=Depends(get_auth_manager)):
         logger.error(f"OAuth login failed: {e}")
         raise HTTPException(status_code=500, detail=f"OAuth setup failed: {e}")
 
-
+# This has to be defined in the GCP, to handle the callback
 @router.get("/callback")
 async def auth_callback(
     code: str,
@@ -65,12 +64,12 @@ async def auth_callback(
 
         # Initialize gmail service now that we have tokens
         if not request.app.state.gmail_service:
-            from src.backend.doc_processing_system.services.gmail_email_listener.gmail_service import GmailService
+            from src.backend.doc_processing_system.services.gmail_email_listener.cloud.gmail_service import GmailService
             new_service = GmailService(auth_manager)
             request.app.state.gmail_service = new_service
 
             # Setup Gmail watch
-            from src.backend.doc_processing_system.api.main import setup_gmail_watch
+            from src.backend.api.main import setup_gmail_watch
             await setup_gmail_watch(request.app)
 
         logger.info("OAuth2 flow completed successfully")

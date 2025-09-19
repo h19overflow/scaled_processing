@@ -29,7 +29,7 @@ class GmailService:
         self._initialize_service()
 
     def _initialize_service(self):
-        """Build authenticated Gmail API client."""
+        """Build an authenticated Gmail API client."""
         try:
             credentials = self.auth_manager.get_credentials()
             self.service = build('gmail', 'v1', credentials=credentials)

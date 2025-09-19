@@ -6,12 +6,11 @@ Used by load balancers, monitoring tools, and for debugging.
 """
 
 import time
-import asyncio
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
-from src.backend.doc_processing_system.api.dependencies import (
+from src.backend.api.dependencies import (
     get_optional_gmail_service
 )
 
