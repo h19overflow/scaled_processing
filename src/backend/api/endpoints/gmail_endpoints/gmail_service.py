@@ -35,12 +35,13 @@ router = APIRouter(prefix="/gmail", tags=["Gmail Service"])
 
 @router.get("/messages", response_model=List[MessageSummary])
 async def list_messages_endpoint(
-    max_results: int = Query(10, ge=1, le=100),
+    max_results: int = Query(30, ge=1, le=200),
     query: Optional[str] = Query(None, description="Gmail search query"),
     service=Depends(get_gmail_service)
 ):
     """List Gmail messages."""
     try:
+
         return await list_messages(service, max_results, query)
     except Exception as e:
         logger.error(f"Failed to list messages: {e}")
