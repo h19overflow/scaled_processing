@@ -1,17 +1,11 @@
 # main.py
-from fastapi import FastAPI, Request, BackgroundTasks, HTTPException, Depends
+from fastapi import FastAPI
 from fastapi.security import HTTPBearer
-from pydantic import BaseModel
-import base64
-import json
 import logging
-from typing import Optional
 import asyncio
-from datetime import datetime, timedelta
-
+from contextlib import asynccontextmanager
 from src.backend.doc_processing_system.services.gmail_email_listener.gmail_service import GmailService
 from src.backend.doc_processing_system.services.gmail_email_listener.gmail_auth_manager import GmailAuthManager
-from src.backend.doc_processing_system.services.gmail_email_listener.models import ProcessingResult,EmailNotification
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -22,10 +16,10 @@ security = HTTPBearer()
 
 # Global services
 gmail_service = None
-auth_manager = GmailAuthManager("client_secrets.json")
+auth_manager = GmailAuthManager("src/backend/doc_processing_system/services/gmail_email_listener/secerets/client_secret_504172449061-r0o6bi19rpqd2ccm9jacobfvue85j92e.apps.googleusercontent.com.json")
 
 
-@app.on_event("startup")
+@asynccontextmanager
 async def startup_event():
     """Initialize services on startup"""
     global gmail_service
