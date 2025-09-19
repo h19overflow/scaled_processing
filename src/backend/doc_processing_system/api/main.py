@@ -11,11 +11,15 @@ load_dotenv()
 from src.backend.doc_processing_system.services.gmail_email_listener.gmail_service import GmailService
 from src.backend.doc_processing_system.services.gmail_email_listener.gmail_auth_manager import GmailAuthManager
 
+# Import routers
+from src.backend.doc_processing_system.api.endpoints.gmail_auth import router as gmail_auth_router
+from src.backend.doc_processing_system.api.endpoints.gmail_service import router as gmail_service_router
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global services
+# Global services (accessible by routers)
 gmail_service = None
 auth_manager = None
 
@@ -28,16 +32,20 @@ async def lifespan(app: FastAPI):
         # Get paths from environment variables
         client_secrets_path = os.getenv("GMAIL_CLIENT_SECRETS_PATH")
         token_path = os.getenv("GMAIL_TOKEN_PATH")
+        auto_setup_watch = os.getenv("AUTO_SETUP_GMAIL_WATCH", "false").lower() == "true"
 
         if not client_secrets_path or not token_path:
             raise ValueError("GMAIL_CLIENT_SECRETS_PATH and GMAIL_TOKEN_PATH environment variables must be set")
 
         auth_manager = GmailAuthManager(client_secrets_path, token_path)
-        gmail_service = GmailService(auth_manager)
 
-        # Setup Gmail watch on startup
-        await setup_gmail_watch()
-        logger.info("Gmail monitoring started successfully")
+        # Only create gmail_service and setup watch if tokens exist
+        if os.path.exists(token_path) and auto_setup_watch:
+            gmail_service = GmailService(auth_manager)
+            await setup_gmail_watch()
+            logger.info("Gmail monitoring started successfully")
+        else:
+            logger.info("Gmail tokens not found. Use /auth/login to authenticate first.")
 
         yield  # Application runs here
 
@@ -49,17 +57,28 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Gmail Event Monitor", version="1.0.0", lifespan=lifespan)
 security = HTTPBearer()
 
+# Include routers
+app.include_router(gmail_auth_router)
+app.include_router(gmail_service_router)
+
+
+# HELPER FUNCTIONS
 
 async def setup_gmail_watch():
     """Setup Gmail watch for push notifications"""
     try:
+        if not gmail_service:
+            raise Exception("Gmail service not initialized")
+
         watch_request = {
             'labelIds': ['INBOX'],
             'topicName': 'projects/gmail-monitor-project/topics/gmail-notifications',
             'labelFilterBehavior': 'INCLUDE'
         }
 
-        result = gmail_service.setup_watch(watch_request)
+        # Run synchronous call in executor to avoid blocking event loop
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, gmail_service.setup_watch, watch_request)
         logger.info(f"Gmail watch setup successful. Expires: {result.get('expiration')}")
 
         # Schedule watch renewal (every 6 days to be safe)

@@ -1,58 +1,78 @@
-"""
-auth_manager.py
-
-Manages Gmail API OAuth2 authentication and credential refresh.
-
-- Loads client secrets and token file.
-- Refreshes or obtains tokens (manual OAuth first time).
-- Exposes helpers to get valid Gmail API credentials and service client.
-
-Used by: GmailService (to authorize all Gmail API calls)
-"""
 import os
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import Flow
-from googleapiclient.discovery import build
+from google.auth.transport.requests import Request          # Used to make authorized HTTP requests (for refreshing tokens)
+from google.oauth2.credentials import Credentials           # Manages OAuth2 tokens (access/refresh), loads/saves and refreshes as needed
+from google_auth_oauthlib.flow import Flow                  # Handles the interactive OAuth2 flow for user consent and token exchange
+from googleapiclient.discovery import build                 # Dynamically creates API clients for Google services (like Gmail)
+from dotenv import load_dotenv
+load_dotenv()
 
 class GmailAuthManager:
-    def __init__(self, client_secrets_path: str, token_path: str = "src/backend/doc_processing_system/services/gmail_email_listener/secerets/token.json"):
-        self.client_secrets_path = client_secrets_path
-        self.token_path = token_path
-        # API permission scopes
+    """
+    Handles Gmail API OAuth2 authentication, token management, and credential refresh.
+
+    Key responsibilities:
+    - Loading client secrets file (the 'ID card' for the app—client ID/secret).
+    - Attempting to load existing, cached OAuth2 tokens for the user (from disk).
+    - If token is missing/expired, refresh it or trigger interactive OAuth2 browser flow.
+    - Provides helper to create an authorized Gmail API service client.
+
+    Used as a dependency by the GmailService, ensuring all Gmail API calls are authorized.
+    """
+    def __init__(self, client_secrets_path: str, token_path: str = os.getenv("GMAIL_CLIENT_SECRETS_PATH")):
+        self.client_secrets_path = client_secrets_path    # Path to client_secret.json (generated in Google Cloud console)
+        self.token_path = token_path                      # Path where access/refresh tokens are stored (JSON)
+        # The OAuth2 scopes (permissions) this app will request from the user—for Gmail read and modify access
         self.SCOPES = [
             'https://www.googleapis.com/auth/gmail.readonly',
             'https://www.googleapis.com/auth/gmail.modify'
         ]
 
     def get_credentials(self) -> Credentials:
-        """Return valid Gmail API credentials (load, refresh, or require manual OAuth if none exist)"""
+        """
+        Ensures valid Gmail API OAuth2 credentials:
+        - Loads from saved token file if available.
+        - Refreshes token if expired and a refresh token exists (uses requests transport).
+        - Runs interactive OAuth2 flow if no valid credentials, requiring user consent.
+        - Always updates and saves tokens for future sessions.
+
+        Returns:
+            google.oauth2.credentials.Credentials: the valid, active credentials
+        """
         creds = None
 
-        # 1. Try to load saved token
+        # 1. Try loading an existing, saved OAuth2 token
         if os.path.exists(self.token_path):
+            # Loads credentials from file, token-scoped for this app
             creds = Credentials.from_authorized_user_file(self.token_path, self.SCOPES)
 
-        # 2. Refresh token or run OAuth flow if needed
+        # 2. If credentials are missing or invalid, refresh or start new OAuth2 flow
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
+                # If the access token is expired and a refresh token is available, request a fresh access token
+                creds.refresh(Request())   # Uses transport.Request to perform the secure HTTPS token exchange
             else:
-                # First run or no valid token: needs user browser interaction
+                # No tokens present or can't be refreshed; must run browser-based OAuth2 consent (manual, first run)
                 flow = Flow.from_client_secrets_file(
-                    self.client_secrets_path,
-                    scopes=self.SCOPES,
-                    redirect_uri='http://localhost:8000/auth/callback'
+                    self.client_secrets_path,     # Uses client_secret.json for app identification
+                    scopes=self.SCOPES,           # Requests the necessary Gmail permissions
+                    redirect_uri='http://localhost:8000/auth/callback' # Redirect URI for web server (must match Google Cloud config)
                 )
+                # In production, you may automate or expose the flow differently;
+                # here, we explicitly block and raise for manual handling.
                 raise Exception("Manual OAuth flow required: Run this locally in an interactive environment.")
 
-        # 3. Save new/updated token for future use
+        # 3. Save any updated/obtained tokens to disk for future reuse
         with open(self.token_path, 'w') as token:
             token.write(creds.to_json())
 
         return creds
 
     def get_gmail_service(self):
-        """Builds an authenticated Gmail API client"""
-        credentials = self.get_credentials()
-        return build('gmail', 'v1', credentials=credentials)
+        """
+        Builds an authorized Gmail API client instance, ready to make authenticated API calls.
+
+        Returns:
+            googleapiclient.discovery.Resource: Gmail API client object
+        """
+        credentials = self.get_credentials()    # Ensures we have valid, refreshed credentials
+        return build('gmail', 'v1', credentials=credentials)  # Constructs Gmail service client, ready for use
