@@ -16,7 +16,7 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 
 class GmailAuthManager:
-    def __init__(self, client_secrets_path: str, token_path: str = "src/backend/doc_processing_system/services/gmail_email_listener/secerets/client_secret_504172449061-r0o6bi19rpqd2ccm9jacobfvue85j92e.apps.googleusercontent.com.json"):
+    def __init__(self, client_secrets_path: str, token_path: str = "src/backend/doc_processing_system/services/gmail_email_listener/secerets/token.json"):
         self.client_secrets_path = client_secrets_path
         self.token_path = token_path
         # API permission scopes

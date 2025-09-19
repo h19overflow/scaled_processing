@@ -3,7 +3,11 @@ from fastapi import FastAPI
 from fastapi.security import HTTPBearer
 import logging
 import asyncio
+import os
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+load_dotenv()
 from src.backend.doc_processing_system.services.gmail_email_listener.gmail_service import GmailService
 from src.backend.doc_processing_system.services.gmail_email_listener.gmail_auth_manager import GmailAuthManager
 
@@ -11,25 +15,39 @@ from src.backend.doc_processing_system.services.gmail_email_listener.gmail_auth_
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Gmail Event Monitor", version="1.0.0")
-security = HTTPBearer()
-
 # Global services
 gmail_service = None
-auth_manager = GmailAuthManager("src/backend/doc_processing_system/services/gmail_email_listener/secerets/client_secret_504172449061-r0o6bi19rpqd2ccm9jacobfvue85j92e.apps.googleusercontent.com.json")
+auth_manager = None
 
 
 @asynccontextmanager
-async def startup_event():
+async def lifespan(app: FastAPI):
     """Initialize services on startup"""
-    global gmail_service
+    global gmail_service, auth_manager
     try:
+        # Get paths from environment variables
+        client_secrets_path = os.getenv("GMAIL_CLIENT_SECRETS_PATH")
+        token_path = os.getenv("GMAIL_TOKEN_PATH")
+
+        if not client_secrets_path or not token_path:
+            raise ValueError("GMAIL_CLIENT_SECRETS_PATH and GMAIL_TOKEN_PATH environment variables must be set")
+
+        auth_manager = GmailAuthManager(client_secrets_path, token_path)
         gmail_service = GmailService(auth_manager)
+
         # Setup Gmail watch on startup
         await setup_gmail_watch()
         logger.info("Gmail monitoring started successfully")
+
+        yield  # Application runs here
+
     except Exception as e:
         logger.error(f"Failed to initialize Gmail service: {e}")
+        yield  # Still yield even on error to let app start
+
+
+app = FastAPI(title="Gmail Event Monitor", version="1.0.0", lifespan=lifespan)
+security = HTTPBearer()
 
 
 async def setup_gmail_watch():
