@@ -343,27 +343,191 @@ async def get_attachments(message_id: str, service=Depends(get_gmail_service)):
 
 ---
 
+### **Problem 8: Understanding Pub/Sub Connection & Message Monitoring**
+**Issue:** "Where exactly does Gmail connect to Pub/Sub? How do I actually monitor incoming messages?"
+
+**The Complete Pub/Sub Flow:**
+
+#### **1. Gmail → Pub/Sub (The Watch Setup)**
+```python
+# In gmail_service.py:41-51 - This is THE connection point!
+def setup_watch(self, watch_request: dict) -> dict:
+    """Register/watch mailbox for push notifications (Pub/Sub)."""
+    result = self.service.users().watch(
+        userId='me',
+        body=watch_request  # Contains: topicName, labelIds, labelFilterBehavior
+    ).execute()
+    return result
+
+# When called with:
+watch_request = {
+    'topicName': 'projects/gmail-monitor-project-472511/topics/gmail-notifications',  # ← Pub/Sub topic!
+    'labelIds': ['INBOX'],
+    'labelFilterBehavior': 'INCLUDE'
+}
+```
+
+**What This Does:**
+- Tells Gmail API: "Send notifications to this Pub/Sub topic when emails arrive"
+- Gmail becomes a **publisher** to your Pub/Sub topic
+- Your app needs to become a **subscriber** to receive notifications
+
+#### **2. The Missing Link: Pub/Sub → Your App**
+
+**Problem:** After setting up watch, we had Gmail → Pub/Sub working, but no Pub/Sub → App connection!
+
+**Solutions Created:**
+
+##### **Option A: Background Pub/Sub Subscriber**
+```python
+# File: pubsub_subscriber.py
+class GmailPubSubSubscriber:
+    def process_gmail_notification(self, message):
+        # Decode Pub/Sub message
+        data = json.loads(message.data.decode('utf-8'))
+        history_id = data.get('historyId')
+
+        # Process Gmail history changes
+        asyncio.create_task(self._process_history_changes(history_id))
+
+    def start_listening(self):
+        # Continuously pull messages from Pub/Sub
+        streaming_pull_future = self.subscriber.pull(
+            request={"subscription": self.subscription_path},
+            callback=self.process_gmail_notification
+        )
+```
+
+**How it Works:**
+- Runs in background thread
+- Continuously listens to Pub/Sub subscription
+- Automatically processes new emails when notifications arrive
+
+##### **Option B: HTTP Webhook Endpoint**
+```python
+# File: gmail_webhook.py
+@router.post("/gmail/webhook/notifications")
+async def receive_gmail_notification(request: Request):
+    # Receive HTTP POST from Pub/Sub
+    body = await request.body()
+    notification = json.loads(body)
+
+    # Extract Gmail data
+    data = base64.b64decode(notification['message']['data'])
+    gmail_data = json.loads(data)
+
+    # Process the notification
+    await process_gmail_notification(service, gmail_data['historyId'])
+```
+
+**How it Works:**
+- Pub/Sub sends HTTP POST requests to your endpoint
+- Most common production pattern
+- Requires configuring Pub/Sub to push to your URL
+
+##### **Option C: Manual Monitoring Endpoints**
+```python
+# File: gmail_monitoring.py
+@router.get("/gmail/monitor/check-new")
+async def check_new_messages(since_history_id: str):
+    # Manually check for changes since last history ID
+    changes = await service.get_history_changes(since_history_id)
+    return changes
+
+@router.post("/gmail/monitor/test-notification")
+async def test_notification_processing():
+    # Simulate processing the latest email
+    # Good for testing your notification logic
+```
+
+**How it Works:**
+- Manual API calls to check for new messages
+- Perfect for testing and debugging
+- Use Gmail History API to get changes
+
+#### **3. The Complete Architecture**
+
+```
+New Email → Gmail API → Pub/Sub Topic → [Your Choice]:
+                                      ↓
+                              A) Background Subscriber (Auto)
+                              B) HTTP Webhook (Push)
+                              C) Manual Check (Pull)
+                                      ↓
+                              Your App Processes Email:
+                              - Extract subject, sender, body
+                              - Download attachments
+                              - Save to disk
+                              - Send to processing pipeline
+```
+
+#### **4. Key Files Created**
+
+**Monitoring Infrastructure:**
+- `pubsub_subscriber.py` - Background Pub/Sub listener
+- `gmail_webhook.py` - HTTP webhook for Pub/Sub push notifications
+- `gmail_monitoring.py` - Manual monitoring endpoints
+
+**Key Methods:**
+- `setup_watch()` - Creates Gmail → Pub/Sub connection
+- `get_history_changes()` - Gets email changes since last notification
+- `process_gmail_notification()` - Handles incoming notifications
+
+#### **5. Testing Your Setup**
+
+```bash
+# 1. Setup Gmail watch (connects Gmail → Pub/Sub)
+POST /gmail/watch/setup
+{
+  "topic_name": "projects/gmail-monitor-project-472511/topics/gmail-notifications",
+  "label_ids": ["INBOX"]
+}
+
+# 2. Test manual monitoring
+GET /gmail/monitor/check-new?since_history_id=123456
+
+# 3. Test notification processing
+POST /gmail/monitor/test-notification
+
+# 4. Check watch status
+GET /gmail/monitor/watch-status
+```
+
+**The Learning:** Gmail watch only creates Gmail → Pub/Sub connection. You need additional code to complete Pub/Sub → Your App connection for actual message monitoring!
+
+---
+
 ## 📁 **Final File Structure**
 
 ```
-src/backend/doc_processing_system/
+src/backend/
 ├── api/
-│   ├── main.py                    # FastAPI app + lifespan
-│   ├── dependencies.py            # Dependency injection functions
+│   ├── main.py                        # FastAPI app + lifespan
+│   ├── dependencies.py                # Dependency injection functions
 │   └── endpoints/
-│       ├── gmail_auth.py          # OAuth2 endpoints
-│       ├── gmail_service.py       # Gmail operations
-│       └── health.py              # Health checks
-└── services/
-    └── gmail_email_listener/
-        ├── gmail_auth_manager.py   # OAuth2 token management
-        ├── gmail_service.py        # Gmail API operations
-        ├── models.py               # Pydantic data models
-        ├── grant_permissions.py    # Pub/Sub setup script
-        └── secerets/
-            ├── client_secret_xxx.json     # OAuth2 credentials
-            ├── gmail-monitor-xxx.json     # Service account
-            └── token.json                 # User tokens (auto-created)
+│       ├── gmail_endpoints/
+│       │   ├── gmail_auth.py          # OAuth2 endpoints
+│       │   ├── gmail_service.py       # Gmail operations
+│       │   ├── gmail_monitoring.py    # Manual monitoring endpoints
+│       │   └── gmail_webhook.py       # Pub/Sub webhook endpoint
+│       └── health.py                  # Health checks
+└── doc_processing_system/
+    └── services/
+        └── gmail_email_listener/
+            ├── cloud/
+            │   ├── gmail_auth_manager.py  # OAuth2 token management
+            │   ├── gmail_service.py       # Gmail API operations
+            │   ├── pubsub_subscriber.py   # Background Pub/Sub listener
+            │   └── LEARNING_SUMMARY.md    # This documentation!
+            ├── utils/
+            │   ├── message_operations.py  # Message utilities
+            │   └── watch_operations.py    # Watch utilities
+            ├── models.py                  # Pydantic data models
+            ├── grant_permissions.py       # Pub/Sub setup script
+            └── secerets/
+                ├── client_secret_xxx.json     # OAuth2 credentials
+                ├── gmail-monitor-xxx.json     # Service account
+                └── token.json                 # User tokens (auto-created)
 ```
 
 ---
@@ -473,16 +637,45 @@ AUTO_SETUP_GMAIL_WATCH=false  # Don't auto-setup on startup
 ✅ **Health monitoring endpoints**
 ✅ **Pub/Sub integration setup**
 ✅ **Production-ready patterns**
+✅ **Complete Gmail monitoring infrastructure**
+✅ **Refactored clean code structure**
 
 ### **API Endpoints Created:**
+
+#### **Authentication Endpoints:**
 - `GET /auth/login` - Start OAuth flow
 - `GET /auth/callback` - Handle OAuth response
 - `GET /auth/status` - Check authentication
+
+#### **Gmail Service Endpoints:**
 - `GET /gmail/messages` - List emails
+- `GET /gmail/messages/{id}` - Get message details
+- `GET /gmail/messages/{id}/attachments` - Get attachments
+- `POST /gmail/watch/setup` - Setup Gmail watch
+- `GET /gmail/watch/status` - Check watch status
+- `GET /gmail/history/{id}` - Get history changes
+
+#### **Monitoring Endpoints:**
+- `GET /gmail/monitor/check-new` - Manual check for new messages
+- `GET /gmail/monitor/watch-status` - Detailed watch status
+- `POST /gmail/monitor/test-notification` - Test notification processing
+
+#### **Webhook Endpoints:**
+- `POST /gmail/webhook/notifications` - Receive Pub/Sub notifications
+- `GET /gmail/webhook/test` - Test webhook connectivity
+
+#### **System Endpoints:**
 - `GET /health` - Health check
 - `GET /metrics` - Basic metrics
 
-**The system is now ready for Gmail email processing! 🚀**
+### **Message Processing Capabilities:**
+✅ **Real-time Gmail notifications via Pub/Sub**
+✅ **Automatic attachment downloading**
+✅ **Message content extraction**
+✅ **History change tracking**
+✅ **Multiple monitoring approaches (webhook, subscriber, manual)**
+
+**The system is now ready for complete Gmail email processing and monitoring! 🚀**
 
 ---
 

@@ -1,0 +1,140 @@
+@startuml OAuth2 Flow Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+    BackgroundColor #F8F9FA
+    BorderColor #6C757D
+}
+skinparam note {
+    BackgroundColor #FFF3CD
+    BorderColor #FFC107
+}
+
+title Gmail OAuth2 Authentication Flow
+
+actor "User" as User
+participant "Browser" as Browser
+participant "FastAPI App" as API
+participant "GmailAuthManager" as AuthMgr
+participant "Google OAuth2" as Google
+participant "Gmail API" as Gmail
+participant "File System" as FS
+
+== Initial Setup ==
+User -> Browser: Navigate to application
+Browser -> API: GET /auth/status
+API -> FS: Check if token.json exists
+FS -> API: File not found
+API -> Browser: {"authenticated": false, "login_url": "/auth/login"}
+Browser -> User: Show "Login Required"
+
+== OAuth2 Login Flow ==
+User -> Browser: Click "Login with Gmail"
+Browser -> API: GET /auth/login
+
+activate API
+API -> AuthMgr: get_authorization_url()
+activate AuthMgr
+
+AuthMgr -> AuthMgr: Create OAuth2 Flow
+note right: Uses client_secret.json\nSets redirect_uri, scopes
+
+AuthMgr -> Google: Generate authorization URL
+Google -> AuthMgr: authorization_url + state
+AuthMgr -> API: Return (authorization_url, state)
+deactivate AuthMgr
+
+API -> API: Store state globally
+note right: oauth_state = state\n(Security verification)
+
+API -> Browser: RedirectResponse(authorization_url)
+deactivate API
+
+Browser -> Google: Redirect to Google OAuth consent screen
+
+== User Consent ==
+Google -> User: Show consent screen
+note right: Permissions requested:\n- gmail.readonly\n- gmail.modify
+
+User -> Google: Grant permissions
+Google -> Browser: Redirect with authorization code
+Browser -> API: GET /auth/callback?code=AUTH_CODE&state=STATE
+
+== Token Exchange ==
+activate API
+API -> API: Verify state parameter
+note right: Security check:\nif state != oauth_state:\n  raise HTTPException
+
+API -> AuthMgr: exchange_code_for_tokens(code, state)
+activate AuthMgr
+
+AuthMgr -> AuthMgr: Create OAuth2 Flow
+AuthMgr -> Google: Exchange code for tokens
+activate Google
+Google -> Google: Validate authorization code
+Google -> AuthMgr: Return access_token + refresh_token
+deactivate Google
+
+AuthMgr -> FS: Save tokens to token.json
+note right: {"token": "access_token",\n "refresh_token": "refresh_token",\n "token_uri": "...",\n "client_id": "...",\n "scopes": [...]}
+
+FS -> AuthMgr: Tokens saved
+AuthMgr -> API: Return credentials object
+deactivate AuthMgr
+
+== Service Initialization ==
+API -> API: Check if gmail_service exists
+API -> AuthMgr: Create GmailService(auth_manager)
+API -> API: Set app.state.gmail_service
+
+== Gmail Watch Setup ==
+API -> API: setup_gmail_watch(app)
+API -> AuthMgr: get_credentials()
+AuthMgr -> FS: Load token.json
+FS -> AuthMgr: Return saved tokens
+AuthMgr -> API: Valid credentials
+
+API -> Gmail: Setup push notifications
+note right: Watch request:\n{"labelIds": ["INBOX"],\n "topicName": "projects/.../topics/gmail-notifications",\n "labelFilterBehavior": "INCLUDE"}
+
+Gmail -> API: Watch confirmation + expiration
+API -> Browser: {"message": "Authentication successful! Gmail monitoring is now active."}
+deactivate API
+
+Browser -> User: Show success message
+
+== Subsequent API Calls ==
+User -> Browser: Make Gmail API request
+Browser -> API: GET /gmail/messages
+API -> AuthMgr: get_credentials()
+
+activate AuthMgr
+AuthMgr -> FS: Load token.json
+FS -> AuthMgr: Return tokens
+AuthMgr -> AuthMgr: Check if token expired
+
+alt Token Valid
+    AuthMgr -> API: Return valid credentials
+else Token Expired
+    AuthMgr -> Google: Refresh token request
+    Google -> AuthMgr: New access token
+    AuthMgr -> FS: Update token.json
+    AuthMgr -> API: Return refreshed credentials
+end
+deactivate AuthMgr
+
+API -> Gmail: Authenticated API call
+Gmail -> API: Response data
+API -> Browser: JSON response
+Browser -> User: Display results
+
+== Error Scenarios ==
+note over API, Google
+**Error Handling:**
+1. Invalid state → HTTPException(400)
+2. No refresh token → Exception("Manual OAuth flow required")
+3. Token refresh fails → Re-authentication needed
+4. Gmail API errors → HTTP 500 with error details
+end note
+
+@enduml
