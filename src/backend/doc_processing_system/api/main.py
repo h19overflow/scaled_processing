@@ -12,8 +12,8 @@ from src.backend.doc_processing_system.services.gmail_email_listener.gmail_servi
 from src.backend.doc_processing_system.services.gmail_email_listener.gmail_auth_manager import GmailAuthManager
 
 # Import routers
-from src.backend.doc_processing_system.api.endpoints.gmail_endpoints.gmail_auth import router as gmail_auth_router
-from src.backend.doc_processing_system.api.endpoints.gmail_endpoints.gmail_service import router as gmail_service_router
+from src.backend.doc_processing_system.api.endpoints.gmail_auth import router as gmail_auth_router
+from src.backend.doc_processing_system.api.endpoints.gmail_service import router as gmail_service_router
 from src.backend.doc_processing_system.api.endpoints.health import router as health_router
 
 # Configure logging

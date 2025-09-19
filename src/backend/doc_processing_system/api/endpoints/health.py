@@ -12,8 +12,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
 from src.backend.doc_processing_system.api.dependencies import (
-    get_optional_gmail_service,
-    increment_request_count
+    get_optional_gmail_service
 )
 
 router = APIRouter(tags=["Health & Monitoring"])
@@ -38,8 +37,7 @@ class MetricsResponse(BaseModel):
 @router.get("/health", response_model=HealthResponse)
 async def health_check(
     request: Request,
-    gmail_service=Depends(get_optional_gmail_service),
-    _: None = Depends(increment_request_count)
+    gmail_service=Depends(get_optional_gmail_service)
 ):
     """Basic health check - is the API running?"""
     current_time = time.time()
@@ -66,8 +64,7 @@ async def health_check(
 
 @router.get("/health/ready")
 async def readiness_check(
-    request: Request,
-    _: None = Depends(increment_request_count)
+    request: Request
 ):
     """Readiness check - is the API ready to serve requests?"""
     # Check if critical components are initialized
@@ -80,7 +77,7 @@ async def readiness_check(
 
 
 @router.get("/health/live")
-async def liveness_check(_: None = Depends(increment_request_count)):
+async def liveness_check():
     """Liveness check - is the API process alive?"""
     return {"status": "alive", "timestamp": datetime.now(timezone.utc)}
 
@@ -88,8 +85,7 @@ async def liveness_check(_: None = Depends(increment_request_count)):
 @router.get("/metrics", response_model=MetricsResponse)
 async def get_metrics(
     request: Request,
-    gmail_service=Depends(get_optional_gmail_service),
-    _: None = Depends(increment_request_count)
+    gmail_service=Depends(get_optional_gmail_service)
 ):
     """Get basic API metrics."""
     current_time = time.time()
