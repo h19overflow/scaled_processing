@@ -1,137 +1,191 @@
-"""
-Pub/Sub subscriber for Gmail notifications.
-
-Listens for Gmail push notifications and processes new emails.
-Dependencies: GmailService for email processing.
-"""
-
-import json
-import logging
 from google.cloud import pubsub_v1
 import asyncio
-from typing import Dict, Any
+import json
+import logging
 
 logger = logging.getLogger(__name__)
 
-
+#TODO test out the subscriber Created subscription [projects/gmail-monitor-project-472511/subscriptions/gmail-notifications-processor-sub].
+# (scaled_processing) PS C:\Users\User\Projects\scaled_processing> python -m src.backend.doc_processing_system.services.gmail_email_listener.cloud.pubsub_subscriber
+# 🚀 Testing Gmail PubSub Subscriber
+# ========================================
+# 🔧 Initializing Gmail service...
+# ✅ Gmail service initialized
+# 🔧 Creating PubSub subscriber...
+# ✅ Subscriber created for: projects/gmail-monitor-project-472511/subscriptions/gmail-notifications-processor-sub
+# 🔧 Testing Pub/Sub connection...
+# ✅ Successfully connected to Pub/Sub subscription
+#
+# 🎧 Starting to listen for Gmail notifications...
+# 📧 Send yourself an email to test!
+# ⏹️  Press Ctrl+C to stop,
+#Failed to get history changes: <HttpError 404 when requesting https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=2106520&alt=json returned "Requested entity was not found.". Details: "[{'message': 'Requested entity was not found.', 'domain': 'global', 'reason': 'notFound'}]">
+# TODO Not working properly.
 class GmailPubSubSubscriber:
-    """Subscribes to Gmail push notifications via Pub/Sub."""
-
     def __init__(self, project_id: str, subscription_name: str, gmail_service):
-        self.project_id = project_id
-        self.subscription_name = subscription_name
         self.gmail_service = gmail_service
         self.subscriber = pubsub_v1.SubscriberClient()
         self.subscription_path = self.subscriber.subscription_path(project_id, subscription_name)
+        # Recommended flow control
+        self.flow_control = pubsub_v1.types.FlowControl(
+            max_messages=100,
+            max_bytes=10 * 1024 * 1024,
+        )
 
-    def process_gmail_notification(self, message):
-        """Process a Gmail push notification message."""
+    def process_gmail_notification(self, message: pubsub_v1.subscriber.message.Message) -> None:
         try:
-            # Decode the Pub/Sub message
-            data = json.loads(message.data.decode('utf-8'))
-
+            data = json.loads(message.data.decode("utf-8"))
             logger.info(f"Received Gmail notification: {data}")
 
-            # Extract Gmail data
-            email_address = data.get('emailAddress')
-            history_id = data.get('historyId')
+            # Check message age (Pub/Sub adds publish_time)
+            import time
+            message_age = time.time() - message.publish_time.timestamp()
+            if message_age > 3600:  # Ignore messages older than 1 hour
+                logger.warning(f"Ignoring old notification (age: {message_age:.0f}s)")
+                message.ack()
+                return
 
+            history_id = data.get("historyId")
             if history_id:
-                # Process the history changes
-                asyncio.create_task(self._process_history_changes(history_id))
+                # Wait synchronously for processing to complete before ack
+                asyncio.run(self._process_history_changes(history_id))
 
-            # Acknowledge the message
+            # Acknowledge only after processing succeeds
             message.ack()
 
         except Exception as e:
             logger.error(f"Failed to process Gmail notification: {e}")
-            message.nack()  # Negative acknowledgment - will retry
+            message.nack()
 
-    async def _process_history_changes(self, history_id: str):
-        """Process Gmail history changes."""
+    async def _process_history_changes(self, history_id: str) -> None:
         try:
-            # Get the history changes since last notification
             changes = await self.gmail_service.get_history_changes(history_id)
-
-            # Process new messages
-            history = changes.get('history', [])
-            for change in history:
-                messages_added = change.get('messagesAdded', [])
-                for message_info in messages_added:
-                    message_id = message_info['message']['id']
-                    await self._process_new_message(message_id)
-
+            for change in changes.get("history", []):
+                for msg in change.get("messagesAdded", []):
+                    await self._process_new_message(msg["message"]["id"])
         except Exception as e:
-            logger.error(f"Failed to process history changes: {e}")
+            if "404" in str(e) or "notFound" in str(e):
+                logger.warning(f"History ID {history_id} not found (likely too old). Checking recent messages instead.")
+                # Fallback: get recent messages instead
+                await self._process_recent_messages()
+            else:
+                logger.error(f"Unexpected error processing history: {e}")
+                raise
 
-    async def _process_new_message(self, message_id: str):
-        """Process a single new message."""
+    async def _process_recent_messages(self) -> None:
+        """Fallback: process recent messages when history ID is invalid"""
         try:
-            # Get the full message
-            message = await self.gmail_service.get_message(message_id)
+            # Get recent messages from INBOX
+            result = self.gmail_service.service.users().messages().list(
+                userId='me',
+                maxResults=5,
+                q='in:inbox'
+            ).execute()
 
-            # Extract information
-            headers = message.get('payload', {}).get('headers', [])
-            subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'No Subject')
-            sender = next((h['value'] for h in headers if h['name'] == 'From'), 'Unknown')
+            messages = result.get('messages', [])
+            logger.info(f"Processing {len(messages)} recent messages as fallback")
 
-            logger.info(f"Processing new email: {subject} from {sender}")
-
-            # Process attachments if any
-            attachments = await self.gmail_service.process_attachments(message_id, message)
-
-            if attachments:
-                logger.info(f"Found {len(attachments)} attachments")
-                # Save attachments
-                for attachment in attachments:
-                    await self.gmail_service.save_attachment(attachment)
-
-            # Here you can add your custom email processing logic
-            # For example: send to document processing pipeline
+            for msg in messages:
+                await self._process_new_message(msg['id'])
 
         except Exception as e:
-            logger.error(f"Failed to process message {message_id}: {e}")
+            logger.error(f"Failed to process recent messages: {e}")
 
-    def start_listening(self):
-        """Start listening for Gmail notifications."""
-        logger.info(f"Starting to listen on subscription: {self.subscription_path}")
+    async def _process_new_message(self, message_id: str) -> None:
+        msg = await self.gmail_service.get_message(message_id)
+        headers = msg.get("payload", {}).get("headers", [])
+        subject = next((h["value"] for h in headers if h["name"] == "Subject"), "No Subject")
+        sender = next((h["value"] for h in headers if h["name"] == "From"), "Unknown")
+        logger.info(f"Processing new email: {subject} from {sender}")
 
-        # Configure subscriber settings
-        flow_control = pubsub_v1.types.FlowControl(max_messages=100)
+        attachments = await self.gmail_service.process_attachments(message_id, msg)
+        for attachment in attachments or []:
+            await self.gmail_service.save_attachment(attachment)
 
-        # Start pulling messages
-        streaming_pull_future = self.subscriber.pull(
-            request={"subscription": self.subscription_path, "max_messages": 10},
+    def start_listening(self) -> None:
+        logger.info(f"Listening on {self.subscription_path}")
+        # Use subscribe() instead of pull()
+        streaming_pull_future = self.subscriber.subscribe(
+            self.subscription_path,
             callback=self.process_gmail_notification,
-            flow_control=flow_control,
+            flow_control=self.flow_control,
         )
-
-        logger.info("Listening for Gmail notifications...")
-
         try:
-            # Keep the subscriber running
             streaming_pull_future.result()
         except KeyboardInterrupt:
             streaming_pull_future.cancel()
-            logger.info("Gmail notification listener stopped")
+            logger.info("Subscriber stopped")
+
+async def setup_pubsub_subscriber(gmail_service):
+    project_id = "gmail-monitor-project-472511"
+    subscription_name = "gmail-notifications-processor-sub"  # Updated to match your actual subscription
+    subscriber = GmailPubSubSubscriber(project_id, subscription_name, gmail_service)
+    # Simply call start_listening in the current thread (it blocks)
+    subscriber.start_listening()
+    return subscriber
 
 
 # HELPER FUNCTIONS
 
-async def setup_pubsub_subscriber(gmail_service):
-    """Setup and start the Pub/Sub subscriber for Gmail notifications."""
-    project_id = "gmail-monitor-project-472511"
-    subscription_name = "gmail-notifications-subscription"
+def test_subscriber():
+    """Test the PubSub subscriber with actual Gmail service"""
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
 
-    subscriber = GmailPubSubSubscriber(project_id, subscription_name, gmail_service)
+    # Import your Gmail services
+    from .gmail_auth_manager import GmailAuthManager
+    from .gmail_service import GmailService
 
-    # Start listening in background
-    import threading
-    def run_subscriber():
+    try:
+        # Setup Gmail service (same as your main app)
+        client_secrets_path = os.getenv("GMAIL_CLIENT_SECRETS_PATH")
+        token_path = os.getenv("GMAIL_TOKEN_PATH")
+
+        if not client_secrets_path or not token_path:
+            raise ValueError("GMAIL_CLIENT_SECRETS_PATH and GMAIL_TOKEN_PATH must be set in .env")
+
+        if not os.path.exists(token_path):
+            raise ValueError(f"Token file not found: {token_path}. Run OAuth flow first via /auth/login")
+
+        print("🔧 Initializing Gmail service...")
+        auth_manager = GmailAuthManager(client_secrets_path, token_path)
+        gmail_service = GmailService(auth_manager)
+        print("✅ Gmail service initialized")
+
+        # Create and test subscriber
+        print("🔧 Creating PubSub subscriber...")
+        project_id = "gmail-monitor-project-472511"
+        subscription_name = "gmail-notifications-processor-sub"
+        subscriber = GmailPubSubSubscriber(project_id, subscription_name, gmail_service)
+        print(f"✅ Subscriber created for: {subscriber.subscription_path}")
+
+        # Test connection
+        print("🔧 Testing Pub/Sub connection...")
+        try:
+            # Just check if we can connect to the subscription
+            subscriber.subscriber.get_subscription(request={"subscription": subscriber.subscription_path})
+            print("✅ Successfully connected to Pub/Sub subscription")
+        except Exception as e:
+            print(f"❌ Failed to connect to subscription: {e}")
+            return
+
+        print("\n🎧 Starting to listen for Gmail notifications...")
+        print("📧 Send yourself an email to test!")
+        print("⏹️  Press Ctrl+C to stop\n")
+
+        # Start listening (this will block until Ctrl+C)
         subscriber.start_listening()
 
-    thread = threading.Thread(target=run_subscriber, daemon=True)
-    thread.start()
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        print("\n💡 Make sure you:")
+        print("   1. Have run the OAuth flow (/auth/login)")
+        print("   2. Have set up the Pub/Sub subscription")
+        print("   3. Have valid environment variables")
 
-    logger.info("Gmail Pub/Sub subscriber started in background")
-    return subscriber
+
+if __name__ == "__main__":
+    print("🚀 Testing Gmail PubSub Subscriber")
+    print("=" * 40)
+    test_subscriber()
