@@ -1,63 +1,69 @@
-"""
-FastAPI application for document processing system.
-Provides REST API endpoints for document upload and processing.
-"""
+# main.py
+from fastapi import FastAPI, Request, BackgroundTasks, HTTPException, Depends
+from fastapi.security import HTTPBearer
+from pydantic import BaseModel
+import base64
+import json
+import logging
+from typing import Optional
+import asyncio
+from datetime import datetime, timedelta
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from src.backend.doc_processing_system.services.gmail_email_listener.gmail_service import GmailService
+from src.backend.doc_processing_system.services.gmail_email_listener.gmail_auth_manager import GmailAuthManager
+from src.backend.doc_processing_system.services.gmail_email_listener.models import ProcessingResult,EmailNotification
 
-from .endpoints import ingestion
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-app = FastAPI(
-    title="Document Processing System",
-    description="Hybrid RAG system for document processing and querying",
-    version="1.0.0"
-)
+app = FastAPI(title="Gmail Event Monitor", version="1.0.0")
+security = HTTPBearer()
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Global services
+gmail_service = None
+auth_manager = GmailAuthManager("client_secrets.json")
 
-# Include routers
-app.include_router(ingestion.router, prefix="/api/v1", tags=["ingestion"])
 
-@app.get("/")
-async def root():
-    """Health check endpoint."""
-    return {"message": "Document Processing System API", "status": "healthy"}
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    global gmail_service
+    try:
+        gmail_service = GmailService(auth_manager)
+        # Setup Gmail watch on startup
+        await setup_gmail_watch()
+        logger.info("Gmail monitoring started successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize Gmail service: {e}")
 
-@app.get("/health")
-async def health():
-    """Health check endpoint."""
-    return {"status": "healthy"}
 
-@app.get("/docs-info")
-async def docs_info():
-    """API documentation information with full route URLs."""
-    return {
-        "message": "Document Processing System API",
-        "version": "1.0.0",
-        "documentation": {
-            "interactive_docs": "/docs",
-            "redoc": "/redoc",
-            "openapi_json": "/openapi.json"
-        },
-        "endpoints": {
-            "health": "/health",
-            "root": "/",
-            "upload_document": "/api/v1/upload",
-            "document_status": "/api/v1/status/{document_id}",
-            "kafka_topics": "/api/v1/topics"
-        },
-        "usage_examples": {
-            "upload_curl": "curl -X POST 'http://localhost:8001/api/v1/upload' -F 'file=@document.pdf' -F 'user_id=test_user'",
-            "status_check": "http://localhost:8001/api/v1/status/{document_id}",
-            "topics_info": "http://localhost:8001/api/v1/topics"
-        },
-        "note": "FastAPI runs on port 8001 (ChromaDB uses port 8000)"
-    }
+async def setup_gmail_watch():
+    """Setup Gmail watch for push notifications"""
+    try:
+        watch_request = {
+            'labelIds': ['INBOX'],
+            'topicName': 'projects/gmail-monitor-project/topics/gmail-notifications',
+            'labelFilterBehavior': 'INCLUDE'
+        }
+
+        result = gmail_service.setup_watch(watch_request)
+        logger.info(f"Gmail watch setup successful. Expires: {result.get('expiration')}")
+
+        # Schedule watch renewal (every 6 days to be safe)
+        asyncio.create_task(schedule_watch_renewal())
+
+    except Exception as e:
+        logger.error(f"Failed to setup Gmail watch: {e}")
+        raise
+
+
+async def schedule_watch_renewal():
+    """Schedule automatic renewal of Gmail watch every 6 days"""
+    while True:
+        await asyncio.sleep(6 * 24 * 3600)  # 6 days
+        try:
+            await setup_gmail_watch()
+            logger.info("Gmail watch renewed successfully")
+        except Exception as e:
+            logger.error(f"Failed to renew Gmail watch: {e}")
