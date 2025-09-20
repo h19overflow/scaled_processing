@@ -10,7 +10,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-
+#TODO Beban Diisytiharkan 950.00kW
+# Kehendak Maksima Tertinggi 819.00kW
+# NOT CAPTURED in 0602_202507
+# AMAUN COLUMN AND KADAR NOT CAPTURED IN THE ANDA GUNA TABLE
+# INFO IS IN THE JSON BUT not LOADED     {
+#         "Penerangan": "Puncak (kWh)",
+#         "Penggunaan": "141,779.00",
+#         "Kadar (RM)": "0.35500",
+#         "Amaun (RM)": "50,331.55"},
+#  {,
+#         "Penerangan": "Jumlah",
+#         "Penggunaan": "277,411.00",
+#         "Kadar (RM)": "",
+#         "Amaun (RM)": "106,526.96"
+#       }
+#     ]
 class TableDataLoader:
     """Loads and validates table data from JSON files."""
 

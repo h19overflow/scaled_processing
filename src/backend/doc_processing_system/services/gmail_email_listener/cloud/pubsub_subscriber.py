@@ -104,17 +104,28 @@ class GmailPubSubSubscriber:
 
     def start_listening(self) -> None:
         logger.info(f"Listening on {self.subscription_path}")
+        logger.info("Press Ctrl+C to stop listening...")
+
         # Use subscribe() instead of pull()
         streaming_pull_future = self.subscriber.subscribe(
             self.subscription_path,
             callback=self.process_gmail_notification,
             flow_control=self.flow_control,
         )
+
         try:
+            # Block forever until interrupted
             streaming_pull_future.result()
         except KeyboardInterrupt:
+            print("\n🛑 Keyboard interrupt received...")
+            print("🔄 Gracefully shutting down subscriber...")
             streaming_pull_future.cancel()
-            logger.info("Subscriber stopped")
+            streaming_pull_future.result()  # Wait for cancellation to complete
+            logger.info("✅ Subscriber stopped gracefully")
+        except Exception as e:
+            logger.error(f"❌ Unexpected error in subscriber: {e}")
+            streaming_pull_future.cancel()
+            raise
 
 async def setup_pubsub_subscriber(gmail_service):
     project_id = "gmail-monitor-project-472511"
@@ -126,6 +137,61 @@ async def setup_pubsub_subscriber(gmail_service):
 
 
 # HELPER FUNCTIONS
+
+def check_gmail_watch_status(gmail_service):
+    """Check if Gmail watch is properly set up"""
+    try:
+        print("🔍 Checking Gmail watch configuration...")
+
+        # Check if we can access Gmail API
+        profile = gmail_service.service.users().getProfile(userId='me').execute()
+        email = profile.get('emailAddress')
+        print(f"✅ Gmail API access confirmed for: {email}")
+
+        # Check recent message to see if we have the right permissions
+        messages = gmail_service.service.users().messages().list(
+            userId='me',
+            maxResults=1
+        ).execute()
+
+        if messages.get('messages'):
+            print("✅ Can read Gmail messages")
+
+            # Get the latest message to check history ID
+            latest_msg = messages['messages'][0]
+            msg_detail = gmail_service.service.users().messages().get(
+                userId='me',
+                id=latest_msg['id']
+            ).execute()
+
+            current_history_id = msg_detail.get('historyId')
+            print(f"📍 Current history ID: {current_history_id}")
+        else:
+            print("⚠️  No messages found in mailbox")
+
+        # Try to set up Gmail watch manually
+        print("\n🔧 Setting up Gmail watch...")
+        watch_request = {
+            'labelIds': ['INBOX'],
+            'topicName': 'projects/gmail-monitor-project-472511/topics/gmail-notifications',
+            'labelFilterBehavior': 'INCLUDE'
+        }
+
+        try:
+            result = gmail_service.setup_watch(watch_request)
+            expiration = result.get('expiration', 'Unknown')
+            print(f"✅ Gmail watch setup successful!")
+            print(f"📧 Watching email: {email}")
+            print(f"📅 Expires: {expiration}")
+            print(f"🎯 Topic: projects/gmail-monitor-project-472511/topics/gmail-notifications")
+            return True
+        except Exception as watch_error:
+            print(f"❌ Failed to setup Gmail watch: {watch_error}")
+            return False
+
+    except Exception as e:
+        print(f"❌ Gmail API error: {e}")
+        return False
 
 def test_subscriber():
     """Test the PubSub subscriber with actual Gmail service"""
@@ -153,6 +219,9 @@ def test_subscriber():
         gmail_service = GmailService(auth_manager)
         print("✅ Gmail service initialized")
 
+        # Check Gmail watch status first
+        check_gmail_watch_status(gmail_service)
+
         # Create and test subscriber
         print("🔧 Creating PubSub subscriber...")
         project_id = "gmail-monitor-project-472511"
@@ -175,7 +244,14 @@ def test_subscriber():
         print("⏹️  Press Ctrl+C to stop\n")
 
         # Start listening (this will block until Ctrl+C)
-        subscriber.start_listening()
+        try:
+            subscriber.start_listening()
+        except KeyboardInterrupt:
+            print("\n👋 Test stopped by user")
+        except Exception as e:
+            print(f"\n❌ Test failed: {e}")
+        finally:
+            print("🏁 Test completed")
 
     except Exception as e:
         print(f"❌ Error: {e}")

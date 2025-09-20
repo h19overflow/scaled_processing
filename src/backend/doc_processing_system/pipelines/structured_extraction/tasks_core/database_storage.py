@@ -198,10 +198,10 @@ def _create_extraction_result(document_id: str, document_name: str, extraction: 
         extraction_class=extraction.get("extraction_class", "unknown"),
         extraction_text=extraction.get("extraction_text", ""),
         attributes=attributes,
-        alignment_status=extraction.get("alignment_status", "unknown"),
+        alignment_status=extraction.get("alignment_status") or "unknown",
         extraction_index=extraction.get("extraction_index", 0),
         group_index=extraction.get("group_index", 0),
-        description=extraction.get("description"),
+        description=extraction.get("description") or "",
         char_start_pos=char_start,
         char_end_pos=char_end,
         timestamp=datetime.now()

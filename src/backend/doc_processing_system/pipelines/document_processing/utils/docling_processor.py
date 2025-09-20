@@ -1,121 +1,120 @@
 """
-DoclingProcessor - Smart document extraction with format detection and path-based I/O.
-Extracts rich markdown and images from documents using adaptive Docling pipelines.
+DoclingProcessor - Smart document extraction with Granite VLM (inline model) and format detection.
+Extracts rich markdown and images from documents using Granite-Docling VLM pipelines.
 """
 
 import logging
 import json
 from pathlib import Path
 from typing import Dict, Any
+
 from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption, PowerpointFormatOption
 from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import PdfPipelineOptions, PaginatedPipelineOptions,TableFormerMode
+from docling.datamodel.pipeline_options import VlmPipelineOptions, PaginatedPipelineOptions
+from docling.datamodel.pipeline_options_vlm_model import (
+    InlineVlmOptions,
+    ResponseFormat,
+    InferenceFramework,
+    TransformersModelType,
+    AcceleratorDevice,
+)
+from docling.pipeline.vlm_pipeline import VlmPipeline
 from docling_core.types.doc import ImageRefMode
+
 DOCLING_AVAILABLE = True
 
 class DoclingProcessor:
-    """Smart document processor with format detection and adaptive pipelines."""
+    """Smart document processor with Granite-Docling VLM and format detection."""
 
-    def __init__(self, temp_base_dir: str = "data/temp/docling"):
-        """Initialize DoclingProcessor with file-based I/O.
+    def __init__(self, temp_base_dir: str = "data/temp/docling", use_gpu: bool = True):
+        """Initialize DoclingProcessor with VLM-based extraction.
 
         Args:
             temp_base_dir: Base directory for temporary processing files
+            use_gpu: Whether to use GPU acceleration
         """
         self.logger = logging.getLogger(__name__)
         self.temp_base_dir = Path(temp_base_dir)
         self.temp_base_dir.mkdir(parents=True, exist_ok=True)
+        self.use_gpu = use_gpu
 
         if not DOCLING_AVAILABLE:
-            self.logger.error("Docling not available - install with: pip install docling")
-            raise ImportError("Docling package is required but not installed")
+            self.logger.error(
+                "Docling not available - install with: pip install 'docling[transformers]' or 'docling[mlx]'"
+            )
+            raise ImportError("Docling package with VLM support is required but not installed")
 
-        # Initialize adaptive converters
-        self._converters = self._initialize_converters()
+        # Initialize converters
+        self._converters = self._initialize_vlm_converters()
 
-        self.logger.info("DoclingProcessor initialized with adaptive pipelines")
+        self.logger.info(f"DoclingProcessor initialized with Granite-Docling VLM (GPU: {self.use_gpu})")
 
     def extract_document(self, raw_file_path: str, document_id: str) -> Dict[str, Any]:
-        """Extract document to markdown and images with path-based output.
+        """Extract document using Granite-Docling VLM with path-based output.
 
         Args:
             raw_file_path: Path to raw document file
             document_id: Unique document identifier
-            user_id: User who uploaded document
 
         Returns:
-            Dict with paths to extracted content: {
-                "status": "completed",
-                "processed_markdown_path": "/path/to/document.md",
-                "extracted_images_dir": "/path/to/images/",
-                "document_id": "doc_id",
-                "file_info": {...}
-            }
+            Dict with paths to extracted content
         """
         try:
             raw_path = Path(raw_file_path)
             if not raw_path.exists():
                 return self._error_result("File not found", raw_file_path)
 
-            self.logger.info(f"Starting Docling extraction for: {raw_path.name}")
+            self.logger.info(f"Starting Granite-Docling VLM extraction for: {raw_path.name}")
 
-            # Step 1: Detect document format and complexity
+            # Detect document format
             doc_format = self._detect_document_format(raw_path)
-            complexity = self._get_file_complexity(raw_path)
+            self.logger.info(f"Document format: {doc_format}")
 
-            self.logger.info(f"Document format: {doc_format}, complexity: {complexity}")
-
-            # Step 2: Create processing directories
+            # Create processing directories
             processing_dir = self._create_processing_directory(document_id)
             images_dir = processing_dir / "images"
             images_dir.mkdir(exist_ok=True)
 
-            # Step 3: Convert document with appropriate pipeline
+            # Convert with VLM pipeline (first page)
             converter = self._get_converter_for_format(doc_format)
-            conv_result = converter.convert(str(raw_path),page_range=(1,1))
+            conv_result = converter.convert(str(raw_path), page_range=(1, 1))
 
             if conv_result.status.name != "SUCCESS":
-                return self._error_result("Docling conversion failed", raw_file_path,
-                                        error_details=f"Status: {conv_result.status.name}")
+                return self._error_result(
+                    "Granite-Docling VLM conversion failed",
+                    raw_file_path,
+                    error_details=f"Status: {conv_result.status.name}",
+                )
 
-            # Step 4: Export markdown with embedded images
-            markdown_path = processing_dir / f"{document_id}_docling.md"
+            # Export markdown
+            markdown_path = processing_dir / f"{document_id}_granite_vlm.md"
             conv_result.document.save_as_markdown(
-                str(markdown_path),
-                image_mode=ImageRefMode.EMBEDDED
+                str(markdown_path), image_mode=ImageRefMode.EMBEDDED
             )
 
-            # Step 4.5: Clean up image placeholders from markdown
-            self._clean_markdown_image_placeholders(markdown_path)
+            # Clean markdown placeholders
+            self._clean_markdown_vlm_placeholders(markdown_path)
 
-
-            # Step 4: Export JSON
+            # Extract tables (full doc)
             tables_data = []
-            conv_result_tables = converter.convert(str(raw_path))
-            for table_ix, table in enumerate(conv_result_tables.document.tables):
-                # Convert to DataFrame to strip metadata
-                df = table.export_to_dataframe()
+            try:
+                full_result = converter.convert(str(raw_path))
+                for idx, table in enumerate(full_result.document.tables):
+                    df = table.export_to_dataframe()
+                    tables_data.append({
+                        "table_id": idx,
+                        "data": df.to_dict("records"),
+                    })
 
+                with open(processing_dir / f"{document_id}_tables.json", "w", encoding="utf-8") as f:
+                    json.dump(tables_data, f, indent=2, ensure_ascii=False)
 
-                # Create clean table object
-                clean_table = {
-                    "table_id": table_ix,
-                    "data": df.to_dict('records'),
-                }
-                tables_data.append(clean_table)
+                self.logger.info(f"Extracted {len(tables_data)} tables")
+            except Exception as e:
+                self.logger.warning(f"Table extraction failed: {e}")
 
-            # Save as clean JSON
-            with open(processing_dir/f"{document_id}_table_json", "w", encoding="utf-8") as f:
-                json.dump(tables_data, f, indent=2, ensure_ascii=False)
-
-            print(f"Saved {len(tables_data)} tables as clean JSON!")
-
-
-            # Step 6: Get file metadata
+            # File metadata
             file_info = self._get_file_info(raw_path, conv_result.document)
-
-            self.logger.info(f"✅ Docling extraction completed: {markdown_path}")
-            self.logger.info(f"📁 Images extracted to: {images_dir}")
 
             return {
                 "status": "completed",
@@ -123,156 +122,101 @@ class DoclingProcessor:
                 "extracted_images_dir": str(images_dir),
                 "document_id": document_id,
                 "file_info": file_info,
-                "processing_directory": str(processing_dir)
+                "processing_directory": str(processing_dir),
+                "extraction_method": "granite_vlm",
             }
 
         except Exception as e:
-            self.logger.error(f"❌ Docling extraction failed: {e}")
-            return self._error_result("Extraction failed", raw_file_path, error_details=str(e))
+            self.logger.error(f"Extraction failed: {e}")
+            return self._error_result("VLM extraction failed", raw_file_path, error_details=str(e))
 
-    # HELPER FUNCTIONS
-    def _clean_markdown_image_placeholders(self, markdown_path: Path):
-        """Remove image placeholder comments that cause noise in extraction."""
-        try:
-            # Read the markdown file
-            with open(markdown_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+    def _initialize_vlm_converters(self) -> Dict[str, DocumentConverter]:
+        """Initialize converters using InlineVlmOptions for Granite-Docling VLM."""
+        # Hugging Face repo for Granite-Docling
+        granite_repo = "ibm-granite/granite-docling-258M"
 
-            # Remove the specific image placeholder pattern
-            import re
-            pattern = r'<!-- 🖼️❌ Image not available\. Please use `PdfPipelineOptions\(generate_picture_images=True\)` -->'
-            cleaned_content = re.sub(pattern, '', content)
+        # Set device preference
+        devices = [AcceleratorDevice.CPU]
+        if self.use_gpu:
+            devices = [AcceleratorDevice.CUDA, AcceleratorDevice.MPS, AcceleratorDevice.CPU]
 
-            # Also remove any extra blank lines that might remain
-            cleaned_content = re.sub(r'\n\s*\n\s*\n', '\n\n', cleaned_content)
+        inline_options = InlineVlmOptions(
+            repo_id=granite_repo,
+            prompt="Convert this page to Markdown. Retain all text, tables, and images.",
+            response_format=ResponseFormat.MARKDOWN,
+            inference_framework=InferenceFramework.TRANSFORMERS,
+            transformers_model_type=TransformersModelType.AUTOMODEL_VISION2SEQ,
+            supported_devices=devices,
+            scale=2.0,
+            temperature=0.0,
+        )
 
-            # Write back the cleaned content
-            with open(markdown_path, 'w', encoding='utf-8') as f:
-                f.write(cleaned_content)
+        vlm_pipeline_options = VlmPipelineOptions(
+            vlm_options=inline_options,
+            generate_page_images=True,
+            generate_picture_images=True,
+            images_scale=2.0,
+        )
 
-            self.logger.info(f"🧹 Cleaned image placeholders from: {markdown_path.name}")
+        office_opts = PaginatedPipelineOptions()
+        office_opts.images_scale = 1.5
 
-        except Exception as e:
-            self.logger.warning(f"Failed to clean image placeholders: {e}")
-
-    def _initialize_converters(self) -> Dict[str, DocumentConverter]:
-        """Initialize converters for different document formats."""
-        # High-quality PDF configuration
-        pdf_config = PdfPipelineOptions()
-        pdf_config.images_scale = 4.0
-        pdf_config.generate_page_images = False
-        pdf_config.do_ocr = True
-        pdf_config.ocr_options.force_full_page_ocr=True
-        pdf_config.do_table_structure = True
-        pdf_config.table_structure_options.mode = TableFormerMode.ACCURATE  # Use accurate mode for better table handling
-        pdf_config.table_structure_options.do_cell_matching = False
-        pdf_config.generate_picture_images = False
-
-        # Balanced Office format configuration
-        office_config = PaginatedPipelineOptions()
-        office_config.images_scale = 1.5
-
-        # Create converters
-        converters = {
+        return {
             "pdf": DocumentConverter(
-                format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_config)}
+                format_options={
+                    InputFormat.PDF: PdfFormatOption(
+                        pipeline_cls=VlmPipeline,
+                        pipeline_options=vlm_pipeline_options,
+                    )
+                }
             ),
             "docx": DocumentConverter(
-                format_options={InputFormat.DOCX: WordFormatOption(pipeline_options=office_config)}
+                format_options={InputFormat.DOCX: WordFormatOption(pipeline_options=office_opts)}
             ),
             "pptx": DocumentConverter(
-                format_options={InputFormat.PPTX: PowerpointFormatOption(pipeline_options=office_config)}
-            )
+                format_options={InputFormat.PPTX: PowerpointFormatOption(pipeline_options=office_opts)}
+            ),
         }
 
-        return converters
+    def _clean_markdown_vlm_placeholders(self, markdown_path: Path):
+        """Remove VLM-specific placeholders from markdown."""
+        try:
+            text = markdown_path.read_text(encoding="utf-8")
+            import re
+            text = re.sub(r'<!--.*?-->', '', text, flags=re.DOTALL)
+            text = re.sub(r"\n\s*\n\s*\n", "\n\n", text)
+            markdown_path.write_text(text, encoding="utf-8")
+            self.logger.info(f"Cleaned markdown: {markdown_path.name}")
+        except Exception as e:
+            self.logger.warning(f"Cleanup failed: {e}")
 
     def _detect_document_format(self, file_path: Path) -> str:
-        """Detect document format from file extension."""
-        extension = file_path.suffix.lower()
-        format_map = {
-            '.jpg': 'pdf',
-            '.png': 'pdf',
-            '.pdf': 'pdf',
-            '.docx': 'docx',
-            '.pptx': 'pptx',
-            '.html': 'html'
-        }
-        return format_map.get(extension, 'pdf')
+        ext = file_path.suffix.lower()
+        return {'.pdf':'pdf','.docx':'docx','.pptx':'pptx'}.get(ext,'pdf')
 
-    def _get_file_complexity(self, file_path: Path) -> str:
-        """Determine file complexity based on size."""
-        file_size_mb = file_path.stat().st_size / (1024 * 1024)
+    def _get_converter_for_format(self, fmt: str) -> DocumentConverter:
+        return self._converters.get(fmt, self._converters['pdf'])
 
-        if file_size_mb > 50:
-            return "high"
-        elif file_size_mb > 10:
-            return "medium"
-        else:
-            return "low"
-
-    def _get_converter_for_format(self, doc_format: str) -> DocumentConverter:
-        """Get appropriate converter for document format."""
-        return self._converters.get(doc_format, self._converters["pdf"])
-
-    def _create_processing_directory(self, document_id: str) -> Path:
-        """Create unique processing directory for document."""
-        processing_dir = self.temp_base_dir / document_id
-        processing_dir.mkdir(parents=True, exist_ok=True)
-        return processing_dir
-
-    def _extract_images_to_directory(self, document, images_dir: Path):
-        """Extract document images to specified directory."""
-        try:
-            # Get document images
-            if hasattr(document, 'pictures') and document.pictures:
-                for i, picture in enumerate(document.pictures):
-                    image_path = images_dir / f"image_{i}.png"
-                    # Save image data to file
-                    if hasattr(picture, 'image') and picture.image:
-                        with open(image_path, 'wb') as f:
-                            f.write(picture.image)
-                        self.logger.debug(f"Extracted image: {image_path}")
-
-            self.logger.info(f"Extracted {len(list(images_dir.glob('*.png')))} images")
-
-        except Exception as e:
-            self.logger.warning(f"Failed to extract images: {e}")
+    def _create_processing_directory(self, doc_id: str) -> Path:
+        p = self.temp_base_dir / doc_id
+        p.mkdir(parents=True, exist_ok=True)
+        return p
 
     def _get_file_info(self, file_path: Path, document) -> Dict[str, Any]:
-        """Extract file metadata information."""
         try:
-            file_stats = file_path.stat()
+            stats = file_path.stat()
+            pages = len(document.pages) if hasattr(document, 'pages') else 0
+            length = len(document.export_to_markdown()) if hasattr(document,'export_to_markdown') else 0
+            return {"filename":file_path.name, "file_size":stats.st_size, "page_count":pages, "content_length":length}
+        except:
+            return {"filename":file_path.name, "file_size":0, "page_count":0, "content_length":0}
 
-            # Get page count if available
-            page_count = 0
-            if hasattr(document, 'pages') and document.pages:
-                page_count = len(document.pages)
+    def _error_result(self, message: str, path: str, error_details: str = "") -> Dict[str, Any]:
+        return {"status":"error","error":message,"error_details":error_details,"file_path":path}
 
-            return {
-                "filename": file_path.name,
-                "file_type": file_path.suffix.lower().replace('.', ''),
-                "file_size": file_stats.st_size,
-                "page_count": page_count,
-                "content_length": len(document.export_to_markdown()) if hasattr(document, 'export_to_markdown') else 0
-            }
 
-        except Exception as e:
-            self.logger.warning(f"Failed to get file info: {e}")
-            return {
-                "filename": file_path.name,
-                "file_type": file_path.suffix.lower().replace('.', ''),
-                "file_size": 0,
-                "page_count": 0,
-                "content_length": 0
-            }
-
-    def _error_result(self, message: str, file_path: str, error_details: str = "") -> Dict[str, Any]:
-        """Create standardized error result."""
-        return {
-            "status": "error",
-            "error": message,
-            "error_details": error_details,
-            "file_path": file_path,
-            "message": f"{message}: {error_details}" if error_details else message
-        }
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    proc = DoclingProcessor(temp_base_dir="data/temp/granite_vlm", use_gpu=True)
+    result = proc.extract_document("path/to/doc.pdf", "my_doc_001")
+    print(result)

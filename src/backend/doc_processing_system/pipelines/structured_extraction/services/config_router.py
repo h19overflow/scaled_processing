@@ -18,7 +18,8 @@ def invoice_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
     - no_invois: Invoice number
     - no_akaun: Account number
     - baki_terdahulu: Previous balance amount
-    - caj_semasa: Current charges (main summary value)
+    - caj_semasa: Current charges (main summary value, NOT NEM-specific)
+    - caj_semasa_nem: Current charges under NEM program (only extract if explicitly labeled as "NEM" charges, typically large amounts)
     - deposit_sekuriti: Security deposit
     - jumlah_bil: Total bill amount
     - tarikh_bil: Bill date
@@ -28,9 +29,16 @@ def invoice_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
     - amaun_bayaran_bagi_tempoh: Payment amount
     - biller_code: Biller code
     - ref_1: Reference number
-    - pelarasan_penggenapan: Rounding adjustment
+    - pelarasan_penggenapan: Rounding adjustment (small amounts like -RM0.01, -RM0.02, typically less than RM1)
     - tarikh_akhir_jelaskan_tunggakan: Final settlement date
     - amaun_rm_tunggakan: Arrears amount
+    - Baki NEM: NEM balance accumulated
+    - Tarikh Luput Baki NEM: NEM balance expiry date
+
+    IMPORTANT:
+    - caj_semasa_nem should only be extracted when explicitly mentioned as "NEM" charges
+    - pelarasan_penggenapan is for small rounding adjustments (usually cents, like -RM0.01)
+    - Do NOT confuse small rounding amounts with large NEM charges
     """).strip()
 
     examples = [
@@ -90,6 +98,7 @@ JomPAY online di Perbankan Internet dan Telefon Mudah Alih dengan akaun semasa, 
 | Ringkasan Bil Anda:   |              |
 |-----------------------|--------------|
 | Baki Terdahulu        | RM0.00       |
+| Caj Semasa            | RM1,500.25   |
 | Caj Semasa NEM        | RM152,298.12 |
 | Pelarasan Penggenapan | -RM0.02      |
 | Baki NEM              | RM0.00       |
@@ -193,8 +202,13 @@ Penghawa dingin menggunakan banyak elektrik. Menetapkan suhu di antara mampu unt
                 ),
                 lx.data.Extraction(
                     extraction_class="caj_semasa",
+                    extraction_text="RM1,500.25",
+                    attributes={"current_charges": 1500.25, "currency": "MYR", "amount": 1500.25, "type": "regular_charges"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="caj_semasa_nem",
                     extraction_text="RM152,298.12",
-                    attributes={"current_charges": 152298.12, "currency": "MYR", "amount": 152298.12, "type": "main_summary_charges"}
+                    attributes={"current_charges_nem": 152298.12, "currency": "MYR", "amount": 152298.12, "type": "nem_charges"}
                 ),
                 lx.data.Extraction(
                     extraction_class="pelarasan_penggenapan",
@@ -230,6 +244,16 @@ Penghawa dingin menggunakan banyak elektrik. Menetapkan suhu di antara mampu unt
                     extraction_class="amaun_rm_tunggakan",
                     extraction_text="RM0.00",
                     attributes={"arrears_amount": 0.00, "currency": "MYR"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="Baki NEM",
+                    extraction_text="RM0.00",
+                    attributes={"nem_balance": 0.00, "currency": "MYR", "type": "nem_accumulated_balance"}
+                ),
+                lx.data.Extraction(
+                    extraction_class="Tarikh Luput Baki NEM",
+                    extraction_text="",
+                    attributes={"nem_balance_expiry_date": "", "iso_date": ""}
                 ),
             ]
         ),
