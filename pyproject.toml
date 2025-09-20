@@ -3,7 +3,7 @@ name = "scaled-processing"
 version = "0.1.0"
 description = "Scaled Document Processing System with parallel RAG and structured extraction flows"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     # Core Framework
     "fastapi>=0.104.0",
@@ -11,26 +11,16 @@ dependencies = [
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
     "pydantic-ai>=0.0.1",
-    "openai>=1.6.0",
-    "google-generativeai>=0.3.0",
-    "anthropic>=0.8.0",
     # Agent Orchestration
-    "langgraph>=0.0.55",
-    "langsmith>=0.0.69",
     "langchain-experimental>=0.3.0",
     # Vector Database & Embeddings
-    "chromadb>=0.4.18",
-    "weaviate-client>=4.16.9",
     "sentence-transformers>=2.2.2",
-    "faiss-cpu>=1.7.4",
     # Database & Storage
     "sqlalchemy>=2.0.23",
     "asyncpg>=0.29.0",
     "psycopg2-binary>=2.9.9",
     "alembic>=1.13.0",
     # Messaging & Event Streaming
-    "kafka-python>=2.0.2",
-    "aiokafka>=0.10.0",
     # Workflow Orchestration (keeping Prefect for document processing flows)
     "prefect>=2.14.0",
     "prefect-dask>=0.2.6",
@@ -50,10 +40,6 @@ dependencies = [
     # Semantic Chunking
     "semantic-text-splitter>=0.8.0",
     "tiktoken>=0.5.2",
-    # Evaluation & Monitoring
-    "ragas>=0.1.0",
-    "wandb>=0.16.0",
-    "mlflow>=2.8.0",
     # HTTP & Async
     "httpx>=0.25.2",
     "aiohttp>=3.9.1",
@@ -79,6 +65,7 @@ dependencies = [
     "pyarrow==14.0.1",
     "chonkie[all]",
     "numpy==1.26.4",
+    "confluent-kafka",
 ]
 
 [project.optional-dependencies]

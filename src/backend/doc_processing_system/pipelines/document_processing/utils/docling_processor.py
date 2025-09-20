@@ -145,17 +145,17 @@ class DoclingProcessor:
             prompt="Convert this page to Markdown. Retain all text, tables, and images.",
             response_format=ResponseFormat.MARKDOWN,
             inference_framework=InferenceFramework.TRANSFORMERS,
-            transformers_model_type=TransformersModelType.AUTOMODEL_VISION2SEQ,
+            transformers_model_type=TransformersModelType.AUTOMODEL_IMAGETEXTTOTEXT,
             supported_devices=devices,
-            scale=2.0,
+            scale=1.0,
             temperature=0.0,
         )
+        inline_options.replace_loc_tags = False
 
         vlm_pipeline_options = VlmPipelineOptions(
             vlm_options=inline_options,
             generate_page_images=True,
             generate_picture_images=True,
-            images_scale=2.0,
         )
 
         office_opts = PaginatedPipelineOptions()
