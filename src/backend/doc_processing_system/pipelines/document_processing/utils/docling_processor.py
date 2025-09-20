@@ -11,13 +11,7 @@ from typing import Dict, Any
 from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption, PowerpointFormatOption
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import VlmPipelineOptions, PaginatedPipelineOptions
-from docling.datamodel.pipeline_options_vlm_model import (
-    InlineVlmOptions,
-    ResponseFormat,
-    InferenceFramework,
-    TransformersModelType,
-    AcceleratorDevice,
-)
+from docling.datamodel import vlm_model_specs
 from docling.pipeline.vlm_pipeline import VlmPipeline
 from docling_core.types.doc import ImageRefMode
 
@@ -75,46 +69,57 @@ class DoclingProcessor:
             images_dir = processing_dir / "images"
             images_dir.mkdir(exist_ok=True)
 
-            # Convert with VLM pipeline (first page)
+            # Get appropriate converter for the document format
             converter = self._get_converter_for_format(doc_format)
-            conv_result = converter.convert(str(raw_path), page_range=(1, 1))
 
-            if conv_result.status.name != "SUCCESS":
+            # Convert first page with VLM for markdown extraction
+            self.logger.info("Extracting first page with Granite VLM...")
+            first_page_result = converter.convert(str(raw_path), page_range=(1, 1))
+
+            if first_page_result.status.name != "SUCCESS":
                 return self._error_result(
                     "Granite-Docling VLM conversion failed",
                     raw_file_path,
-                    error_details=f"Status: {conv_result.status.name}",
+                    error_details=f"Status: {first_page_result.status.name}",
                 )
 
-            # Export markdown
+            # Export markdown from first page
             markdown_path = processing_dir / f"{document_id}_granite_vlm.md"
-            conv_result.document.save_as_markdown(
+            first_page_result.document.save_as_markdown(
                 str(markdown_path), image_mode=ImageRefMode.EMBEDDED
             )
 
             # Clean markdown placeholders
             self._clean_markdown_vlm_placeholders(markdown_path)
 
-            # Extract tables (full doc)
+            # Extract tables from full document (separate conversion)
             tables_data = []
             try:
+                self.logger.info("Extracting tables from full document...")
                 full_result = converter.convert(str(raw_path))
-                for idx, table in enumerate(full_result.document.tables):
-                    df = table.export_to_dataframe()
-                    tables_data.append({
-                        "table_id": idx,
-                        "data": df.to_dict("records"),
-                    })
 
-                with open(processing_dir / f"{document_id}_tables.json", "w", encoding="utf-8") as f:
-                    json.dump(tables_data, f, indent=2, ensure_ascii=False)
+                if full_result.status.name == "SUCCESS":
+                    for idx, table in enumerate(full_result.document.tables):
+                        df = table.export_to_dataframe()
+                        tables_data.append({
+                            "table_id": idx,
+                            "data": df.to_dict("records"),
+                        })
 
-                self.logger.info(f"Extracted {len(tables_data)} tables")
+                    # Save tables to JSON
+                    tables_path = processing_dir / f"{document_id}_tables.json"
+                    with open(tables_path, "w", encoding="utf-8") as f:
+                        json.dump(tables_data, f, indent=2, ensure_ascii=False)
+
+                    self.logger.info(f"Extracted {len(tables_data)} tables from full document")
+                else:
+                    self.logger.warning(f"Full document conversion failed: {full_result.status.name}")
+
             except Exception as e:
                 self.logger.warning(f"Table extraction failed: {e}")
 
-            # File metadata
-            file_info = self._get_file_info(raw_path, conv_result.document)
+            # File metadata from first page result
+            file_info = self._get_file_info(raw_path, first_page_result.document)
 
             return {
                 "status": "completed",
@@ -131,52 +136,68 @@ class DoclingProcessor:
             return self._error_result("VLM extraction failed", raw_file_path, error_details=str(e))
 
     def _initialize_vlm_converters(self) -> Dict[str, DocumentConverter]:
-        """Initialize converters using InlineVlmOptions for Granite-Docling VLM."""
-        # Hugging Face repo for Granite-Docling
-        granite_repo = "ibm-granite/granite-docling-258M"
+        """Initialize converters using proper Granite-Docling VLM specifications."""
+        try:
+            # Use the correct Granite VLM model spec based on system capabilities
+            if self.use_gpu:
+                self.logger.info("Initializing Granite VLM with GPU acceleration...")
+                vlm_options = vlm_model_specs.GRANITEDOCLING_TRANSFORMERS
+            else:
+                # For CPU or Apple Silicon, try MLX first then fallback
+                try:
+                    self.logger.info("Trying MLX backend for Granite VLM...")
+                    vlm_options = vlm_model_specs.GRANITEDOCLING_MLX
+                    self.logger.info("Using MLX backend successfully")
+                except (ImportError, AttributeError) as e:
+                    self.logger.info(f"MLX not available ({e}), falling back to transformers")
+                    vlm_options = vlm_model_specs.GRANITEDOCLING_TRANSFORMERS
 
-        # Set device preference
-        devices = [AcceleratorDevice.CPU]
-        if self.use_gpu:
-            devices = [AcceleratorDevice.CUDA, AcceleratorDevice.MPS, AcceleratorDevice.CPU]
+            # Configure VLM pipeline with performance optimizations
+            vlm_pipeline_options = VlmPipelineOptions(
+                vlm_options=vlm_options,
+                generate_page_images=True,
+                generate_picture_images=False,  # Disable for faster processing
+                # Set timeout to avoid hanging
+                document_timeout=300,  # 5 minutes max per document
+            )
 
-        inline_options = InlineVlmOptions(
-            repo_id=granite_repo,
-            prompt="Convert this page to Markdown. Retain all text, tables, and images.",
-            response_format=ResponseFormat.MARKDOWN,
-            inference_framework=InferenceFramework.TRANSFORMERS,
-            transformers_model_type=TransformersModelType.AUTOMODEL_IMAGETEXTTOTEXT,
-            supported_devices=devices,
-            scale=1.0,
-            temperature=0.0,
-        )
-        inline_options.replace_loc_tags = False
+            # Office format options with reduced scale for performance
+            office_opts = PaginatedPipelineOptions()
+            office_opts.images_scale = 1.0
 
-        vlm_pipeline_options = VlmPipelineOptions(
-            vlm_options=inline_options,
-            generate_page_images=True,
-            generate_picture_images=True,
-        )
+            self.logger.info("Granite VLM converters initialized successfully")
 
-        office_opts = PaginatedPipelineOptions()
-        office_opts.images_scale = 1.5
+            return {
+                "pdf": DocumentConverter(
+                    format_options={
+                        InputFormat.PDF: PdfFormatOption(
+                            pipeline_cls=VlmPipeline,
+                            pipeline_options=vlm_pipeline_options
+                        )
+                    }
+                ),
+                "docx": DocumentConverter(
+                    format_options={InputFormat.DOCX: WordFormatOption(pipeline_options=office_opts)}
+                ),
+                "pptx": DocumentConverter(
+                    format_options={InputFormat.PPTX: PowerpointFormatOption(pipeline_options=office_opts)}
+                ),
+            }
 
-        return {
-            "pdf": DocumentConverter(
-                format_options={
-                    InputFormat.PDF: PdfFormatOption(
-                        pipeline_cls=VlmPipeline,
-                        pipeline_options=vlm_pipeline_options,
-                    )
-                }
-            ),
-            "docx": DocumentConverter(
-                format_options={InputFormat.DOCX: WordFormatOption(pipeline_options=office_opts)}
-            ),
-            "pptx": DocumentConverter(
-                format_options={InputFormat.PPTX: PowerpointFormatOption(pipeline_options=office_opts)}
-            ),
-        }
+        except Exception as e:
+            self.logger.error(f"Failed to initialize VLM converters: {e}")
+            # Fallback to basic converter without VLM
+            self.logger.warning("Falling back to basic document converter without VLM")
+            office_opts = PaginatedPipelineOptions()
+            return {
+                "pdf": DocumentConverter(),
+                "docx": DocumentConverter(
+                    format_options={InputFormat.DOCX: WordFormatOption(pipeline_options=office_opts)}
+                ),
+                "pptx": DocumentConverter(
+                    format_options={InputFormat.PPTX: PowerpointFormatOption(pipeline_options=office_opts)}
+                ),
+            }
 
     def _clean_markdown_vlm_placeholders(self, markdown_path: Path):
         """Remove VLM-specific placeholders from markdown."""
