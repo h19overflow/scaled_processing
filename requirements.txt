@@ -1,3 +1,4 @@
+mineru
 abnf==2.2.0
 absl-py==2.3.1
 accelerate==1.10.1
