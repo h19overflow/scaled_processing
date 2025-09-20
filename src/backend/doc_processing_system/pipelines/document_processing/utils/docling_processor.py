@@ -36,18 +36,16 @@ class DoclingProcessor:
         self.logger.info("DoclingProcessor initialized with adaptive pipelines")
 
     def extract_document(self, raw_file_path: str, document_id: str) -> Dict[str, Any]:
-        """Extract document to markdown and images with path-based output.
+        """Extract document to markdown with path-based output.
 
         Args:
             raw_file_path: Path to raw document file
             document_id: Unique document identifier
-            user_id: User who uploaded document
 
         Returns:
             Dict with paths to extracted content: {
                 "status": "completed",
                 "processed_markdown_path": "/path/to/document.md",
-                "extracted_images_dir": "/path/to/images/",
                 "document_id": "doc_id",
                 "file_info": {...}
             }
@@ -65,10 +63,8 @@ class DoclingProcessor:
 
             self.logger.info(f"Document format: {doc_format}, complexity: {complexity}")
 
-            # Step 2: Create processing directories
+            # Step 2: Create processing directory
             processing_dir = self._create_processing_directory(document_id)
-            images_dir = processing_dir / "images"
-            images_dir.mkdir(exist_ok=True)
 
             # Step 3: Convert document with appropriate pipeline
             converter = self._get_converter_for_format(doc_format)
@@ -115,12 +111,10 @@ class DoclingProcessor:
             file_info = self._get_file_info(raw_path, conv_result.document)
 
             self.logger.info(f"✅ Docling extraction completed: {markdown_path}")
-            self.logger.info(f"📁 Images extracted to: {images_dir}")
 
             return {
                 "status": "completed",
                 "processed_markdown_path": str(markdown_path),
-                "extracted_images_dir": str(images_dir),
                 "document_id": document_id,
                 "file_info": file_info,
                 "processing_directory": str(processing_dir)
@@ -159,13 +153,21 @@ class DoclingProcessor:
         """Initialize converters for different document formats."""
         # High-quality PDF configuration
         pdf_config = PdfPipelineOptions()
+        # Scale factor for rendered page images (higher value increases resolution)
         pdf_config.images_scale = 4.0
+        # Whether to generate full-page raster images of each PDF page
         pdf_config.generate_page_images = False
+        # Enable optical character recognition on page images
         pdf_config.do_ocr = True
-        pdf_config.ocr_options.force_full_page_ocr=True
+        # Force OCR to process the entire page, not just detected text regions
+        pdf_config.ocr_options.force_full_page_ocr = False
+        # Enable detection and reconstruction of table structures
         pdf_config.do_table_structure = True
-        pdf_config.table_structure_options.mode = TableFormerMode.ACCURATE  # Use accurate mode for better table handling
+        # Use the more precise TableFormer “accurate” mode for table layout parsing
+        pdf_config.table_structure_options.mode = TableFormerMode.ACCURATE
+        # Match text cells to detected table cells to improve cell boundary accuracy
         pdf_config.table_structure_options.do_cell_matching = True
+        # Disable generation of images for inline pictures/figures within the PDF
         pdf_config.generate_picture_images = False
 
         # Create converters
@@ -208,23 +210,6 @@ class DoclingProcessor:
         processing_dir.mkdir(parents=True, exist_ok=True)
         return processing_dir
 
-    def _extract_images_to_directory(self, document, images_dir: Path):
-        """Extract document images to specified directory."""
-        try:
-            # Get document images
-            if hasattr(document, 'pictures') and document.pictures:
-                for i, picture in enumerate(document.pictures):
-                    image_path = images_dir / f"image_{i}.png"
-                    # Save image data to file
-                    if hasattr(picture, 'image') and picture.image:
-                        with open(image_path, 'wb') as f:
-                            f.write(picture.image)
-                        self.logger.debug(f"Extracted image: {image_path}")
-
-            self.logger.info(f"Extracted {len(list(images_dir.glob('*.png')))} images")
-
-        except Exception as e:
-            self.logger.warning(f"Failed to extract images: {e}")
 
     def _get_file_info(self, file_path: Path, document) -> Dict[str, Any]:
         """Extract file metadata information."""
