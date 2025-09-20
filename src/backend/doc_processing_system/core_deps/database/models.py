@@ -34,6 +34,7 @@ class BillModel(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     bill_account_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    document_name = Column(String(255), nullable=False, index=True)
     billing_period_start = Column(DateTime(timezone=True), nullable=True)
     billing_period_end = Column(DateTime(timezone=True), nullable=True)
     issue_date = Column(DateTime(timezone=True), nullable=False)
@@ -52,6 +53,7 @@ class BillModel(Base):
         return {
             "id": str(self.id),
             "bill_account_id": str(self.bill_account_id),
+            "document_name": self.document_name,
             "billing_period_start": self.billing_period_start.isoformat() if self.billing_period_start else None,
             "billing_period_end": self.billing_period_end.isoformat() if self.billing_period_end else None,
             "issue_date": self.issue_date.isoformat() if self.issue_date else None,

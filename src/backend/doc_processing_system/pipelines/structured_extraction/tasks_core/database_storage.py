@@ -36,6 +36,11 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         # Get document ID and name from state (set by config_gen task)
         document_id = getattr(state, 'document_id', None)
         document_name = getattr(state, 'document_name', None)
+
+        # Debug logging to track document name issues
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"📋 Storage debug - document_id: '{document_id}', document_name: '{document_name}'")
         
         # extraction_data should now be a list of extraction dictionaries
         if isinstance(extraction_data, list):
@@ -166,6 +171,7 @@ def _create_and_store_bill(extractions: list, document_id: str, document_name: s
     # Create BillModel instance
     bill = BillModel(
         bill_account_id=core_data.get('bill_account_id'),
+        document_name=document_name,
         billing_period_start=core_data.get('billing_period_start'),
         billing_period_end=core_data.get('billing_period_end'),
         issue_date=core_data.get('issue_date'),
@@ -210,14 +216,34 @@ def _parse_malaysian_date(date_text: str, attributes: dict = None) -> datetime:
         except:
             pass
 
-    # Parse Malaysian format like "01.08.2025"
+    # Parse various Malaysian date formats
     try:
-        if '.' in date_text:
-            # Format: DD.MM.YYYY
+        # Format 1: DD.MM.YYYY (like "01.08.2025")
+        if '.' in date_text and len(date_text.split('.')) == 3:
             day, month, year = date_text.split('.')
             return datetime(int(year), int(month), int(day))
+
+        # Format 2: DD MMM YYYY (like "31 Jul 2025", "31 Ogos 2025")
+        elif ' ' in date_text:
+            # Map Malay months to numbers
+            month_map = {
+                'Jan': 1, 'Feb': 2, 'Mac': 3, 'Apr': 4, 'Mei': 5, 'Jun': 6,
+                'Jul': 7, 'Ogos': 8, 'Sep': 9, 'Okt': 10, 'Nov': 11, 'Dis': 12,
+                'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
+                'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
+            }
+
+            parts = date_text.strip().split()
+            if len(parts) == 3:
+                day_str, month_str, year_str = parts
+                day = int(day_str)
+                year = int(year_str)
+                month = month_map.get(month_str, None)
+                if month:
+                    return datetime(year, month, day)
+
+        # Format 3: Period ranges, extract start date
         elif '-' in date_text and ' - ' in date_text:
-            # Handle period ranges, extract start date
             start_date = date_text.split(' - ')[0]
             day, month, year = start_date.split('.')
             return datetime(int(year), int(month), int(day))
