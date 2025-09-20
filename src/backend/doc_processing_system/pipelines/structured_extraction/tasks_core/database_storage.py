@@ -143,6 +143,8 @@ def _create_and_store_bill(extractions: list, document_id: str, document_name: s
             # Map to core BillModel field
             if extraction_class == 'bill_account_id':
                 core_data['bill_account_id'] = _account_to_uuid(extraction_text)
+                # Preserve original account number in jsonb
+                jsonb_data['account_number'] = extraction_text
             elif extraction_class == 'billing_period_start':
                 core_data['billing_period_start'] = _parse_billing_period_start(extraction_text, attributes)
             elif extraction_class == 'billing_period_end':
@@ -154,11 +156,8 @@ def _create_and_store_bill(extractions: list, document_id: str, document_name: s
             elif extraction_class == 'currency':
                 core_data['currency'] = _extract_currency(extraction_text, attributes)
         else:
-            # Add to jsonb data
-            jsonb_data[extraction_class] = {
-                'extraction_text': extraction_text,
-                'attributes': attributes
-            }
+            # Add to jsonb data - store only attributes for clean structure
+            jsonb_data[extraction_class] = attributes
 
     # Set defaults for missing core fields
     if 'currency' not in core_data:
