@@ -34,8 +34,8 @@ class BillModel(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     bill_account_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    billing_period_start = Column(DateTime(timezone=True), nullable=False)
-    billing_period_end = Column(DateTime(timezone=True), nullable=False)
+    billing_period_start = Column(DateTime(timezone=True), nullable=True)
+    billing_period_end = Column(DateTime(timezone=True), nullable=True)
     issue_date = Column(DateTime(timezone=True), nullable=False)
     due_date = Column(DateTime(timezone=True), nullable=False)
     currency = Column(String(3), nullable=False)

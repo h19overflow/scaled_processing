@@ -10,7 +10,7 @@ from pathlib import Path
 from prefect import task
 
 from ..models.state import PipelineState
-from ....core_deps.database import ExtractionCRUD, ConnectionManager
+from ....core_deps.database import ExtractionCRUD, ConnectionManager, BillModel, BillStatus
 from ....data_models.extraction import ExtractionResult
 from ....pipelines.document_processing.utils.table_extraction import TableStorageService
 
@@ -68,25 +68,21 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         
         # Initialize database components
         connection_manager = ConnectionManager()
-        extraction_crud = ExtractionCRUD(connection_manager)
 
-        # Store structured extractions
+        # Store bill data directly
         stored_count = 0
         stored_ids = []
 
-        for extraction in extractions:
-            try:
-                # Convert document_id to proper UUID format
-                uuid_document_id = _convert_to_uuid(document_id)
-                result = _create_extraction_result(uuid_document_id, document_name, extraction)
-                result_id = extraction_crud.create(result)
-                stored_ids.append(result_id)
-                stored_count += 1
-            except Exception as e:
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Failed to store extraction: {e}")
-                continue
+        try:
+            # Create bill record from extractions
+            bill_id = _create_and_store_bill(extractions, document_id, document_name, connection_manager)
+            if bill_id:
+                stored_ids.append(bill_id)
+                stored_count = 1
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to store bill: {e}")
 
         # Process and store table extractions
         table_results = _process_table_extractions(state, document_id, document_name)
@@ -120,6 +116,176 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         }
 
 # HELPER FUNCTIONS
+
+def _create_and_store_bill(extractions: list, document_id: str, document_name: str, connection_manager: ConnectionManager) -> str:
+    """Create and store bill record from extractions."""
+    # Define core fields that map to BillModel columns
+    BILL_CORE_FIELDS = {
+        'bill_account_id': 'bill_account_id',
+        'billing_period_start': 'billing_period_start',
+        'billing_period_end': 'billing_period_end',
+        'issue_date': 'issue_date',
+        'due_date': 'due_date',
+        'currency': 'currency',
+        'amount_due': 'amount_due'
+    }
+
+    # Extract core fields and remaining fields
+    core_data = {}
+    jsonb_data = {}
+
+    for extraction in extractions:
+        extraction_class = extraction.get('extraction_class', '')
+        extraction_text = extraction.get('extraction_text', '')
+        attributes = extraction.get('attributes', {})
+
+        if extraction_class in BILL_CORE_FIELDS:
+            # Map to core BillModel field
+            if extraction_class == 'bill_account_id':
+                core_data['bill_account_id'] = _account_to_uuid(extraction_text)
+            elif extraction_class == 'billing_period_start':
+                core_data['billing_period_start'] = _parse_billing_period_start(extraction_text, attributes)
+            elif extraction_class == 'billing_period_end':
+                core_data['billing_period_end'] = _parse_billing_period_end(extraction_text, attributes)
+            elif extraction_class in ['issue_date', 'due_date']:
+                core_data[extraction_class] = _parse_malaysian_date(extraction_text, attributes)
+            elif extraction_class == 'amount_due':
+                core_data['amount_due'] = _parse_amount(extraction_text, attributes)
+            elif extraction_class == 'currency':
+                core_data['currency'] = _extract_currency(extraction_text, attributes)
+        else:
+            # Add to jsonb data
+            jsonb_data[extraction_class] = {
+                'extraction_text': extraction_text,
+                'attributes': attributes
+            }
+
+    # Set defaults for missing core fields
+    if 'currency' not in core_data:
+        core_data['currency'] = 'MYR'
+
+    # Create BillModel instance
+    bill = BillModel(
+        bill_account_id=core_data.get('bill_account_id'),
+        billing_period_start=core_data.get('billing_period_start'),
+        billing_period_end=core_data.get('billing_period_end'),
+        issue_date=core_data.get('issue_date'),
+        due_date=core_data.get('due_date'),
+        currency=core_data.get('currency', 'MYR'),
+        amount_due=core_data.get('amount_due'),
+        status=BillStatus.PENDING,
+        extracted_jsonb=jsonb_data,
+        version=1
+    )
+
+    # Store in database
+    with connection_manager.get_session() as session:
+        session.add(bill)
+        session.commit()
+        session.refresh(bill)
+        return str(bill.id)
+
+def _account_to_uuid(account_number: str) -> str:
+    """Convert account number to UUID."""
+    if not account_number:
+        return str(uuid.uuid4())
+
+    try:
+        # Check if already a UUID
+        uuid.UUID(account_number)
+        return account_number
+    except ValueError:
+        # Generate deterministic UUID from account number
+        namespace = uuid.NAMESPACE_DNS
+        return str(uuid.uuid5(namespace, account_number))
+
+def _parse_malaysian_date(date_text: str, attributes: dict = None) -> datetime:
+    """Parse Malaysian date format to datetime."""
+    if not date_text:
+        return None
+
+    # Check if ISO date is in attributes
+    if attributes and 'iso_date' in attributes:
+        try:
+            return datetime.fromisoformat(attributes['iso_date'])
+        except:
+            pass
+
+    # Parse Malaysian format like "01.08.2025"
+    try:
+        if '.' in date_text:
+            # Format: DD.MM.YYYY
+            day, month, year = date_text.split('.')
+            return datetime(int(year), int(month), int(day))
+        elif '-' in date_text and ' - ' in date_text:
+            # Handle period ranges, extract start date
+            start_date = date_text.split(' - ')[0]
+            day, month, year = start_date.split('.')
+            return datetime(int(year), int(month), int(day))
+    except:
+        pass
+
+    return None
+
+def _parse_amount(amount_text: str, attributes: dict = None) -> float:
+    """Parse amount from text or attributes."""
+    if attributes and 'amount' in attributes:
+        try:
+            return float(attributes['amount'])
+        except:
+            pass
+
+    if not amount_text:
+        return None
+
+    # Remove currency symbols and commas
+    cleaned = amount_text.replace('RM', '').replace(',', '').strip()
+    try:
+        return float(cleaned)
+    except:
+        return None
+
+def _extract_currency(currency_text: str, attributes: dict = None) -> str:
+    """Extract currency from text or attributes."""
+    if attributes and 'currency' in attributes:
+        currency = attributes['currency']
+        if currency == 'MYR' or currency == 'RM':
+            return 'MYR'
+
+    if 'RM' in currency_text or 'MYR' in currency_text:
+        return 'MYR'
+
+    return 'MYR'  # Default for Malaysian bills
+
+def _parse_billing_period_start(date_text: str, attributes: dict = None) -> datetime:
+    """Parse billing period start date."""
+    if not date_text or date_text.strip() == "":
+        return None
+
+    # Check for start_date in attributes first
+    if attributes and 'start_date' in attributes and attributes['start_date']:
+        try:
+            return datetime.fromisoformat(attributes['start_date'])
+        except:
+            pass
+
+    # Fallback to general date parsing
+    return _parse_malaysian_date(date_text, attributes)
+
+def _parse_billing_period_end(date_text: str, attributes: dict = None) -> datetime:
+    """Parse billing period end date."""
+    if not date_text or date_text.strip() == "":
+        return None
+
+    # Check for end_date in attributes first
+    if attributes and 'end_date' in attributes and attributes['end_date']:
+        try:
+            return datetime.fromisoformat(attributes['end_date'])
+        except:
+            pass
+
+    # Fallback to general date parsing
+    return _parse_malaysian_date(date_text, attributes)
 
 def _process_table_extractions(state: PipelineState, document_id: str, document_name: str) -> list[ExtractionResult]:
     """Process table extractions from state processing directory."""

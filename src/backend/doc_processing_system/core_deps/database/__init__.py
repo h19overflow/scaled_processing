@@ -25,11 +25,14 @@ __all__ = [
     # Connection and Models
     "ConnectionManager",
     "DocumentModel",
+    "ChunkModel",
     "StructuredDocumentModel",
     "QueryLogModel",
     "QueryResultModel",
+    "BillModel",
+    "BillStatus",
     "Base",
-    
+
     # CRUD Operations
     "BaseRepository",
     "DocumentCRUD",
