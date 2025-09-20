@@ -67,13 +67,11 @@ def docling_processing_task(
         if extraction_result["status"] == "completed":
             logger.info(f"✅ Docling processing completed for: {document_id}")
             logger.info(f"📝 Markdown saved to: {extraction_result['processed_markdown_path']}")
-            logger.info(f"🖼️ Images extracted to: {extraction_result['extracted_images_dir']}")
-            
+
             return {
                 "status": "completed",
                 "document_id": document_id,
                 "processed_markdown_path": extraction_result["processed_markdown_path"],
-                "extracted_images_dir": extraction_result["extracted_images_dir"],
                 "file_info": extraction_result["file_info"],
                 "processing_directory": extraction_result["processing_directory"]
             }
