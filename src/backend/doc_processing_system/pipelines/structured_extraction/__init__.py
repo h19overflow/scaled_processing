@@ -6,7 +6,7 @@ template-based field definition and document classification.
 """
 
 from .core.prefect_flow import structured_extraction_flow
-from .services.classification_service import DocumentClassificationService
+from .utils.classification_service import DocumentClassificationService
 
 __all__ = [
     "structured_extraction_flow",

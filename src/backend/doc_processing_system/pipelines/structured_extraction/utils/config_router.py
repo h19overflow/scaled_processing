@@ -125,6 +125,8 @@ TARIKH LUPUT BAKI NEM 31.12.2025
 <tr><td>Caj Permintaan Maksimum (kW)</td><td>1,328.00</td><td>37.00</td><td>49,136.00</td></tr>
 <tr><td>Jumlah</td><td></td><td></td><td>1,876,055.96</td></tr>
 </table>
+<table><tr><td rowspan=1 colspan=1>Baki Terdahulu</td><td rowspan=1 colspan=1>RM0.00</td></tr><tr><td rowspan=1 colspan=1>Caj Semasa NEM</td><td rowspan=1 colspan=1>RM152,298.12</td></tr><tr><td rowspan=1 colspan=1> Pelarasan Penggenapan</td><td rowspan=1 colspan=1>-RM0.02</td></tr><tr><td rowspan=1 colspan=1>Baki NEM</td><td rowspan=1 colspan=1>RM0.00</td></tr></table>
+
 """,
             extractions=[
                 lx.data.Extraction(
@@ -184,8 +186,8 @@ TARIKH LUPUT BAKI NEM 31.12.2025
                 ),
                 lx.data.Extraction(
                     extraction_class="current_charges_nem",
-                    extraction_text="CAJ SEMASA NEM RM169,582.76",
-                    attributes={"current_charges_nem": 169582.76, "currency": "MYR", "amount": 169582.76, "type": "nem_charges"}
+                    extraction_text="<tr><td rowspan=1 colspan=1>Caj Semasa NEM</td><td rowspan=1 colspan=1>RM152,298.12</td>",
+                    attributes={"current_charges_nem": 152298.12, "currency": "MYR", "amount": 169582.76, "type": "nem_charges"}
                 ),
                 lx.data.Extraction(
                     extraction_class="rounding_adjustment",
