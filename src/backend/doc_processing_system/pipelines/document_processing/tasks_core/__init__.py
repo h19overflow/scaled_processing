@@ -3,7 +3,7 @@ Task modules for document processing flow.
 """
 
 from .duplicate_detection_task import duplicate_detection_task
-from .docling_processing_task import docling_processing_task
+from .document_processing_task import docling_processing_task
 from .document_saving_task import document_saving_task
 from .pdf_validation_tasks import (
     validate_pdf_task,

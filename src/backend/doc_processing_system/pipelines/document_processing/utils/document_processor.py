@@ -58,12 +58,37 @@ class DocumentProcessor:
             # Step 1: Create clean processing directory
             processing_dir = self._create_processing_directory(document_id)
 
-            # Step 2: Use MinerU to process document
-            parse_single_file(
-                file_path=raw_path,
-                output_dir=str(processing_dir),
-                backend="pipeline"
-            )
+            # Step 2: Use MinerU to process document with PDF error handling
+            try:
+                parse_single_file(
+                    file_path=raw_path,
+                    output_dir=str(processing_dir),
+                    backend="pipeline"
+                )
+            except Exception as mineru_error:
+                # Check if it's a PDF-related error
+                error_str = str(mineru_error)
+                if "PdfiumError" in error_str or "Data format error" in error_str:
+                    self.logger.warning(f"PDF format error detected: {error_str}")
+
+                    # Try to repair the PDF using PyPDF2 and retry
+                    try:
+                        repaired_path = self._repair_pdf_file(raw_path, processing_dir)
+                        if repaired_path:
+                            self.logger.info(f"Attempting MinerU processing with repaired PDF: {repaired_path.name}")
+                            parse_single_file(
+                                file_path=repaired_path,
+                                output_dir=str(processing_dir),
+                                backend="pipeline"
+                            )
+                        else:
+                            raise mineru_error
+                    except Exception as repair_error:
+                        self.logger.error(f"PDF repair and retry failed: {repair_error}")
+                        return self._error_result(f"PDF processing failed: {error_str}", raw_file_path)
+                else:
+                    # Non-PDF error, re-raise
+                    raise mineru_error
 
             # Step 3: Find the generated content_list.json
             expected_output_dir = processing_dir / f"{raw_path.stem}_output"
@@ -209,6 +234,47 @@ class DocumentProcessor:
             "file_path": file_path,
             "message": f"{message}: {error_details}" if error_details else message
         }
+
+    def _repair_pdf_file(self, pdf_path: Path, processing_dir: Path) -> Path:
+        """
+        Repair a corrupted PDF file using PyPDF2.
+
+        Args:
+            pdf_path: Path to the corrupted PDF file
+            processing_dir: Directory to save the repaired PDF
+
+        Returns:
+            Path to repaired PDF file, or None if repair failed
+        """
+        try:
+            import PyPDF2
+            from io import BytesIO
+
+            self.logger.info(f"Attempting to repair PDF: {pdf_path.name}")
+
+            # Read the corrupted PDF
+            with open(pdf_path, 'rb') as file:
+                pdf_bytes = file.read()
+
+            # Attempt repair with PyPDF2
+            pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_bytes), strict=False)
+            pdf_writer = PyPDF2.PdfWriter()
+
+            # Copy all pages to writer (this often fixes minor corruptions)
+            for page in pdf_reader.pages:
+                pdf_writer.add_page(page)
+
+            # Write repaired PDF
+            repaired_path = processing_dir / f"repaired_{pdf_path.name}"
+            with open(repaired_path, 'wb') as output_file:
+                pdf_writer.write(output_file)
+
+            self.logger.info(f"PDF repair successful: {repaired_path.name}")
+            return repaired_path
+
+        except Exception as e:
+            self.logger.error(f"PDF repair failed: {e}")
+            return None
 # python -m src.backend.doc_processing_system.pipelines.document_processing.utils.document_processor
 if __name__ == "__main__":
     import datetime

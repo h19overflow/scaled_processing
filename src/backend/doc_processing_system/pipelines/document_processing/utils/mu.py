@@ -7,6 +7,31 @@ from pathlib import Path
 from loguru import logger
 
 from mineru.cli.common import convert_pdf_bytes_to_bytes_by_pypdfium2, read_fn
+from pypdfium2._helpers.misc import PdfiumError
+
+# Monkey patch pypdfium2 to handle PDF repair automatically
+import pypdfium2
+_original_pdf_document_init = pypdfium2.PdfDocument.__init__
+
+def _patched_pdf_document_init(self, input_data=None, password=None, autoclose=True):
+    """Patched PdfDocument init that attempts PDF repair on failure."""
+    try:
+        return _original_pdf_document_init(self, input_data, password, autoclose)
+    except PdfiumError as e:
+        if isinstance(input_data, bytes) and "Data format error" in str(e):
+            logger.warning(f"PdfDocument creation failed, attempting PDF repair: {e}")
+            try:
+                repaired_bytes = repair_pdf_fallback(input_data)
+                logger.info("Retrying PdfDocument creation with repaired PDF bytes")
+                return _original_pdf_document_init(self, repaired_bytes, password, autoclose)
+            except Exception as repair_error:
+                logger.error(f"PDF repair failed in monkey patch: {repair_error}")
+                raise e  # Re-raise original error
+        else:
+            raise e
+
+# Apply the monkey patch
+pypdfium2.PdfDocument.__init__ = _patched_pdf_document_init
 from mineru.data.data_reader_writer import FileBasedDataWriter
 from mineru.utils.draw_bbox import draw_layout_bbox, draw_span_bbox
 from mineru.utils.enum_class import MakeMode
@@ -90,6 +115,60 @@ def parse_single_file(
         logger.exception(f"Error parsing {file_path}: {e}")
 
 
+def repair_pdf_fallback(pdf_bytes: bytes) -> bytes:
+    """
+    Attempt to repair corrupted PDF using alternative methods.
+
+    Args:
+        pdf_bytes: Original PDF bytes that failed to parse
+
+    Returns:
+        bytes: Repaired PDF bytes or original bytes if repair fails
+    """
+    try:
+        # Try PyPDF2 repair
+        import PyPDF2
+        from io import BytesIO
+
+        logger.info("Attempting PDF repair with PyPDF2...")
+        pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_bytes), strict=False)
+        pdf_writer = PyPDF2.PdfWriter()
+
+        # Copy all pages to writer (this often fixes minor corruptions)
+        for page in pdf_reader.pages:
+            pdf_writer.add_page(page)
+
+        # Write repaired PDF to bytes
+        repaired_stream = BytesIO()
+        pdf_writer.write(repaired_stream)
+        repaired_bytes = repaired_stream.getvalue()
+
+        logger.info("PDF repair successful with PyPDF2")
+        return repaired_bytes
+
+    except Exception as e:
+        logger.warning(f"PyPDF2 repair failed: {e}")
+
+    try:
+        # Try pdfplumber fallback (less aggressive repair)
+        import pdfplumber
+        from io import BytesIO
+
+        logger.info("Attempting PDF repair with pdfplumber...")
+        with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
+            # If we can open it with pdfplumber, return original bytes
+            if len(pdf.pages) > 0:
+                logger.info("PDF validated with pdfplumber")
+                return pdf_bytes
+
+    except Exception as e:
+        logger.warning(f"pdfplumber validation failed: {e}")
+
+    # If all repair attempts fail, return original bytes
+    logger.error("All PDF repair attempts failed, returning original bytes")
+    return pdf_bytes
+
+
 def do_parse(
         output_dir,
         pdf_file_names: list[str],
@@ -113,8 +192,19 @@ def do_parse(
 ):
     if backend == "pipeline":
         for idx, pdf_bytes in enumerate(pdf_bytes_list):
-            new_pdf_bytes = convert_pdf_bytes_to_bytes_by_pypdfium2(pdf_bytes, start_page_id, end_page_id)
-            pdf_bytes_list[idx] = new_pdf_bytes
+            try:
+                new_pdf_bytes = convert_pdf_bytes_to_bytes_by_pypdfium2(pdf_bytes, start_page_id, end_page_id)
+                pdf_bytes_list[idx] = new_pdf_bytes
+            except PdfiumError as e:
+                logger.warning(f"pypdfium2 failed for PDF {idx}: {e}. Attempting repair...")
+                try:
+                    repaired_bytes = repair_pdf_fallback(pdf_bytes)
+                    new_pdf_bytes = convert_pdf_bytes_to_bytes_by_pypdfium2(repaired_bytes, start_page_id, end_page_id)
+                    pdf_bytes_list[idx] = new_pdf_bytes
+                    logger.info(f"PDF {idx} successfully repaired and processed")
+                except Exception as repair_error:
+                    logger.error(f"PDF repair failed for PDF {idx}: {repair_error}")
+                    raise e  # Re-raise original error if repair fails
 
         infer_results, all_image_lists, all_pdf_docs, lang_list, ocr_enabled_list = pipeline_doc_analyze(pdf_bytes_list,
                                                                                                          p_lang_list,
@@ -154,7 +244,17 @@ def do_parse(
         parse_method = "vlm"
         for idx, pdf_bytes in enumerate(pdf_bytes_list):
             pdf_file_name = pdf_file_names[idx]
-            pdf_bytes = convert_pdf_bytes_to_bytes_by_pypdfium2(pdf_bytes, start_page_id, end_page_id)
+            try:
+                pdf_bytes = convert_pdf_bytes_to_bytes_by_pypdfium2(pdf_bytes, start_page_id, end_page_id)
+            except PdfiumError as e:
+                logger.warning(f"pypdfium2 failed for PDF {pdf_file_name}: {e}. Attempting repair...")
+                try:
+                    repaired_bytes = repair_pdf_fallback(pdf_bytes)
+                    pdf_bytes = convert_pdf_bytes_to_bytes_by_pypdfium2(repaired_bytes, start_page_id, end_page_id)
+                    logger.info(f"PDF {pdf_file_name} successfully repaired and processed")
+                except Exception as repair_error:
+                    logger.error(f"PDF repair failed for {pdf_file_name}: {repair_error}")
+                    raise e  # Re-raise original error if repair fails
 
             # Use custom prepare_env function for flatter structure
             local_image_dir, local_md_dir = custom_prepare_env(output_dir, pdf_file_name)

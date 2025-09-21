@@ -4,7 +4,6 @@ Extracts rich Markdown and images using DoclingProcessor with strict path-based 
 """
 
 from typing import Dict, Any
-import sys
 
 from prefect import task, get_run_logger
 

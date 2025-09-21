@@ -21,7 +21,7 @@ def invoice_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
     - current_charges: Current charges (main summary value, NOT NEM-specific, may be empty if only NEM charges exist)
     - current_charges_nem: Current charges under NEM program (only extract if explicitly labeled as "NEM" charges, typically large amounts)
     - security_deposit: Security deposit
-    - amount_due: Total bill amount
+    - amount_due: The amount due at the end of the billing period
     - issue_date: Bill date
     - due_date: Payment due date
     - billing_period_start: Billing period start date
@@ -57,7 +57,9 @@ TARIKH BIL: 01.08.2025
 TEMPOH BIL: 01.07.2025 - 31.07.2025 (31 Hari)
 NO. INVOIS: 000271377327
 NO. AKAUN: 210299319006
-
+BAYARAN BAGI TEMPOH 
+01.06.2025 - 30.06.2025
+RM1,809.50
 Ringkasan Bil Anda:
 BAKI TERDAHULU RM0.00
 CAJ SEMASA NEM RM169,582.76
@@ -111,8 +113,8 @@ Ref-1: 210299319006
                 ),
                 lx.data.Extraction(
                     extraction_class="amount_due",
-                    extraction_text="JUMLAH TEMPOH INI RM169,582.75",
-                    attributes={"amount_due": 169582.75, "currency": "MYR", "type": "final_payable"}
+                    extraction_text="BAYARAN BAGI TEMPOH \n01.06.2025 - 30.06.2025\nRM1,809.50\nRingkasan Bil Anda:\nBAKI TERDAHULU RM125.50\nCAJ SEMASA RM450.00\nDEPOSIT SEKURITI RM200.00\nPELARASAN PEMBUNDARAN -RM0.02\nJUMLAH BIL ANDA RM1809.50",
+                    attributes={"amount_due":1809.50, "currency": "MYR", "type": "final_payable"}
                 ),
                 lx.data.Extraction(
                     extraction_class="issue_date",
@@ -159,7 +161,9 @@ TARIKH BIL: 15.09.2025
 TEMPOH BIL: 15.08.2025 - 14.09.2025 (30 Hari)
 NO. INVOIS: 000445566778
 NO. AKAUN: 401234567890
-
+BAYARAN BAGI TEMPOH 
+01.06.2025 - 30.06.2025
+RM1,809.50
 Ringkasan Bil Anda:
 BAKI TERDAHULU RM125.50
 CAJ SEMASA RM450.00
@@ -219,8 +223,8 @@ Ref-1: 401234567890
                 ),
                 lx.data.Extraction(
                     extraction_class="amount_due",
-                    extraction_text="JUMLAH BIL ANDA RM575.48",
-                    attributes={"amount_due": 575.48, "currency": "MYR", "type": "final_payable"}
+                    extraction_text="BAYARAN BAGI TEMPOH \n01.06.2025 - 30.06.2025\nRM1,809.50\nRingkasan Bil Anda:\nBAKI TERDAHULU RM125.50\nCAJ SEMASA RM450.00\nDEPOSIT SEKURITI RM200.00\nPELARASAN PEMBUNDARAN -RM0.02\nJUMLAH BIL ANDA RM1809.50",
+                    attributes={"amount_due": 1809.50, "currency": "MYR", "type": "final_payable"}
                 ),
                 lx.data.Extraction(
                     extraction_class="issue_date",
@@ -255,108 +259,7 @@ Ref-1: 401234567890
             ]
         ),
 
-        # Example C: Mixed bill with both current_charges and current_charges_nem
-        lx.data.ExampleData(
-            text="""
-ALAMAT POS
-SARAWAK ENERGY BERHAD
-NO. 8, JALAN TUNKU ABDUL RAHMAN
-93100 KUCHING SARAWAK
 
-Bill Date: 20.10.2025
-Billing Period: 20.09.2025 - 19.10.2025 (29 Days)
-Invoice No: INV-998877665
-Account No: 501122334455
-
-Bill Summary:
-Previous Balance RM0.00
-Current Charges RM320.50
-NEM Current Charges RM180.25
-Rounding Adjustment -RM0.03
-Total Amount Due RM500.72
-
-Payment Due Date: 15 November 2025
-Biller Code: 7890
-Reference-1: 501122334455
-""",
-            extractions=[
-                lx.data.Extraction(
-                    extraction_class="bill_source",
-                    extraction_text="SARAWAK ENERGY BERHAD",
-                    attributes={"bill_source": "SARAWAK ENERGY BERHAD", "type": "utility_company"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="postal_address",
-                    extraction_text="NO. 8, JALAN TUNKU ABDUL RAHMAN\n93100 KUCHING SARAWAK",
-                    attributes={"postal_address": "NO. 8, JALAN TUNKU ABDUL RAHMAN, 93100 KUCHING SARAWAK"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="invoice_number",
-                    extraction_text="INV-998877665",
-                    attributes={"invoice_number": "INV-998877665"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="bill_account_id",
-                    extraction_text="501122334455",
-                    attributes={"account_number": "501122334455"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="previous_balance",
-                    extraction_text="Previous Balance RM0.00",
-                    attributes={"previous_balance": 0.00, "currency": "MYR"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="current_charges",
-                    extraction_text="Current Charges RM320.50",
-                    attributes={"current_charges": 320.50, "currency": "MYR", "type": "regular_charges"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="current_charges_nem",
-                    extraction_text="NEM Current Charges RM180.25",
-                    attributes={"current_charges_nem": 180.25, "currency": "MYR", "type": "nem_charges"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="rounding_adjustment",
-                    extraction_text="Rounding Adjustment -RM0.03",
-                    attributes={"rounding_adjustment": -0.03, "currency": "MYR"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="amount_due",
-                    extraction_text="Total Amount Due RM500.72",
-                    attributes={"amount_due": 500.72, "currency": "MYR", "type": "final_payable"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="issue_date",
-                    extraction_text="20.10.2025",
-                    attributes={"issue_date": "20.10.2025", "iso_date": "2025-10-20"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="due_date",
-                    extraction_text="15 November 2025",
-                    attributes={"due_date": "15 November 2025", "iso_date": "2025-11-15"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="billing_period_start",
-                    extraction_text="20.09.2025 - 19.10.2025 (29 Days)",
-                    attributes={"billing_period_start": "2025-09-20"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="billing_period_end",
-                    extraction_text="20.09.2025 - 19.10.2025 (29 Days)",
-                    attributes={"billing_period_end": "2025-10-19"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="biller_code",
-                    extraction_text="7890",
-                    attributes={"biller_code": "7890"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="reference_1",
-                    extraction_text="501122334455",
-                    attributes={"reference_1": "501122334455"}
-                )
-            ]
-        )
     ]
     return extraction_prompt, examples
 
@@ -369,11 +272,11 @@ def process_document(text: str):
         text_or_documents=text,
         prompt_description=prompt,
         examples=examples,
-        model_id="gemini-2.0-flash-lite",
-        max_workers=3,
-        max_char_buffer=1500,  # Smaller buffer for better JSON stability
+        model_id="gemini-2.0-flash",
+        max_workers=5,
+        max_char_buffer=5128,  # Smaller buffer for better JSON stability
         temperature=0.1,       # Small temperature for controlled randomness
-        extraction_passes=1    # Single pass to avoid JSON conflicts
+        extraction_passes=2    # Single pass to avoid JSON conflicts
     )
     return result
 
