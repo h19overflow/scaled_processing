@@ -298,3 +298,4 @@ wheels/
 /data/extractions/docling/Sample_Bill_NonDom_e_Invoicing_5dfeeba9/Sample_Bill_NonDom_e_Invoicing_5dfeeba9_docling.md
 /data/extractions/docling/Sample_Bill_NonDom_e_Invoicing_5dfeeba9/Sample_Bill_NonDom_e_Invoicing_5dfeeba9_table_json
 /test_output/test.jsonl
+/src/backend/doc_processing_system/services/gmail_email_listener/secerets

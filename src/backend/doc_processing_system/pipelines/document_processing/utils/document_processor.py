@@ -6,7 +6,7 @@ Extracts rich markdown and tables from documents using MinerU processing.
 import logging
 import json
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 from .mu import parse_single_file
 from .table_line_item_extractor import TableLineItemExtractor
 MINERU_AVAILABLE = True
@@ -53,9 +53,9 @@ class DocumentProcessor:
             if not raw_path.exists():
                 return self._error_result("File not found", raw_file_path)
 
-            self.logger.info(f"Starting MinerU extraction for: {raw_path.name}")
+            self.logger.info(f"Starting optimized MinerU extraction for: {raw_path.name}")
 
-            # Step 1: Create processing directory
+            # Step 1: Create clean processing directory
             processing_dir = self._create_processing_directory(document_id)
 
             # Step 2: Use MinerU to process document
@@ -65,37 +65,40 @@ class DocumentProcessor:
                 backend="pipeline"
             )
 
-            # Step 3: Find the generated markdown file
+            # Step 3: Find the generated content_list.json
             expected_output_dir = processing_dir / f"{raw_path.stem}_output"
-            markdown_path = expected_output_dir / f"{raw_path.stem}.md"
+            content_list_path = expected_output_dir / f"{raw_path.stem}_content_list.json"
 
-            if not markdown_path.exists():
-                return self._error_result("MinerU markdown not generated", raw_file_path)
+            if not content_list_path.exists():
+                return self._error_result("MinerU content_list.json not generated", raw_file_path)
 
-            # Step 4: Copy markdown to expected location
-            final_markdown_path = processing_dir / f"{document_id}_mineru.md"
-            with open(markdown_path, 'r', encoding='utf-8') as src:
-                with open(final_markdown_path, 'w', encoding='utf-8') as dst:
-                    dst.write(src.read())
+            # Step 4: Create optimized markdown from page 0 only
+            final_markdown_path = processing_dir / f"{document_id}.md"
+            self._create_page0_markdown(content_list_path, final_markdown_path)
 
-            # Step 5: Extract tables from markdown and save as CSV
-            self.table_extractor.extract_and_save_tables(final_markdown_path, processing_dir, document_id)
+            # Step 5: Extract tables from content_list.json and save as CSV
+            csv_path = processing_dir / f"{document_id}_line_items.csv"
+            self.table_extractor.extract_tables_from_content_list(content_list_path, csv_path, document_id)
 
             # Step 6: Get file metadata
             file_info = self._get_file_info(raw_path)
 
-            self.logger.info(f"✅ MinerU extraction completed: {final_markdown_path}")
+            # Step 7: Clean up temporary MinerU output directory
+            self._cleanup_temp_output(expected_output_dir)
+
+            self.logger.info(f"✅ Optimized MinerU extraction completed: {final_markdown_path}")
 
             return {
                 "status": "completed",
                 "processed_markdown_path": str(final_markdown_path),
+                "line_items_csv_path": str(csv_path),
                 "document_id": document_id,
                 "file_info": file_info,
                 "processing_directory": str(processing_dir)
             }
 
         except Exception as e:
-            self.logger.error(f"❌ MinerU extraction failed: {e}")
+            self.logger.error(f"❌ Optimized MinerU extraction failed: {e}")
             return self._error_result("Extraction failed", raw_file_path, error_details=str(e))
 
     # HELPER FUNCTIONS
@@ -105,6 +108,51 @@ class DocumentProcessor:
         processing_dir = self.temp_base_dir / document_id
         processing_dir.mkdir(parents=True, exist_ok=True)
         return processing_dir
+
+    def _create_page0_markdown(self, content_list_path: Path, output_path: Path) -> None:
+        """Create markdown file with only page 0 content for efficient processing."""
+        try:
+            with open(content_list_path, 'r', encoding='utf-8') as f:
+                content_list = json.load(f)
+
+            # Filter for page 0 content only
+            page0_content = [item for item in content_list if item.get('page_idx') == 0]
+
+            # Build markdown content
+            markdown_lines = []
+
+            for item in page0_content:
+                if item.get('type') == 'text':
+                    text = item.get('text', '').strip()
+                    if text:
+                        # Add header formatting for text_level 1
+                        if item.get('text_level') == 1:
+                            markdown_lines.append(f"# {text}")
+                        else:
+                            markdown_lines.append(text)
+                        markdown_lines.append("")  # Add blank line
+
+            # Write page 0 markdown
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write("\n".join(markdown_lines))
+
+            self.logger.info(f"Created page 0 markdown with {len(page0_content)} elements")
+
+        except Exception as e:
+            self.logger.error(f"Failed to create page 0 markdown: {e}")
+            # Create empty file as fallback
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write("# Document Processing Error\nCould not extract page 0 content.")
+
+    def _cleanup_temp_output(self, output_dir: Path) -> None:
+        """Clean up temporary MinerU output directory."""
+        try:
+            if output_dir.exists():
+                import shutil
+                shutil.rmtree(output_dir)
+                self.logger.info(f"Cleaned up temporary directory: {output_dir}")
+        except Exception as e:
+            self.logger.warning(f"Failed to cleanup temp directory {output_dir}: {e}")
 
 
     def _get_file_info(self, file_path: Path) -> Dict[str, Any]:

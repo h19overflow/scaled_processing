@@ -13,9 +13,9 @@ modules_to_clear = [k for k in sys.modules.keys() if 'docling_processor' in k.lo
 for module in modules_to_clear:
     del sys.modules[module]
 
-from src.backend.doc_processing_system.pipelines.document_processing.utils.documnet_processor import DocumentProcessor
+from src.backend.doc_processing_system.pipelines.document_processing.utils.document_processor import DocumentProcessor
 
-@task(name="docling-processing", retries=2)
+@task(name="mineru-processing", retries=2)
 def docling_processing_task(
     raw_file_path: str,
     document_id: str,

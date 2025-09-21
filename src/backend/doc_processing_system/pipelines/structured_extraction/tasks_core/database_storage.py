@@ -12,7 +12,6 @@ from prefect import task
 from ..models.state import PipelineState
 from ....core_deps.database import ExtractionCRUD, ConnectionManager, BillModel, BillStatus
 from ....data_models.extraction import ExtractionResult
-from ....pipelines.document_processing.utils.table_extraction import TableStorageService
 
 @task(name="database-storage",
       retries=2,
@@ -89,18 +88,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to store bill: {e}")
 
-        # Process and store table extractions
-        table_results = _process_table_extractions(state, document_id, document_name)
-        for table_result in table_results:
-            try:
-                result_id = extraction_crud.create(table_result)
-                stored_ids.append(result_id)
-                stored_count += 1
-            except Exception as e:
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Failed to store table extraction: {e}")
-                continue
+
         
         return {
             "status": "storage_completed",

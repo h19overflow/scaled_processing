@@ -102,7 +102,7 @@ def do_parse(
         server_url=None,
         f_draw_layout_bbox=False,
         f_draw_span_bbox=False,
-        f_dump_md=True,
+        f_dump_md=False,
         f_dump_middle_json=False,
         f_dump_model_output=False,
         f_dump_orig_pdf=False,
