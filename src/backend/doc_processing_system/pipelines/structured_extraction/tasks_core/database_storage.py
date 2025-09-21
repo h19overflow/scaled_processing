@@ -112,7 +112,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
 
 def _create_and_store_bill(extractions: list, document_id: str, document_name: str, connection_manager: ConnectionManager) -> str:
     """Create and store bill record from extractions."""
-    # Define core fields that map to BillModel columns
+    # Define flows fields that map to BillModel columns
     BILL_CORE_FIELDS = {
         'bill_account_id': 'bill_account_id',
         'billing_period_start': 'billing_period_start',
@@ -123,7 +123,7 @@ def _create_and_store_bill(extractions: list, document_id: str, document_name: s
         'amount_due': 'amount_due'
     }
 
-    # Extract core fields and remaining fields
+    # Extract flows fields and remaining fields
     core_data = {}
     jsonb_data = {}
 
@@ -133,7 +133,7 @@ def _create_and_store_bill(extractions: list, document_id: str, document_name: s
         attributes = extraction.get('attributes', {})
 
         if extraction_class in BILL_CORE_FIELDS:
-            # Map to core BillModel field
+            # Map to flows BillModel field
             if extraction_class == 'bill_account_id':
                 core_data['bill_account_id'] = _account_to_uuid(extraction_text)
                 # Preserve original account number in jsonb
@@ -152,7 +152,7 @@ def _create_and_store_bill(extractions: list, document_id: str, document_name: s
             # Add to jsonb data - store only attributes for clean structure
             jsonb_data[extraction_class] = attributes
 
-    # Set defaults for missing core fields
+    # Set defaults for missing flows fields
     if 'currency' not in core_data:
         core_data['currency'] = 'MYR'
 

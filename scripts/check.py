@@ -23,6 +23,6 @@ def repair_pdf_with_pymupdf(input_path, output_path):
 
 # Usage
 success = repair_pdf_with_pymupdf(
-    r"C:\Users\User\Projects\scaled_processing\data\documents\GSPP_5407_202507_Billing.pdf",
+    r"/data/documents/GSPP_5407_202507_Billing.pdf",
     r"/data/documents/raw/GSPP_5407_202507_Billing_repaired.pdf"
 )

@@ -1,0 +1,65 @@
+@startuml
+title Enhanced Document Processing Flow (Simplified)
+
+start
+
+:Raw document input;
+:Init params: enable_chunking=true, enable_pdf_validation=true, force_pdf_repair=false;
+
+:Duplicate detection;
+if (Document exists?) then (yes)
+  :Return duplicate (status="duplicate");
+  stop
+else (no)
+  :Continue with new document_id;
+endif
+
+:Check file type;
+if (Is PDF?) then (yes)
+  if (Validation enabled?) then (yes)
+    :Validate PDF (pdfinfo / pikepdf / PyMuPDF);
+    if (Needs repair or forced?) then (yes)
+      :Repair PDF (Ghostscript -> QPDF -> pikepdf);
+      if (Repair successful?) then (yes)
+        :Clean PDF (PyMuPDF);
+        if (Cleaning successful?) then (yes)
+          :final_file_path = clean_path;
+        else (no)
+          :final_file_path = repaired_path;
+        endif
+      else (no)
+        :final_file_path = raw_file_path;
+      endif
+    else (no)
+      :final_file_path = raw_file_path;
+    endif
+  else (no)
+    :final_file_path = raw_file_path;
+  endif
+else (no)
+  :final_file_path = raw_file_path;
+endif
+
+:Process document (MinerU/Docling);
+if (Processing successful?) then (yes)
+  :Read processed content and metadata;
+  if (Chunking enabled?) then (yes)
+    :Save document and metadata;
+    if (Saving successful?) then (yes)
+      :Notify via Kafka and cleanup temps;
+      :Return success (status="completed");
+      stop
+    else (no)
+      :Cleanup temps and return saving error;
+      stop
+    endif
+  else (no)
+    :Notify via Kafka, cleanup temps, return success (no chunking);
+    stop
+  endif
+else (no)
+  :Cleanup temps and return processing error;
+  stop
+endif
+
+@enduml
