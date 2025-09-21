@@ -8,10 +8,7 @@ import sys
 
 from prefect import task, get_run_logger
 
-# Clear any cached DoclingProcessor modules to ensure we get the right one
-modules_to_clear = [k for k in sys.modules.keys() if 'docling_processor' in k.lower()]
-for module in modules_to_clear:
-    del sys.modules[module]
+
 
 from src.backend.doc_processing_system.pipelines.document_processing.utils.document_processor import DocumentProcessor
 

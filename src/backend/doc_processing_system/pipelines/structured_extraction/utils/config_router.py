@@ -369,7 +369,7 @@ def process_document(text: str):
         text_or_documents=text,
         prompt_description=prompt,
         examples=examples,
-        model_id="gemini-2.0-flash",
+        model_id="gemini-2.0-flash-lite",
         max_workers=3,
         max_char_buffer=1500,  # Smaller buffer for better JSON stability
         temperature=0.1,       # Small temperature for controlled randomness
