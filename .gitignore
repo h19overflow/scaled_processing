@@ -9,6 +9,13 @@ wheels/
 # Virtual environments
 .venv
 .env
+*.csv
+*.jpg
+*.jpeg
+*.png
+*.pdf
+images/
+# Data directories
 /data/extractions/docling/batch1_0499_4bf98e77/batch1_0499_4bf98e77_docling.md
 /data/temp/docling/batch1_0499_4bf98e77/batch1_0499_4bf98e77_docling.md
 /data/extractions/docling/batch1_0499_4bf98e77/batch1_0499_4bf98e77_table_json
