@@ -5,7 +5,8 @@ from google_auth_oauthlib.flow import Flow                  # Handles the intera
 from googleapiclient.discovery import build                 # Dynamically creates API clients for Google utils (like Gmail)
 from dotenv import load_dotenv
 load_dotenv()
-
+# !! basic is required for pushing notifications
+# TODO Investigate other problems that are related to this
 class GmailAuthManager:
     """
     Handles Gmail API OAuth2 authentication, token management, and credential refresh.
@@ -21,10 +22,11 @@ class GmailAuthManager:
     def __init__(self, client_secrets_path: str, token_path: str = os.getenv("GMAIL_CLIENT_SECRETS_PATH")):
         self.client_secrets_path = client_secrets_path    # Path to client_secret.json (generated in Google Cloud console)
         self.token_path = token_path                      # Path where access/refresh tokens are stored (JSON)
-        # The OAuth2 scopes (permissions) this app will request from the user—for Gmail read and modify access
+        # The OAuth2 scopes (permissions) this app will request from the user—for Gmail read, modify, and push notifications
         self.SCOPES = [
             'https://www.googleapis.com/auth/gmail.readonly',
-            'https://www.googleapis.com/auth/gmail.modify'
+            'https://www.googleapis.com/auth/gmail.modify',
+            'https://www.googleapis.com/auth/gmail.settings.basic',
         ]
 
     def get_credentials(self) -> Credentials:

@@ -11,6 +11,7 @@ Dependencies: GmailService for Gmail API operations
 """
 
 import logging
+import asyncio
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Query, Depends
 
@@ -24,7 +25,6 @@ from src.backend.doc_processing_system.services.gmail_email_listener.utils impor
     get_message_details,
     get_message_attachments_info,
     get_history_changes,
-    setup_gmail_watch,
     get_watch_status
 )
 
@@ -35,7 +35,7 @@ router = APIRouter(prefix="/gmail", tags=["Gmail Service"])
 
 @router.get("/messages", response_model=List[MessageSummary])
 async def list_messages_endpoint(
-    max_results: int = Query(30, ge=1, le=200),
+    max_results: int = Query(10, ge=1, le=200),
     query: Optional[str] = Query(None, description="Gmail search query"),
     service=Depends(get_gmail_service)
 ):
@@ -87,7 +87,19 @@ async def setup_watch_endpoint(
         raise HTTPException(status_code=503, detail="Gmail service not initialized. Use /auth/login first.")
 
     try:
-        return await setup_gmail_watch(service, watch_request)
+        request_dict = {
+            'labelIds': watch_request.label_ids,
+            'topicName': watch_request.topic_name,
+            'labelFilterBehavior': watch_request.label_filter_behavior
+        }
+
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, service.setup_watch, request_dict)
+
+        return {
+            "message": "Gmail watch setup successful",
+            "result": result
+        }
     except Exception as e:
         logger.error(f"Failed to setup Gmail watch: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to setup watch: {e}")
