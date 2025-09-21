@@ -40,7 +40,7 @@ class GmailPubSubSubscriber:
             # Check message age (Pub/Sub adds publish_time)
             import time
             message_age = time.time() - message.publish_time.timestamp()
-            if message_age > 3600:  # Ignore messages older than 1 hour
+            if message_age > 300:  # Ignore messages older than 5 minutes
                 logger.warning(f"Ignoring old notification (age: {message_age:.0f}s)")
                 message.ack()
                 return
@@ -172,9 +172,7 @@ def check_gmail_watch_status(gmail_service):
         # Try to set up Gmail watch manually
         print("\n🔧 Setting up Gmail watch...")
         watch_request = {
-            'labelIds': ['INBOX'],
-            'topicName': 'projects/gmail-monitor-project-472511/topics/gmail-notifications',
-            'labelFilterBehavior': 'INCLUDE'
+            'topicName': 'projects/gmail-monitor-project-472511/topics/gmail-notifications'
         }
 
         try:

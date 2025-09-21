@@ -52,7 +52,7 @@ def docling_processing_task(
         logger.info(f"📄 Normalized file path: {final_path}")
         logger.info(f"📄 Path exists: {path_obj.exists()}")
 
-        # Extract document with Docling
+        # Extract document with processor
         logger.info(f"🔥 BEFORE processor.extract_document() call")
         extraction_result = processor.extract_document(
             raw_file_path=final_path,

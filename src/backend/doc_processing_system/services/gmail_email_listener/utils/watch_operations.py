@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 class WatchRequest(BaseModel):
     """Gmail watch setup request."""
     topic_name: str = "projects/gmail-monitor-project-472511/topics/gmail-notifications"
-    label_ids: List[str] = ["INBOX"]
+    label_ids: List[str] = []
     label_filter_behavior: str = "INCLUDE"
 
 
