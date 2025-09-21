@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 #TODO test out the subscriber Created subscription [projects/gmail-monitor-project-472511/subscriptions/gmail-notifications-processor-sub].
-# (scaled_processing) PS C:\Users\User\Projects\scaled_processing> python -m src.backend.doc_processing_system.services.gmail_email_listener.cloud.pubsub_subscriber
+# (scaled_processing) PS C:\Users\User\Projects\scaled_processing> python -m src.backend.doc_processing_system.utils.gmail_email_listener.cloud.pubsub_subscriber
 # 🚀 Testing Gmail PubSub Subscriber
 # ========================================
 # 🔧 Initializing Gmail service...
@@ -199,7 +199,7 @@ def test_subscriber():
     from dotenv import load_dotenv
     load_dotenv()
 
-    # Import your Gmail services
+    # Import your Gmail utils
     from .gmail_auth_manager import GmailAuthManager
     from .gmail_service import GmailService
 

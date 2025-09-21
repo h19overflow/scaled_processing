@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize services on startup"""
+    """Initialize utils on startup"""
     try:
         # Initialize app state
         app.state.gmail_service = None

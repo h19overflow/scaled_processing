@@ -44,15 +44,14 @@ def invoice_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
 
     examples = [
         lx.data.ExampleData(
-            text="""## Bil Elektrik Anda
+            text="""
+ALAMAT POS
 
-## ALAMAT POS
-
-## GS PAPERBOARD &amp; PACKAGING SDN. BHD.
+GS PAPERBOARD & PACKAGING SDN. BHD.
 
 NO. 24, JALAN ALOI 3
 
-KAWASAN  PERUSAHAAN  BUKIT  CHANGGANG
+KAWASAN PERUSAHAAN BUKIT CHANGGANG
 
 UTAMA
 
@@ -60,30 +59,7 @@ UTAMA
 
 SELANGOR
 
-Sila imbas bagi pembayaran di Kios @Kedai Tenaga
-
-210299319006000271377327000000016958275
-
-Jumlah Bil Anda (RM)
-
-169,582.75
-
-## KLIK DI SINI UNTUK PEMBAYARAN
-
-Sila bayar sebelum
-
-31 Ogos 2025
-
-## Ringkasan Bil Anda:
-
-| Baki Terdahulu                                     | RM0.00       |
-|----------------------------------------------------|--------------|
-| Caj Semasa NEM                                     | RM169,582.76 |
-| Pelarasan Penggenapan                              | -RM0.01      |
-| Baki NEM Terkumpul                                 | RM0.00       |
-| Baki NEM Dibawa Ke Hadapan - Luput pada 31.12.2025 | RM0.00       |
-
-TARIKH BIL
+# TARIKH BIL
 
 01.08.2025
 
@@ -91,29 +67,65 @@ TEMPOH BIL
 
 01.07.2025 - 31.07.2025 (31 Hari)
 
-## NO. INVOIS
+NO. INVOIS 000271377327
 
-000271377327
-
-## DEPOSIT SEKURITI
-
-RM994,898.92
+DEPOSIT SEKURITI RM994,898.92
 
 NO. AKAUN
 
 210299319006
 
-BAYARAN BAGI TEMPOH 01.07.2025 - 31.07.2025
+JENIS BACAAN Bacaan Sebenar
 
-RM5,000.00
+# TARIF
 
-Biller Code:
+E1:Perindustrian ETOU
 
-5454
+BAYARAN BAGI TEMPOH 01.07.2025 - 31.07.2025 RM5,000.00
 
-Ref-1:
+Biller Code: 5454
+Ref-1: 210299319006
 
-210299319006""",
+JomPAY online di Perbankan Internet dan Telefon Mudah Alih dengan akaun semasa, simpanan atau kad kredit
+
+# Jumlah Bil Anda (RM)
+
+169,582.75
+
+# KLIK DI SINI UNTUK PEMBAYARAN
+
+Sila bayar sebelum
+
+31 Ogos 2025
+
+# Ringkasan Bil Anda:
+
+Untuk maklumat terperinci, sila rujuk di muka surat sebelah
+
+BAKI TERDAHULU RM0.00
+
+CAJ SEMASA NEM RM169,582.76
+
+PELARASAN PEMBUNDARAN -RM0.01
+
+JUMLAH TEMPOH INI RM169,582.75
+
+BAKI NEM TERKUMPUL RM0.00
+
+TARIKH LUPUT BAKI NEM 31.12.2025
+
+# Page 0 Tables
+
+## Table 1
+
+<table>
+<tr><td>Penerangan</td><td>Penggunaan</td><td>Kadar (RM)</td><td>Amaun (RM)</td></tr>
+<tr><td>Luar Puncak (kWh)</td><td>1,294,040.00</td><td>0.3190</td><td>412,798.76</td></tr>
+<tr><td>Puncak (kWh)</td><td>3,983,440.00</td><td>0.3550</td><td>1,414,121.20</td></tr>
+<tr><td>Caj Permintaan Maksimum (kW)</td><td>1,328.00</td><td>37.00</td><td>49,136.00</td></tr>
+<tr><td>Jumlah</td><td></td><td></td><td>1,876,055.96</td></tr>
+</table>
+""",
             extractions=[
                 lx.data.Extraction(
                     extraction_class="bill_source",
@@ -162,7 +174,7 @@ Ref-1:
                 ),
                 lx.data.Extraction(
                     extraction_class="previous_balance",
-                    extraction_text="RM0.00",
+                    extraction_text="BAKI TERDAHULU RM0.00",
                     attributes={"previous_balance": 0.00, "currency": "MYR", "amount": 0.00, "type": "previous_outstanding"}
                 ),
                 lx.data.Extraction(
@@ -172,12 +184,12 @@ Ref-1:
                 ),
                 lx.data.Extraction(
                     extraction_class="current_charges_nem",
-                    extraction_text="RM169,582.76",
+                    extraction_text="CAJ SEMASA NEM RM169,582.76",
                     attributes={"current_charges_nem": 169582.76, "currency": "MYR", "amount": 169582.76, "type": "nem_charges"}
                 ),
                 lx.data.Extraction(
                     extraction_class="rounding_adjustment",
-                    extraction_text="-RM0.01",
+                    extraction_text="PELARASAN PEMBUNDARAN -RM0.01",
                     attributes={"rounding_adjustment": -0.01, "currency": "MYR", "amount": -0.01, "type": "billing_adjustment"}
                 ),
                 lx.data.Extraction(
@@ -217,7 +229,7 @@ Ref-1:
                 ),
                 lx.data.Extraction(
                     extraction_class="nem_balance",
-                    extraction_text="RM0.00",
+                    extraction_text="BAKI NEM TERKUMPUL RM0.00",
                     attributes={"nem_balance": 0.00, "currency": "MYR", "type": "nem_accumulated_balance"}
                 ),
                 lx.data.Extraction(
@@ -225,185 +237,26 @@ Ref-1:
                     extraction_text="31.12.2025",
                     attributes={"nem_balance_expiry_date": "31.12.2025", "iso_date": "2025-12-31"}
                 ),
-            ]
-        ),
-
-        lx.data.ExampleData(
-            text="""## Bil Elektrik Anda
-
-## ALAMAT POS
-
-GSPP HOLDINGS SDN. BHD.
-
-LOT 7090A, JLN SALAK BKT CHANGGANG 42700 BANTING
-
-SELANGOR
-
-Jumlah Bil Anda (RM)
-
-217,314.45
-
-Sila bayar sebelum
-
-31 Jul 2025
-
-KLIK DI SINI UNTUK PEMBAYARAN
-
-## Ringkasan Bil Anda:
-
-Baki Terdahulu (RM)
-
-NO. AKAUN
-
-220175210901
-
-BAYARAN BAGI TEMPOH 01.06.2025 - 30.06.2025
-
-RM229,505.30
-
-Biller Code:
-
-5454
-
-Ref-1:
-
-220175210901
-
-Caj Semasa (RM)
-
-0.00
-
-217,314.45
-
-Pelarasan Penggenapan (RM)
-
-0.00
-
-TARIKH BIL
-
-01.07.2025
-
-TEMPOH BIL
-
-01.06.2025 - 30.06.2025 (30 Hari)
-
-NO. INVOIS
-
-000844284963
-
-DEPOSIT SEKURITI
-
-RM581,080.00""",
-            extractions=[
+                # Table-specific extractions to show HTML table data
                 lx.data.Extraction(
-                    extraction_class="bill_source",
-                    extraction_text="GSPP HOLDINGS SDN. BHD.",
-                    attributes={"bill_source": "GSPP HOLDINGS SDN. BHD.", "type": "customer_company"}
+                    extraction_class="peak_usage",
+                    extraction_text="<td>Puncak (kWh)</td><td>3,983,440.00</td>",
+                    attributes={"usage_type": "Puncak (kWh)", "consumption": 3983440.00, "rate": 0.3550, "amount": 1414121.20}
                 ),
                 lx.data.Extraction(
-                    extraction_class="postal_address",
-                    extraction_text="LOT 7090A, JLN SALAK BKT CHANGGANG 42700 BANTING\n\nSELANGOR",
-                    attributes={"postal_address": "LOT 7090A, JLN SALAK BKT CHANGGANG 42700 BANTING SELANGOR"}
+                    extraction_class="off_peak_usage",
+                    extraction_text="<td>Luar Puncak (kWh)</td><td>1,294,040.00</td>",
+                    attributes={"usage_type": "Luar Puncak (kWh)", "consumption": 1294040.00, "rate": 0.3190, "amount": 412798.76}
                 ),
                 lx.data.Extraction(
-                    extraction_class="amount_due",
-                    extraction_text="217,314.45",
-                    attributes={"total_bill": "217314.45", "currency": "RM", "amount": "217314.45", "type": "main_total"}
+                    extraction_class="demand_charge",
+                    extraction_text="<td>Caj Permintaan Maksimum (kW)</td><td>1,328.00</td>",
+                    attributes={"charge_type": "Caj Permintaan Maksimum (kW)", "demand": 1328.00, "rate": 37.00, "amount": 49136.00}
                 ),
                 lx.data.Extraction(
-                    extraction_class="due_date",
-                    extraction_text="31 Jul 2025",
-                    attributes={"pay_before": "31 Jul 2025", "iso_date": "2025-07-31"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="bill_account_id",
-                    extraction_text="220175210901",
-                    attributes={"account_number": "220175210901"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="payment_period",
-                    extraction_text="01.06.2025 - 30.06.2025",
-                    attributes={"payment_for_period": "01.06.2025 - 30.06.2025", "start_date": "2025-06-01", "end_date": "2025-06-30"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="payment_amount",
-                    extraction_text="RM229,505.30",
-                    attributes={"payment_amount_for_period": "229505.30", "currency": "RM"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="biller_code",
-                    extraction_text="5454",
-                    attributes={"biller_code": "5454"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="reference_1",
-                    extraction_text="220175210901",
-                    attributes={"reference_1": "220175210901", "type": "account_reference"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="previous_balance",
-                    extraction_text="0.00",
-                    attributes={"previous_balance": "0.00", "currency": "RM", "amount": "0.00", "type": "previous_outstanding"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="current_charges",
-                    extraction_text="217,314.45",
-                    attributes={"current_charges": "217,314.45", "currency": "RM", "amount": "217,314.45", "type": "regular_charges"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="current_charges_nem",
-                    extraction_text="",
-                    attributes={"current_charges_nem": "", "currency": "", "amount": "", "type": "nem_charges"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="rounding_adjustment",
-                    extraction_text="0.00",
-                    attributes={"rounding_adjustment": "0.00", "currency": "RM", "amount": "0.00", "type": "billing_adjustment"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="issue_date",
-                    extraction_text="01.07.2025",
-                    attributes={"bill_date": "01.07.2025", "iso_date": "2025-07-01"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="billing_period_start",
-                    extraction_text="01.06.2025 - 30.06.2025 (30 Hari)",
-                    attributes={"bill_period": "01.06.2025 - 30.06.2025", "start_date": "2025-06-01", "end_date": "2025-06-30", "days": "30"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="billing_period_end",
-                    extraction_text="01.06.2025 - 30.06.2025 (30 Hari)",
-                    attributes={"bill_period": "01.06.2025 - 30.06.2025", "start_date": "2025-06-01", "end_date": "2025-06-30", "days": "30"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="invoice_number",
-                    extraction_text="000844284963",
-                    attributes={"invoice_number": "000844284963"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="security_deposit",
-                    extraction_text="RM581,080.00",
-                    attributes={"security_deposit": "581,080.00", "currency": "RM"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="arrears_final_date",
-                    extraction_text="",
-                    attributes={"final_arrears_settlement_date": "", "iso_date": ""}
-                ),
-                lx.data.Extraction(
-                    extraction_class="arrears_amount",
-                    extraction_text="",
-                    attributes={"arrears_amount": "", "currency": ""}
-                ),
-                lx.data.Extraction(
-                    extraction_class="nem_balance",
-                    extraction_text="",
-                    attributes={"nem_balance": "", "currency": "", "type": ""}
-                ),
-                lx.data.Extraction(
-                    extraction_class="nem_balance_expiry",
-                    extraction_text="",
-                    attributes={"nem_balance_expiry_date": "", "iso_date": ""}
+                    extraction_class="total_charges",
+                    extraction_text="<td>Jumlah</td><td></td><td></td><td>1,876,055.96</td>",
+                    attributes={"total_amount": 1876055.96, "currency": "MYR", "type": "subtotal"}
                 ),
             ]
         ),

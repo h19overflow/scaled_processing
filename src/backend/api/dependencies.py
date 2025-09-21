@@ -1,8 +1,8 @@
 """
 API dependencies for dependency injection.
 
-Provides clean access to app services without global variables.
-Used by routers to get Gmail services, auth managers, etc.
+Provides clean access to app utils without global variables.
+Used by routers to get Gmail utils, auth managers, etc.
 """
 
 from fastapi import HTTPException, Request

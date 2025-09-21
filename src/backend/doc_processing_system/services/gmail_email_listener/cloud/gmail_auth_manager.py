@@ -2,7 +2,7 @@ import os
 from google.auth.transport.requests import Request          # Used to make authorized HTTP requests (for refreshing tokens)
 from google.oauth2.credentials import Credentials           # Manages OAuth2 tokens (access/refresh), loads/saves and refreshes as needed
 from google_auth_oauthlib.flow import Flow                  # Handles the interactive OAuth2 flow for user consent and token exchange
-from googleapiclient.discovery import build                 # Dynamically creates API clients for Google services (like Gmail)
+from googleapiclient.discovery import build                 # Dynamically creates API clients for Google utils (like Gmail)
 from dotenv import load_dotenv
 load_dotenv()
 

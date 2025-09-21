@@ -9,7 +9,7 @@ except ImportError:
     LANGEXTRACT_AVAILABLE = False
 
 from ..models.state import PipelineState
-from ..services.config_router import  process_document
+from ..utils.config_router import  process_document
 from prefect import task
 from typing import  Any
 

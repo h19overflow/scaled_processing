@@ -6,7 +6,7 @@ import logging
 from typing import Dict, Any
 
 from ..models.state import PipelineState
-from ..services.classification_service import DocumentClassificationService
+from ..utils.classification_service import DocumentClassificationService
 from ....core_deps.database.connection_manager import ConnectionManager
 from prefect import task
 

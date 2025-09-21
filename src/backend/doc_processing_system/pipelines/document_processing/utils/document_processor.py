@@ -72,7 +72,7 @@ class DocumentProcessor:
             if not content_list_path.exists():
                 return self._error_result("MinerU content_list.json not generated", raw_file_path)
 
-            # Step 4: Create optimized markdown from page 0 only
+            # Step 4: Create enhanced markdown with page 0 content and all tables
             final_markdown_path = processing_dir / f"{document_id}.md"
             self._create_page0_markdown(content_list_path, final_markdown_path)
 
@@ -110,7 +110,7 @@ class DocumentProcessor:
         return processing_dir
 
     def _create_page0_markdown(self, content_list_path: Path, output_path: Path) -> None:
-        """Create markdown file with only page 0 content for efficient processing."""
+        """Create markdown file with page 0 content and page 0 tables for efficient processing."""
         try:
             with open(content_list_path, 'r', encoding='utf-8') as f:
                 content_list = json.load(f)
@@ -118,9 +118,13 @@ class DocumentProcessor:
             # Filter for page 0 content only
             page0_content = [item for item in content_list if item.get('page_idx') == 0]
 
+            # Get table elements from page 0 only
+            page0_tables = [item for item in page0_content if item.get('type') == 'table']
+
             # Build markdown content
             markdown_lines = []
 
+            # Add page 0 text content
             for item in page0_content:
                 if item.get('type') == 'text':
                     text = item.get('text', '').strip()
@@ -132,14 +136,32 @@ class DocumentProcessor:
                             markdown_lines.append(text)
                         markdown_lines.append("")  # Add blank line
 
-            # Write page 0 markdown
+            # Add section for page 0 tables if any exist
+            if page0_tables:
+                markdown_lines.append("\n# Page 0 Tables\n")
+
+                for table_idx, table_item in enumerate(page0_tables):
+                    # Add table header
+                    markdown_lines.append(f"## Table {table_idx + 1}")
+                    markdown_lines.append("")
+
+                    # Add table HTML content
+                    table_html = table_item.get('table_body', '')
+                    if table_html:
+                        markdown_lines.append(table_html)
+                    else:
+                        markdown_lines.append("*Table content not available*")
+
+                    markdown_lines.append("")  # Add blank line
+
+            # Write combined markdown
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write("\n".join(markdown_lines))
 
-            self.logger.info(f"Created page 0 markdown with {len(page0_content)} elements")
+            self.logger.info(f"Created page 0 markdown with {len(page0_content)} elements and {len(page0_tables)} page 0 tables")
 
         except Exception as e:
-            self.logger.error(f"Failed to create page 0 markdown: {e}")
+            self.logger.error(f"Failed to create enhanced markdown: {e}")
             # Create empty file as fallback
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write("# Document Processing Error\nCould not extract page 0 content.")
