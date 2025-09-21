@@ -5,12 +5,10 @@ Extracts rich markdown and tables from documents using MinerU processing.
 
 import logging
 import json
-import re
-import pandas as pd
 from pathlib import Path
 from typing import Dict, Any
-from io import StringIO
 from .mu import parse_single_file
+from .table_line_item_extractor import TableLineItemExtractor
 MINERU_AVAILABLE = True
 
 class DocumentProcessor:
@@ -29,6 +27,9 @@ class DocumentProcessor:
         if not MINERU_AVAILABLE:
             self.logger.error("MinerU not available - install MinerU dependencies")
             raise ImportError("MinerU package is required but not installed")
+
+        # Initialize table extractor
+        self.table_extractor = TableLineItemExtractor(logger=self.logger)
 
         self.logger.info("DocumentProcessor initialized with MinerU backend")
 
@@ -78,7 +79,7 @@ class DocumentProcessor:
                     dst.write(src.read())
 
             # Step 5: Extract tables from markdown and save as CSV
-            self._extract_tables_to_csv(final_markdown_path, processing_dir, document_id)
+            self.table_extractor.extract_and_save_tables(final_markdown_path, processing_dir, document_id)
 
             # Step 6: Get file metadata
             file_info = self._get_file_info(raw_path)
@@ -98,49 +99,6 @@ class DocumentProcessor:
             return self._error_result("Extraction failed", raw_file_path, error_details=str(e))
 
     # HELPER FUNCTIONS
-    def _extract_tables_to_csv(self, markdown_path: Path, processing_dir: Path, document_id: str):
-        """Extract HTML tables from markdown and save as combined CSV."""
-        try:
-            # Read the markdown file
-            with open(markdown_path, 'r', encoding='utf-8') as f:
-                markdown_content = f.read()
-
-            # Extract HTML tables using regex
-            table_pattern = r'<table>.*?</table>'
-            html_tables = re.findall(table_pattern, markdown_content, re.DOTALL)
-
-            if not html_tables:
-                self.logger.info("No HTML tables found in markdown")
-                return
-
-            # Parse each table with pandas
-            all_dataframes = []
-            for i, html_table in enumerate(html_tables):
-                try:
-                    # Use pandas to read HTML table with StringIO to avoid FutureWarning
-                    dfs = pd.read_html(StringIO(html_table))
-                    for df in dfs:
-                        # Add table identifier
-                        df['table_id'] = i
-                        all_dataframes.append(df)
-                        self.logger.info(f"Parsed table {i} with {len(df)} rows")
-                except Exception as e:
-                    self.logger.warning(f"Failed to parse table {i}: {e}")
-
-            if all_dataframes:
-                # Combine all tables
-                combined_df = pd.concat(all_dataframes, ignore_index=True)
-
-                # Save as CSV
-                csv_path = processing_dir / f"{document_id}_tables_combined.csv"
-                combined_df.to_csv(csv_path, index=False)
-
-                self.logger.info(f"✅ Saved {len(html_tables)} tables to CSV: {csv_path}")
-            else:
-                self.logger.warning("No tables could be parsed successfully")
-
-        except Exception as e:
-            self.logger.error(f"Failed to extract tables to CSV: {e}")
 
     def _create_processing_directory(self, document_id: str) -> Path:
         """Create unique processing directory for document."""
@@ -181,3 +139,13 @@ class DocumentProcessor:
             "file_path": file_path,
             "message": f"{message}: {error_details}" if error_details else message
         }
+# python -m src.backend.doc_processing_system.pipelines.document_processing.utils.document_processor
+if __name__ == "__main__":
+    import datetime
+
+    doc_processor = DocumentProcessor()
+    starting = datetime.datetime.now()
+    result = doc_processor.extract_document(r"C:\Users\User\Projects\scaled_processing\data\pdfs\GSPP_5407_202507_Billing.pdf", "test_doc")
+    ending = datetime.datetime.now()
+    print(f"Document processing completed in {(ending - starting).total_seconds()} seconds")
+    print(json.dumps(result, indent=4))

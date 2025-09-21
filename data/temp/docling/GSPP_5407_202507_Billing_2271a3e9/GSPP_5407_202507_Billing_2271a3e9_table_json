@@ -1,0 +1,118 @@
+[
+  {
+    "table_id": 0,
+    "data": [
+      {
+        "Penerangan": "Puncak (kWh)",
+        "Penggunaan": "3,983,440.00",
+        "Kadar (RM)": "0.3550",
+        "Amaun (RM)": "1,414,121.20"
+      },
+      {
+        "Penerangan": "Luar Puncak (kWh)",
+        "Penggunaan": "2,703,940.00",
+        "Kadar (RM)": "0.2190",
+        "Amaun (RM)": "592,162.86"
+      },
+      {
+        "Penerangan": "Maximum Demand (kW)",
+        "Penggunaan": "16,720.00",
+        "Kadar (RM)": "37.0000",
+        "Amaun (RM)": "618,640.00"
+      },
+      {
+        "Penerangan": "Standby Demand (kW)",
+        "Penggunaan": "280.00",
+        "Kadar (RM)": "14.0000",
+        "Amaun (RM)": "3,920.00"
+      },
+      {
+        "Penerangan": "Jumlah",
+        "Penggunaan": "",
+        "Kadar (RM)": "",
+        "Amaun (RM)": "2,628,844.06"
+      }
+    ]
+  },
+  {
+    "table_id": 1,
+    "data": [
+      {
+        "Keterangan": "RM",
+        "Tanpa ST": "2,006,284.06",
+        "Dengan ST": "0.00",
+        "Jumlah": "2,006,284.06"
+      },
+      {
+        "Keterangan": "RM",
+        "Tanpa ST": "622,560.00",
+        "Dengan ST": "0.00",
+        "Jumlah": "622,560.00"
+      },
+      {
+        "Keterangan": "RM",
+        "Tanpa ST": "1,069,980.80",
+        "Dengan ST": "0.00",
+        "Jumlah": "1,069,980.80"
+      },
+      {
+        "Keterangan": "RM",
+        "Tanpa ST": "3,698,824.86",
+        "Dengan ST": "0.00",
+        "Jumlah": "3,698,824.86"
+      },
+      {
+        "Keterangan": "RM",
+        "Tanpa ST": "",
+        "Dengan ST": "",
+        "Jumlah": "42,061.50"
+      },
+      {
+        "Keterangan": "RM",
+        "Tanpa ST": "",
+        "Dengan ST": "",
+        "Jumlah": "3,740,886.36"
+      }
+    ]
+  },
+  {
+    "table_id": 2,
+    "data": [
+      {
+        "No. Meter": "M 821800109",
+        "Bacaan Meter.Dahulu": "0",
+        "Bacaan Meter.Semasa": "3,983,440",
+        "Penggunaan": "3,983,440",
+        "Unit": "kWh P"
+      },
+      {
+        "No. Meter": "M 821800109",
+        "Bacaan Meter.Dahulu": "0",
+        "Bacaan Meter.Semasa": "2,703,940",
+        "Penggunaan": "2,703,940",
+        "Unit": "kWh O"
+      },
+      {
+        "No. Meter": "M 821800109",
+        "Bacaan Meter.Dahulu": "0",
+        "Bacaan Meter.Semasa": "16,720",
+        "Penggunaan": "16,720",
+        "Unit": "kW P"
+      },
+      {
+        "No. Meter": "M 821800109",
+        "Bacaan Meter.Dahulu": "0",
+        "Bacaan Meter.Semasa": "14,680",
+        "Penggunaan": "14,680",
+        "Unit": "kW O"
+      },
+      {
+        "No. Meter": "M 821800109",
+        "Bacaan Meter.Dahulu": "0",
+        "Bacaan Meter.Semasa": "2,796,800",
+        "Penggunaan": "2,796,800",
+        "Unit": "kVARh"
+      }
+    ]
+  }
+]
