@@ -185,9 +185,9 @@ TARIKH LUPUT BAKI NEM 31.12.2025
                     attributes={"current_charges": "", "currency": "", "amount": "", "type": "regular_charges"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="current_charges_nem",
-                    extraction_text="<tr><td rowspan=1 colspan=1>Caj Semasa NEM</td><td rowspan=1 colspan=1>RM152,298.12</td>",
-                    attributes={"current_charges_nem": 152298.12, "currency": "MYR", "amount": 169582.76, "type": "nem_charges"}
+                    extraction_class="amount_due",
+                    extraction_text="CAJ SEMASA NEM RM169,582.76",
+                    attributes={"total_bill": 152298.12, "currency": "MYR", "amount": 169582.76, "type": "nem_charges"}
                 ),
                 lx.data.Extraction(
                     extraction_class="rounding_adjustment",

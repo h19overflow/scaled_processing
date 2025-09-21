@@ -13,6 +13,12 @@ from src.backend.doc_processing_system.pipelines.document_processing.tasks_core 
     docling_processing_task,
     document_saving_task,
 )
+from src.backend.doc_processing_system.pipelines.document_processing.tasks_core.pdf_validation_tasks import (
+    validate_pdf_task,
+    repair_pdf_task,
+    clean_with_pymupdf_task,
+    cleanup_pdf_processing_temp,
+)
 
 
 def get_markdown_path_for_processing(docling_result: Dict[str, Any]) -> str:
@@ -69,30 +75,74 @@ def send_completion_message(document_id: str, raw_file_path: str, user_id: str, 
 async def document_processing_flow(
     raw_file_path: str,
     user_id: str = "default",
-    enable_chunking: bool = True
+    enable_chunking: bool = True,
+    enable_pdf_validation: bool = True,
+    force_pdf_repair: bool = False
 ) -> Dict[str, Any]:
     logger = get_run_logger()
     logger.info(f"🚀 Starting document processing flow for: {Path(raw_file_path).name}")
     
     try:
+        # STEP 1: Duplicate Detection
         duplicate_result = duplicate_detection_task(raw_file_path)
-        
+
         if duplicate_result["status"] == "duplicate":
             return {
                 "status": "duplicate",
                 "document_id": duplicate_result["document_id"],
                 "message": f"Document already exists: {duplicate_result['document_id']}"
             }
-        
+
         if duplicate_result["status"] == "error":
             return duplicate_result
-        
+
         document_id = duplicate_result["document_id"]
-        
-        logger.info(f"📄 STEP 2: Starting Docling processing for {document_id}")
-        docling_result = docling_processing_task(raw_file_path, document_id)
-        logger.info(f"✅ STEP 2 COMPLETE: Docling processing - Status: {docling_result.get('status')}")
+
+        # STEP 2: PDF Validation and Repair (for PDF files only)
+        final_file_path = raw_file_path
+        pdf_processing_steps = {}
+
+        if raw_file_path.lower().endswith('.pdf') and enable_pdf_validation:
+            logger.info(f"🔍 STEP 2A: PDF Validation for {document_id}")
+
+            validation_result = validate_pdf_task(raw_file_path)
+            pdf_processing_steps["validation"] = validation_result["status"]
+
+            needs_repair = validation_result["needs_repair"] or force_pdf_repair
+
+            if needs_repair and validation_result["status"] != "error":
+                logger.info(f"🔧 STEP 2B: PDF Repair for {document_id}")
+                repair_result = repair_pdf_task(raw_file_path)
+                pdf_processing_steps["repair"] = repair_result["status"]
+
+                if repair_result["status"] == "repaired":
+                    repaired_path = repair_result["repaired_path"]
+
+                    # STEP 2C: PDF Cleaning with PyMuPDF
+                    logger.info(f"🧹 STEP 2C: PDF Cleaning for {document_id}")
+                    clean_result = clean_with_pymupdf_task(repaired_path)
+                    pdf_processing_steps["cleaning"] = clean_result["status"]
+
+                    if clean_result["status"] == "cleaned":
+                        final_file_path = clean_result["clean_path"]
+                        logger.info(f"✅ Using cleaned PDF: {Path(final_file_path).name}")
+                    else:
+                        final_file_path = repaired_path
+                        logger.info(f"✅ Using repaired PDF: {Path(final_file_path).name}")
+                else:
+                    logger.warning(f"⚠️ PDF repair failed, using original file")
+            else:
+                logger.info(f"✅ PDF validation passed, no repair needed")
+        else:
+            logger.info(f"⏭️ STEP 2 SKIPPED: Not a PDF or validation disabled")
+
+        # STEP 3: Document Processing (MinerU/Docling)
+        logger.info(f"📄 STEP 3: Starting document processing for {document_id}")
+        docling_result = docling_processing_task(final_file_path, document_id)
+        logger.info(f"✅ STEP 3 COMPLETE: Document processing - Status: {docling_result.get('status')}")
         if docling_result["status"] != "completed":
+            # Cleanup temp files before returning error
+            cleanup_pdf_processing_temp(document_id)
             return docling_result
 
         # Get markdown path for processing
@@ -108,16 +158,20 @@ async def document_processing_flow(
         content_length = len(content)
 
         # Early return if chunking is disabled
-        logger.info(f"🔄 STEP 3: Checking chunking enabled: {enable_chunking}")
+        logger.info(f"🔄 STEP 4: Checking chunking enabled: {enable_chunking}")
         if not enable_chunking:
-            logger.info(f"⏭️ STEP 3 SKIPPED: Chunking disabled - preparing early return")
+            logger.info(f"⏭️ STEP 4 SKIPPED: Chunking disabled - preparing early return")
 
             processing_steps = {
                 "duplicate_detection": duplicate_result.get("status"),
-                "docling_extraction": docling_result.get("status"),
+                "pdf_processing": pdf_processing_steps,
+                "document_extraction": docling_result.get("status"),
                 "chunking": "disabled",
                 "document_saving": "disabled"
             }
+
+            # Cleanup temp files
+            cleanup_pdf_processing_temp(document_id)
 
             # Send completion message with processed content
             send_completion_message(document_id, raw_file_path, user_id, processing_steps, content)
@@ -131,7 +185,7 @@ async def document_processing_flow(
 
 
 
-        logger.info("🔄 STEP 4: Saving document metadata...")
+        logger.info("🔄 STEP 5: Saving document metadata...")
         save_result = document_saving_task(
             vision_enhanced_markdown_path=markdown_path,
             document_id=document_id,
@@ -141,13 +195,19 @@ async def document_processing_flow(
             user_id=user_id
         )
         if save_result.get("save_result", {}).get("status") != "saved":
+            # Cleanup temp files before returning error
+            cleanup_pdf_processing_temp(document_id)
             return save_result
 
         processing_steps = {
             "duplicate_detection": duplicate_result.get("status"),
-            "docling_extraction": docling_result.get("status"),
+            "pdf_processing": pdf_processing_steps,
+            "document_extraction": docling_result.get("status"),
             "document_saving": save_result.get("save_result", {}).get("status")
         }
+
+        # Cleanup temp files after successful processing
+        cleanup_pdf_processing_temp(document_id)
 
         # Send completion message with processed content
         send_completion_message(document_id, raw_file_path, user_id, processing_steps, content)
@@ -160,6 +220,14 @@ async def document_processing_flow(
             
     except Exception as e:
         logger.error(f"❌ Document processing flow failed: {e}")
+
+        # Attempt cleanup on error if document_id is available
+        try:
+            if 'document_id' in locals():
+                cleanup_pdf_processing_temp(document_id)
+        except:
+            pass
+
         return {
             "status": "error",
             "error": str(e),
@@ -170,12 +238,16 @@ async def document_processing_flow(
 async def process_document_with_flow(
     raw_file_path: str,
     user_id: str = "default",
-    enable_chunking: bool = True
+    enable_chunking: bool = True,
+    enable_pdf_validation: bool = True,
+    force_pdf_repair: bool = False
 ) -> Dict[str, Any]:
     return await document_processing_flow(
         raw_file_path,
         user_id,
-        enable_chunking
+        enable_chunking,
+        enable_pdf_validation,
+        force_pdf_repair
     )
 
 if __name__ == "__main__":
