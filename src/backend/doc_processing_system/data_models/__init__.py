@@ -1,6 +1,6 @@
 """
 Data models package for the document processing system.
-Provides all core data structures used across the system.
+Provides all flows data structures used across the system.
 """
 
 # Document models

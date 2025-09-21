@@ -43,11 +43,9 @@ import json
 import uuid
 import logging
 from pathlib import Path
-from confluent_kafka.admin import AdminClient
 from src.backend.doc_processing_system.messaging.consumer import ConsumerHandler
 from src.backend.doc_processing_system.pipelines.structured_extraction.models.state import PipelineState
-from src.backend.doc_processing_system.pipelines.structured_extraction.core.prefect_flow import structured_extraction_flow
-
+from src.backend.doc_processing_system.pipelines.structured_extraction.flows.prefect_flow import structured_extraction_flow
 
 class StructuringConsumer(ConsumerHandler):
     """Consumer for document pipeline completed events to trigger structured extraction."""

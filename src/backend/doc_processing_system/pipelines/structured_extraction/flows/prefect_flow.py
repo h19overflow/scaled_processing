@@ -1,7 +1,6 @@
 
 
 from prefect import flow, get_run_logger
-import asyncio
 
 from ..config.settings import Settings
 from ..models.state import PipelineState

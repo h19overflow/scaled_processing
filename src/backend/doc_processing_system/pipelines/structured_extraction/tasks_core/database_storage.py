@@ -132,6 +132,15 @@ def _create_and_store_bill(extractions: list, document_id: str, document_name: s
         extraction_text = extraction.get('extraction_text', '')
         attributes = extraction.get('attributes', {})
 
+        # Debug logging for amount_due specifically
+        import logging
+        logger = logging.getLogger(__name__)
+        if extraction_class == 'amount_due':
+            logger.info(f"🔍 Found amount_due extraction: class='{extraction_class}', text='{extraction_text}', attributes={attributes}")
+
+        # Log all extraction classes to debug what's being extracted
+        logger.debug(f"📝 Processing extraction: class='{extraction_class}', in_core_fields={extraction_class in BILL_CORE_FIELDS}")
+
         if extraction_class in BILL_CORE_FIELDS:
             # Map to flows BillModel field
             if extraction_class == 'bill_account_id':
@@ -155,6 +164,12 @@ def _create_and_store_bill(extractions: list, document_id: str, document_name: s
     # Set defaults for missing flows fields
     if 'currency' not in core_data:
         core_data['currency'] = 'MYR'
+
+    # Debug logging for final core_data
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"💾 Final core_data before BillModel creation: {core_data}")
+    logger.info(f"💾 amount_due value: {core_data.get('amount_due')} (type: {type(core_data.get('amount_due'))})")
 
     # Create BillModel instance
     bill = BillModel(
@@ -242,21 +257,24 @@ def _parse_malaysian_date(date_text: str, attributes: dict = None) -> datetime:
 
 def _parse_amount(amount_text: str, attributes: dict = None) -> float:
     """Parse amount from text or attributes."""
-    if attributes and 'amount' in attributes:
-        try:
-            return float(attributes['amount'])
-        except:
-            pass
+    if attributes:
+        # Try amount_due first (new format), then amount (legacy format)
+        for amount_key in ['amount_due', 'amount']:
+            if amount_key in attributes:
+                try:
+                    return float(attributes[amount_key])
+                except (ValueError, TypeError):
+                    continue
 
     if not amount_text:
-        return None
+        return 0.0  # Return 0.0 instead of None for database NOT NULL constraint
 
     # Remove currency symbols and commas
     cleaned = amount_text.replace('RM', '').replace(',', '').strip()
     try:
         return float(cleaned)
-    except:
-        return None
+    except (ValueError, TypeError):
+        return 0.0  # Return 0.0 instead of None for database NOT NULL constraint
 
 def _extract_currency(currency_text: str, attributes: dict = None) -> str:
     """Extract currency from text or attributes."""
@@ -275,12 +293,14 @@ def _parse_billing_period_start(date_text: str, attributes: dict = None) -> date
     if not date_text or date_text.strip() == "":
         return None
 
-    # Check for start_date in attributes first
-    if attributes and 'start_date' in attributes and attributes['start_date']:
-        try:
-            return datetime.fromisoformat(attributes['start_date'])
-        except:
-            pass
+    # Check for billing_period_start (new format) or start_date (legacy format) in attributes first
+    if attributes:
+        for date_key in ['billing_period_start', 'start_date']:
+            if date_key in attributes and attributes[date_key]:
+                try:
+                    return datetime.fromisoformat(attributes[date_key])
+                except (ValueError, TypeError):
+                    continue
 
     # Fallback to general date parsing
     return _parse_malaysian_date(date_text, attributes)
@@ -290,12 +310,14 @@ def _parse_billing_period_end(date_text: str, attributes: dict = None) -> dateti
     if not date_text or date_text.strip() == "":
         return None
 
-    # Check for end_date in attributes first
-    if attributes and 'end_date' in attributes and attributes['end_date']:
-        try:
-            return datetime.fromisoformat(attributes['end_date'])
-        except:
-            pass
+    # Check for billing_period_end (new format) or end_date (legacy format) in attributes first
+    if attributes:
+        for date_key in ['billing_period_end', 'end_date']:
+            if date_key in attributes and attributes[date_key]:
+                try:
+                    return datetime.fromisoformat(attributes[date_key])
+                except (ValueError, TypeError):
+                    continue
 
     # Fallback to general date parsing
     return _parse_malaysian_date(date_text, attributes)
