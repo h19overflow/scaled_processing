@@ -16,7 +16,7 @@ except ImportError:
 try:
     import ghostscript as gs
     GHOSTSCRIPT_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     GHOSTSCRIPT_AVAILABLE = False
 
 
