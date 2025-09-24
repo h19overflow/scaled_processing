@@ -11,7 +11,7 @@ Dependencies: GmailAuthManager for token management
 import logging
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import RedirectResponse
-
+import os
 from src.backend.api.dependencies import (
     get_auth_manager,
     get_optional_gmail_service

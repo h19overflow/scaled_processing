@@ -7,6 +7,8 @@ import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
+# python -m uvicorn src.backend.api.main:app --reload --host 0.0.0.0 --port 8000
+
 load_dotenv()
 from src.backend.doc_processing_system.services.gmail_email_listener.cloud.gmail_service import GmailService
 from src.backend.doc_processing_system.services.gmail_email_listener.cloud.gmail_auth_manager import GmailAuthManager
@@ -74,17 +76,18 @@ app.include_router(health_router)
 
 
 # HELPER FUNCTIONS
-
+# TODO this just does not connect the service account to the topic , i am not sure why , i setup topic name and everything i checked for permission , i checked for the subscription from the pub sub subscriber , it's connected and reports only when i push manually.
 async def setup_gmail_watch(app: FastAPI):
     """Setup Gmail watch for push notifications"""
     try:
         if not app.state.gmail_service:
             raise Exception("Gmail service not initialized")
 
+        # More inclusive watch configuration - watch ALL message activity
         watch_request = {
-            'labelIds': ['INBOX'],
             'topicName': 'projects/gmail-monitor-project-472511/topics/gmail-notifications',
-            'labelFilterBehavior': 'INCLUDE'
+            'labelFilterBehavior': 'EXCLUDE',  # Exclude no labels = watch everything
+            'labelIds': []  # Empty list with EXCLUDE = watch all activity
         }
 
         # Run synchronous call in executor to avoid blocking event loop

@@ -11,7 +11,10 @@
       "Bash(gcloud pubsub subscriptions pull:*)",
       "Bash(del \"C:\\Users\\User\\Projects\\scaled_processing\\src\\backend\\doc_processing_system\\services\\gmail_email_listener\\secerets\\token.json\")",
       "Bash(gcloud pubsub topics list:*)",
-      "Bash(gcloud projects describe:*)"
+      "Bash(gcloud projects describe:*)",
+      "Bash(gcloud pubsub subscriptions:*)",
+      "Bash(del \"C:\\Users\\User\\Projects\\scaled_processing\\test_gmail_watch.py\")",
+      "Bash(timeout 15 python -m src.backend.doc_processing_system.services.gmail_email_listener.cloud.pubsub_subscriber:*)"
     ],
     "deny": [],
     "ask": []

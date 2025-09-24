@@ -41,13 +41,24 @@ class GmailService:
     def setup_watch(self, watch_request: dict) -> dict:
         """Register/watch mailbox for push notifications (Pub/Sub)."""
         try:
+            logger.info(f"Setting up Gmail watch with request: {watch_request}")
+
             result = self.service.users().watch(
                 userId='me',
                 body=watch_request
             ).execute()
+
+            logger.info(f"Gmail watch setup successful: {result}")
+
+            # Get user profile for logging
+            profile = self.service.users().getProfile(userId='me').execute()
+            email = profile.get('emailAddress', 'unknown')
+            logger.info(f"Gmail watch active for email: {email}")
+
             return result
         except HttpError as e:
             logger.error(f"Gmail watch setup failed: {e}")
+            logger.error(f"Error details: {e.content.decode() if hasattr(e, 'content') else 'No additional details'}")
             raise
 
     async def get_history_changes(self, start_history_id: str) -> dict:
