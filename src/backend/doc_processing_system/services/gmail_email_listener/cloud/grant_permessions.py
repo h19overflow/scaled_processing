@@ -80,7 +80,7 @@ def grant_gmail_permissions():
                 members=new_members
             )
 
-    # Commit the updated policy, applying the publisher role to this service account for this topic only.
+    # Commit the updated policy, s applying the publisher role to this service account for this topic only.
     try:
         publisher.set_iam_policy(request={"resource": topic_path, "policy": policy})
         print("Permissions granted successfully")

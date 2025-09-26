@@ -86,8 +86,8 @@ async def setup_gmail_watch(app: FastAPI):
         # More inclusive watch configuration - watch ALL message activity
         watch_request = {
             'topicName': 'projects/gmail-monitor-project-472511/topics/gmail-notifications',
-            'labelFilterBehavior': 'EXCLUDE',  # Exclude no labels = watch everything
-            'labelIds': []  # Empty list with EXCLUDE = watch all activity
+            'labelFilterBehavior': 'INCLUDE',  # Exclude no labels = watch everything
+            'labelIds': ['INBOX']  # Empty list with EXCLUDE = watch all activity
         }
 
         # Run synchronous call in executor to avoid blocking event loop
