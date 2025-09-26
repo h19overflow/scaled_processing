@@ -64,7 +64,7 @@ class GmailPubSubSubscriber:
             # Check message age (Pub/Sub adds publish_time)
             import time
             message_age = time.time() - message.publish_time.timestamp()
-            if message_age > 300:  # Ignore messages older than 5 minutes
+            if message_age > 30000000:  # Ignore messages older than 5 minutes
                 logger.warning(f"Ignoring old notification (age: {message_age:.0f}s)")
                 message.ack()
                 return
