@@ -15,7 +15,6 @@ from typing import Optional
 from pathlib import Path
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Depends
-from fastapi.responses import JSONResponse
 
 from src.backend.api.schemas import (
     ProcessResponse,
@@ -26,7 +25,6 @@ from src.backend.api.job_tracker import JobTracker
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 from src.backend.doc_processing_system.core_deps.database.models import BillModel
-from src.backend.doc_processing_system.config.settings import get_settings
 
 
 router = APIRouter(prefix="/api/v1", tags=["Document Processing"])

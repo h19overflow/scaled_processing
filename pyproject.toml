@@ -59,7 +59,7 @@ dependencies = [
     "python-snappy>=0.7.3",
     "pyarrow==14.0.1",
     "confluent-kafka",
-    "numpy<2.0.0",
+    "numpy<2.0",
     "prefect>=3.4.15",
     "langextract>=1.0.9",
     "loguru>=0.7.3",
@@ -69,6 +69,9 @@ dependencies = [
     "ghostscript>=0.8.1",
     "datasets>=2.19.2",
     "fitz>=0.0.1.dev2",
+    "pytest>=8.4.1",
+    "pytest-mock>=3.14.1",
+    "pytest-cov>=6.2.1",
 ]
 
 [project.optional-dependencies]
