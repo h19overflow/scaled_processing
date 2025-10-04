@@ -5,7 +5,6 @@ Handles all database operations related to documents.
 
 import hashlib
 from typing import List, Optional
-from uuid import UUID
 from datetime import datetime
 from sqlalchemy import desc
 

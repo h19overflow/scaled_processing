@@ -20,9 +20,6 @@ dependencies = [
     "asyncpg>=0.29.0",
     "psycopg2-binary>=2.9.9",
     "alembic>=1.13.0",
-    # Messaging & Event Streaming
-    # Workflow Orchestration (keeping Prefect for document processing flows)
-    "prefect>=2.14.0",
     "prefect-dask>=0.2.6",
     # Document Parsing
     "pypdf>=3.17.0",
@@ -35,8 +32,6 @@ dependencies = [
     "spacy>=3.7.2",
     "nltk>=3.8.1",
     "transformers>=4.36.0",
-    "torch==2.7.1+cu128",
-    "torchvision==0.22.1+cu128",
     # Semantic Chunking
     "semantic-text-splitter>=0.8.0",
     "tiktoken>=0.5.2",
@@ -63,9 +58,17 @@ dependencies = [
     "docling-core>=2.45.0",
     "python-snappy>=0.7.3",
     "pyarrow==14.0.1",
-    "chonkie[all]",
-    "numpy==1.26.4",
     "confluent-kafka",
+    "numpy<2.0.0",
+    "prefect>=3.4.15",
+    "langextract>=1.0.9",
+    "loguru>=0.7.3",
+    "doclayout-yolo>=0.0.4",
+    "ultralytics>=8.3.204",
+    "pikepdf>=9.11.0",
+    "ghostscript>=0.8.1",
+    "datasets>=2.19.2",
+    "fitz>=0.0.1.dev2",
 ]
 
 [project.optional-dependencies]

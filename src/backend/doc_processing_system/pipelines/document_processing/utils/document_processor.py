@@ -281,7 +281,7 @@ if __name__ == "__main__":
 
     doc_processor = DocumentProcessor()
     starting = datetime.datetime.now()
-    result = doc_processor.extract_document(r"C:\Users\User\Projects\scaled_processing\data\pdfs\GSPP_5407_202507_Billing.pdf", "test_doc")
+    result = doc_processor.extract_document(r"C:\Users\User\Projects\scaled_processing\data\documents\raw\GSPP_0901_202507_Billing.pdf", "test_doc")
     ending = datetime.datetime.now()
     print(f"Document processing completed in {(ending - starting).total_seconds()} seconds")
     print(json.dumps(result, indent=4))

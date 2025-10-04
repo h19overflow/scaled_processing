@@ -5,7 +5,6 @@ Contains models for field specifications, extraction results, and agent scaling.
 
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
-from uuid import UUID
 from pydantic import BaseModel
 
 

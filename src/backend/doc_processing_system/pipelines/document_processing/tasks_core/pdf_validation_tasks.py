@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Dict, Any
 import subprocess
 import shutil
-import os
 import fitz
 from prefect import task, get_run_logger
 

@@ -3,10 +3,7 @@ Document classification agent for structured extraction.
 Detects document types using LLM and keyword fallback.
 """
 import logging
-import os
 from typing import Dict
-from uuid import UUID, uuid4
-
 from pydantic_ai import Agent, RunContext
 from pydantic import BaseModel
 from ..models.schema import DocumentClassificationResult
@@ -186,3 +183,4 @@ class ClassificationAgent:
                 "reasoning": "No recognizable patterns found in document",
                 "keywords": []
             }
+

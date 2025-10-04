@@ -103,7 +103,6 @@ frozenlist==1.7.0
 fsspec==2025.7.0
 gitdb==4.0.12
 gitpython==3.1.45
-google-ai-generativelanguage==0.6.15
 google-api-core==2.25.1
 google-api-python-client==2.179.0
 google-auth==2.40.3
@@ -251,9 +250,6 @@ pdf2image==1.17.0
 pdfminer-six==20240706
 pendulum==3.1.0
 pillow==11.3.0
-pinecone==7.3.0
-pinecone-plugin-assistant==1.8.0
-pinecone-plugin-interface==0.0.7
 pip==25.2
 platformdirs==4.4.0
 plotly==6.3.0
@@ -371,9 +367,6 @@ tiktoken==0.11.0
 tokenizers==0.22.0
 toml==0.10.2
 toolz==1.0.0
-torch==2.7.1+cu128
-torchaudio==2.7.1+cu128
-torchvision==0.22.1+cu128
 tornado==6.5.2
 tqdm==4.67.1
 transformers==4.56.0
@@ -392,6 +385,8 @@ tzdata==2025.2
 tzlocal==5.3.1
 uritemplate==4.2.0
 urllib3==2.5.0
+pikepdf
+ghostscript
 uv==0.8.14
 uvicorn==0.35.0
 validators==0.35.0
@@ -419,3 +414,4 @@ yarl==1.20.1
 zict==3.0.0
 zipp==3.23.0
 zstandard==0.24.0
+fitz

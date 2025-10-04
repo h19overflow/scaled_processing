@@ -7,7 +7,14 @@ import multiprocessing
 import logging
 import signal
 import sys
-from pathlib import Path
+import os
+
+# Pre-load onnxruntime DLLs before spawning child processes (Windows fix)
+os.environ['OMP_NUM_THREADS'] = '1'
+try:
+    import onnxruntime
+except ImportError:
+    pass
 
 def setup_logging():
     """Setup logging for the main process."""
@@ -125,4 +132,5 @@ def main():
         logger.info("🛑 All processes stopped")
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()  # Required for Windows
     main()
