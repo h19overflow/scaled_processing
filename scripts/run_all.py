@@ -56,6 +56,20 @@ def run_structured_consumer():
         logging.error(f"Structured consumer failed: {e}")
         raise
 
+def run_api_server():
+    """Run the FastAPI server."""
+    try:
+        import uvicorn
+        uvicorn.run(
+            "src.backend.api.main:app",
+            host="0.0.0.0",
+            port=8000,
+            log_level="info"
+        )
+    except Exception as e:
+        logging.error(f"API server failed: {e}")
+        raise
+
 def signal_handler(signum, frame):
     """Handle shutdown signals."""
     logging.info("Received shutdown signal, terminating all processes...")
@@ -75,6 +89,7 @@ def main():
     logger.info("  1. File Watcher - monitors for new files")
     logger.info("  2. Document Processors - 6 consumers processing documents")
     logger.info("  3. Structured Extractors - 6 consumers extracting structured data")
+    logger.info("  4. FastAPI Server - REST API on port 8000")
 
     processes = []
 
@@ -106,8 +121,19 @@ def main():
         struct_consumer_process.start()
         processes.append(struct_consumer_process)
 
+        # Start FastAPI server
+        logger.info("Starting FastAPI Server...")
+        api_server_process = multiprocessing.Process(
+            target=run_api_server,
+            name="APIServer"
+        )
+        api_server_process.start()
+        processes.append(api_server_process)
+
         logger.info("✅ All processes started successfully!")
         logger.info("📁 Drop files into: C:/Users/User/Projects/scaled_processing/data/documents/raw")
+        logger.info("🌐 API available at: http://localhost:8000")
+        logger.info("📖 API docs at: http://localhost:8000/docs")
         logger.info("🛑 Press Ctrl+C to stop all processes")
 
         # Wait for all processes
