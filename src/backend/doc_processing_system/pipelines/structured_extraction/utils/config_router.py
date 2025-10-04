@@ -8,41 +8,16 @@ load_dotenv()
 # TODO Current charges not extracted in teh 5407202508
 def invoice_extraction() -> Tuple[str, List[lx.data.ExampleData]]:
     extraction_prompt = textwrap.dedent("""
-    Extract Malaysian utility bill information. Extract each field type only ONCE - choose the primary/main value if multiple exist.
-    Fields might appear in malay.
+Extract Malaysian utility bill information. Extract each field type only ONCE - choose the primary/main value if multiple exist.  
+Fields might appear in malay.  
+  
+Extract these fields:  
+- postal_address: Customer postal address  
+- invoice_number: Invoice number    
+- amount_due: The amount due at the end of the billing period  
+- due_date: Payment due date  
+- biller_code: Biller code  
 
-    Extract these fields:
-    - bill_source: Customer company name
-    - postal_address: Customer postal address
-    - invoice_number: Invoice number
-    - bill_account_id: Account number
-    - previous_balance: Previous balance amount
-    - current_charges: Current charges (main summary value, NOT NEM-specific, may be empty if only NEM charges exist)
-    - current_charges_nem: Current charges under NEM program (only extract if explicitly labeled as "NEM" charges, typically large amounts)
-    - security_deposit: Security deposit
-    - amount_due: The amount due at the end of the billing period
-    - issue_date: Bill date
-    - due_date: Payment due date
-    - billing_period_start: Billing period start date
-    - billing_period_end: Billing period end date
-    - payment_period: Payment period
-    - payment_amount: Payment amount
-    - biller_code: Biller code
-    - reference_1: Reference number
-    - rounding_adjustment: Rounding adjustment (small amounts like -RM0.01, -RM0.02, typically less than RM1)
-    - arrears_final_date: Final settlement date
-    - arrears_amount: Arrears amount
-    - nem_balance: NEM balance accumulated
-    - nem_balance_expiry: NEM balance expiry date
-
-    IMPORTANT:
-    - current_charges_nem should only be extracted when explicitly mentioned as "NEM" charges
-    - current_charges may be empty if the bill only contains NEM charges
-    - rounding_adjustment is for small rounding adjustments (usually cents, like -RM0.01)
-    - Do NOT confuse small rounding amounts with large NEM charges
-
-    REFLECT AND DOUBLE CHECK THE REQUIRED and THE EXTRACTION FIELDS TO ENSURE ALL ARE COVERED.
-    Ask yourself: "Is there any field that might be missing or overlooked?"
 
     """).strip()
 
@@ -85,11 +60,6 @@ Ref-1: 210299319006
 """,
             extractions=[
                 lx.data.Extraction(
-                    extraction_class="bill_source",
-                    extraction_text="GS PAPERBOARD & PACKAGING SDN. BHD.",
-                    attributes={"bill_source": "GS PAPERBOARD & PACKAGING SDN. BHD.", "type": "customer_company"}
-                ),
-                lx.data.Extraction(
                     extraction_class="postal_address",
                     extraction_text="NO. 24, JALAN ALOI 3\nKAWASAN PERUSAHAAN BUKIT CHANGGANG UTAMA\n42700 BANTING SELANGOR",
                     attributes={"postal_address": "NO. 24, JALAN ALOI 3, KAWASAN PERUSAHAAN BUKIT CHANGGANG UTAMA, 42700 BANTING SELANGOR"}
@@ -100,49 +70,9 @@ Ref-1: 210299319006
                     attributes={"invoice_number": "000271377327"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="bill_account_id",
-                    extraction_text="210299319006",
-                    attributes={"account_number": "210299319006"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="previous_balance",
-                    extraction_text="BAKI TERDAHULU RM125.50",
-                    attributes={"previous_balance": 125.50, "currency": "MYR"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="current_charges",
-                    extraction_text="CAJ SEMASA RM450.00",
-                    attributes={"current_charges": 450.00, "currency": "MYR", "type": "regular_charges"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="current_charges_nem",
-                    extraction_text="CAJ SEMASA NEM RM169,582.76",
-                    attributes={"current_charges_nem": 169582.76, "currency": "MYR", "type": "nem_charges"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="security_deposit",
-                    extraction_text="DEPOSIT SEKURITI RM200.00",
-                    attributes={"security_deposit": 200.00, "currency": "MYR"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="rounding_adjustment",
-                    extraction_text="PELARASAN PEMBUNDARAN -RM0.01",
-                    attributes={"rounding_adjustment": -0.01, "currency": "MYR"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="""
-                    BAYARAN BAGI TEMPOH
-                    15.06.2025 - 14.07.2025
-                    RM1,255.75
-                    
-                    """,
-                    extraction_text="RM1,255.75",
+                    extraction_class="amount_due",
+                    extraction_text="BAYARAN BAGI TEMPOH\n15.06.2025 - 14.07.2025\nRM1,255.75",
                     attributes={"amount_due": 1255.75, "currency": "MYR", "type": "final_payable"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="issue_date",
-                    extraction_text="01.08.2025",
-                    attributes={"issue_date": "01.08.2025", "iso_date": "2025-08-01"}
                 ),
                 lx.data.Extraction(
                     extraction_class="due_date",
@@ -150,55 +80,10 @@ Ref-1: 210299319006
                     attributes={"due_date": "31 Ogos 2025", "iso_date": "2025-08-31"}
                 ),
                 lx.data.Extraction(
-                    extraction_class="billing_period_start",
-                    extraction_text="01.07.2025 - 31.07.2025 (31 Hari)",
-                    attributes={"billing_period_start": "2025-07-01"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="billing_period_end",
-                    extraction_text="01.07.2025 - 31.07.2025 (31 Hari)",
-                    attributes={"billing_period_end": "2025-07-31"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="payment_period",
-                    extraction_text="15.06.2025 - 14.07.2025",
-                    attributes={"payment_period": "15.06.2025 - 14.07.2025"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="payment_amount",
-                    extraction_text="BAYARAN BAGI TEMPOH\n15.06.2025 - 14.07.2025\nRM1,255.75",
-                    attributes={"payment_amount": 1255.75, "currency": "MYR"}
-                ),
-                lx.data.Extraction(
                     extraction_class="biller_code",
                     extraction_text="5454",
                     attributes={"biller_code": "5454"}
                 ),
-                lx.data.Extraction(
-                    extraction_class="reference_1",
-                    extraction_text="210299319006",
-                    attributes={"reference_1": "210299319006"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="arrears_amount",
-                    extraction_text="TUNGGAKAN: RM250.75",
-                    attributes={"arrears_amount": 250.75, "currency": "MYR"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="arrears_final_date",
-                    extraction_text="TARIKH PENYELESAIAN AKHIR: 15.09.2025",
-                    attributes={"arrears_final_date": "15.09.2025", "iso_date": "2025-09-15"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="nem_balance",
-                    extraction_text="BAKI NEM RM15,250.50",
-                    attributes={"nem_balance": 15250.50, "currency": "MYR"}
-                ),
-                lx.data.Extraction(
-                    extraction_class="nem_balance_expiry",
-                    extraction_text="TARIKH LUPUT BAKI NEM: 31.12.2025",
-                    attributes={"nem_balance_expiry": "31.12.2025", "iso_date": "2025-12-31"}
-                )
             ]
         )
     ]
@@ -212,9 +97,9 @@ def process_document(text: str):
         text_or_documents=text,
         prompt_description=prompt,
         examples=examples,
-        model_id="gemini-2.0-flash",
-        max_workers=5,
-        max_char_buffer=15000,  # Smaller buffer for better JSON stability
+        model_id="gemini-2.-flash",
+        max_workers=1,
+        max_char_buffer=5000,  # Smaller buffer for better JSON stability
         temperature=0.0,       # Small temperature for controlled randomness
         extraction_passes=1    # Single pass to avoid JSON conflicts
     )

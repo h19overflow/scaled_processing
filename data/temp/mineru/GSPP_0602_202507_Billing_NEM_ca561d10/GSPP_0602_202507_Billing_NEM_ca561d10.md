@@ -52,11 +52,11 @@ Untuk maklumat terperinci, sila rujuk di muka surat sebelah
 
 # Caj Bulanan (RM)
 
-# TIP MENINGKATKAN KECEKAPAN TENAGA
+# TIP MENINGKATKAN KECEKAPAN TeNAGA
 
 Tetapkan penghawa dingin anda pada 24oC bagi kesejukan optimum
 
-Penghawa dingin menggunakan banyak elektrik. Menetapkansuhudiantara24-26Cmampuuntukmengekalkan kedinginan,disampingmengurangkanpenggunaanelektrikanda.
+Penghawa dingin menggunakan banyak elektrik. Menetapkan suhu di antara 24-26C mampu untuk mengekalkan kedinginan, di samping mengurangkan penggunaan elektrik anda.
 
 Aras 3, Tower D, TNB Platinum, No. 3, Jln Bkt Pantai, Bangsar, 59100 Kuala Lumpur Nombor Pendaftaran ST W10-1808-31022372
 
@@ -67,7 +67,7 @@ Aras 3, Tower D, TNB Platinum, No. 3, Jln Bkt Pantai, Bangsar, 59100 Kuala Lumpu
 
 ## Table 1
 
-<table><tr><td rowspan=1 colspan=1>Baki Terdahulu</td><td rowspan=1 colspan=1>RM0.00</td></tr><tr><td rowspan=1 colspan=1>Caj Semasa NEM</td><td rowspan=1 colspan=1>RM152,298.12</td></tr><tr><td rowspan=1 colspan=1> Pelarasan Penggenapan</td><td rowspan=1 colspan=1>-RM0.02</td></tr><tr><td rowspan=1 colspan=1>Baki NEM</td><td rowspan=1 colspan=1>RM0.00</td></tr></table>
+<table><tr><td rowspan=1 colspan=1>Baki Terdahulu</td><td rowspan=1 colspan=1>RM0.00</td></tr><tr><td rowspan=1 colspan=1>Caj Semasa NEM</td><td rowspan=1 colspan=1>RM152,298.12</td></tr><tr><td rowspan=1 colspan=1>Pelarasan Penggenapan</td><td rowspan=1 colspan=1>-RM0.02</td></tr><tr><td rowspan=1 colspan=1>Baki NEM</td><td rowspan=1 colspan=1>RM0.00</td></tr></table>
 
 ## Table 2
 

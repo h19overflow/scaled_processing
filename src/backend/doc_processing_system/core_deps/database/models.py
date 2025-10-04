@@ -33,38 +33,28 @@ class BillModel(Base):
     __tablename__ = "bill"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    bill_account_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     document_name = Column(String(255), nullable=False, index=True)
-    billing_period_start = Column(DateTime(timezone=True), nullable=True)
-    billing_period_end = Column(DateTime(timezone=True), nullable=True)
     issue_date = Column(DateTime(timezone=True), nullable=False)
     due_date = Column(DateTime(timezone=True), nullable=False)
-    currency = Column(String(3), nullable=False)
     amount_due = Column(DECIMAL(10, 2), nullable=False)
     status = Column(Enum(BillStatus), nullable=False, default=BillStatus.PENDING)
     extracted_jsonb = Column(JSON)
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
-    deleted_at = Column(DateTime(timezone=True))
     version = Column(Integer, nullable=False, default=1)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
         return {
             "id": str(self.id),
-            "bill_account_id": str(self.bill_account_id),
             "document_name": self.document_name,
-            "billing_period_start": self.billing_period_start.isoformat() if self.billing_period_start else None,
-            "billing_period_end": self.billing_period_end.isoformat() if self.billing_period_end else None,
             "issue_date": self.issue_date.isoformat() if self.issue_date else None,
             "due_date": self.due_date.isoformat() if self.due_date else None,
-            "currency": self.currency,
             "amount_due": float(self.amount_due) if self.amount_due else None,
             "status": self.status.value if self.status else None,
             "extracted_jsonb": self.extracted_jsonb or {},
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
             "version": self.version
         }
 
