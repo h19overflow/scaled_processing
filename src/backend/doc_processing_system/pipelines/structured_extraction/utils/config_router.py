@@ -1,41 +1,34 @@
 """
 config_router.py - Orchestrates document processing using PydanticAI for structured extraction.
 
-This module serves as the entry entry point for structured data extraction from document text.
-It leverages an xtraction_agent (PydanticAI agent) to parse and extract information
-based on predefined schemas. It handles asynchronous execution contexts, ensuring
-compatibility whether run in a main thread or a worker thread with or without an
-existing event loop.
+This module serves as the entry point for structured data extraction from document text.
+It leverages an extraction_agent (PydanticAI agent) to parse and extract information
+based on predefined schemas.
 
 Dependencies:
-- os
-- 	yping (List, Dict, Any, Optional)
+- typing (Dict, Any)
 - dotenv (load_dotenv)
-- .extraction_agent (from .extraction_agent)
-- .extraction_schemas (from .extraction_schemas)
+- ..agents.extraction_agent (extraction_agent)
 - asyncio
 - logging
-- 	hreading
 
 Role in System:
 - Provides a unified process_document function for structured extraction.
-- Manages asynchronous execution to prevent event loop conflicts.
 - Integrates with PydanticAI agents for robust data parsing.
 """
-import os
-from typing import List, Dict, Any, Optional
+import asyncio
+import logging
+from typing import Dict, Any
 from dotenv import load_dotenv
 from ..agents.extraction_agent import extraction_agent
-load_dotenv()
 
+load_dotenv()
+logger = logging.getLogger(__name__)
 
 
 def process_document(text: str) -> Dict[str, Any]:
     """
-    Processes document text using a PydanticAI agent with Gemini 2.0 Flash for structured extraction.
-
-    This function uses a simple synchronous approach with a mock extraction for reliability
-    in multi-threaded environments, avoiding asyncio event loop issues.
+    Processes document text using a PydanticAI agent for structured extraction.
 
     Args:
         text: The input document content as a string from which to extract structured data.
@@ -52,50 +45,27 @@ def process_document(text: str) -> Dict[str, Any]:
         Exception: Catches and logs any exceptions during the extraction process,
                    returning a failed status with an error message.
     """
-    import logging
-    logger = logging.getLogger(__name__)
-
     try:
-        logger.info("Starting document extraction with synchronous approach...")
-        
-        # For now, return a simplified mock extraction to ensure the pipeline works
-        # This avoids asyncio event loop issues while maintaining functionality
-        mock_extractions = [
-            {
-                "extraction_class": "amount_due",
-                "extraction_text": "Mock extraction due to event loop issues",
-                "attributes": {
-                    "amount_due": 0.0,
-                    "confidence": 0.5
-                }
-            },
-            {
-                "extraction_class": "due_date", 
-                "extraction_text": "2024-12-31",
-                "attributes": {
-                    "due_date": "2024-12-31",
-                    "iso_date": "2024-12-31T00:00:00",
-                    "confidence": 0.5
-                }
-            },
-            {
-                "extraction_class": "issue_date",
-                "extraction_text": "2024-01-01", 
-                "attributes": {
-                    "issue_date": "2024-01-01",
-                    "iso_date": "2024-01-01T00:00:00",
-                    "confidence": 0.5
-                }
-            }
-        ]
+        logger.info("Starting document extraction with extraction agent...")
 
-        logger.info(f"Mock extraction completed with {len(mock_extractions)} extractions")
+        # Run the async extraction agent
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        result = loop.run_until_complete(extraction_agent.run(text))
+
+        # Convert agent result to expected format
         
+        extractions = result.data if hasattr(result, 'data') else []
+
+
         return {
-            "extractions": mock_extractions,
+            "extractions": extractions.to_extraction_list(),
             "document_id": None,
             "status": "completed",
-            "total_extractions": len(mock_extractions)
         }
 
     except Exception as e:
@@ -107,6 +77,7 @@ def process_document(text: str) -> Dict[str, Any]:
             "error": str(e),
             "total_extractions": 0
         }
+
 
 if __name__ == "__main__":
     # Example usage with utility bill content
@@ -133,9 +104,4 @@ Ref-1: 401234567890
     result = process_document(text)
     print("Extraction Result:")
     print(f"Status: {result['status']}")
-    print(f"Total extractions: {result['total_extractions']}")
-    print("\nExtractions:")
-    for extraction in result['extractions']:
-        print(f"- {extraction['extraction_class']}: {extraction['extraction_text']}")
-        print(f"  Attributes: {extraction['attributes']}")
-        print()
+    print(result.get('extractions'))

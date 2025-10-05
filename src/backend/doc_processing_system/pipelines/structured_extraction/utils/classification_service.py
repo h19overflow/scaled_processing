@@ -45,10 +45,6 @@ class DocumentClassificationService:
         # Determine classification based on keyword counts
         if invoice_count >= 2 or 'invoice' in filename_lower:
             return 'invoice', 0.8 + min(0.15, invoice_count * 0.05)
-        elif contract_count >= 2 or 'contract' in filename_lower:
-            return 'contract', 0.7 + min(0.15, contract_count * 0.05)  
-        elif receipt_count >= 2 or 'receipt' in filename_lower:
-            return 'receipt', 0.7 + min(0.15, receipt_count * 0.05)
         else:
             # Default to invoice with lower confidence
             return 'invoice', 0.6

@@ -104,11 +104,14 @@ def _create_and_store_bill(extractions: list, document_name: str, connection_man
     jsonb_data = {}
 
     logger.info(f"🔍 Processing {len(extractions)} extractions")
+    logger.info(f"📋 Raw extractions data: {extractions}")
 
     for extraction in extractions:
         extraction_class = extraction.get('extraction_class', '')
         extraction_text = extraction.get('extraction_text', '')
         attributes = extraction.get('attributes', {})
+        
+        logger.info(f"Processing extraction: class={extraction_class}, text='{extraction_text}', attributes={attributes}")
 
         if extraction_class in CORE_FIELDS:
             # Process core BillModel fields
@@ -117,19 +120,29 @@ def _create_and_store_bill(extractions: list, document_name: str, connection_man
                 if parsed_amount is not None:
                     core_data['amount_due'] = parsed_amount
                     logger.info(f"💰 Parsed amount_due: {core_data['amount_due']}")
+                else:
+                    logger.warning(f"⚠️ Failed to parse amount_due from attributes: {attributes}")
             elif extraction_class == 'due_date':
                 parsed_date = _parse_date(extraction_text, attributes)
                 if parsed_date is not None:
                     core_data['due_date'] = parsed_date
                     logger.info(f"📅 Parsed due_date: {core_data['due_date']}")
+                else:
+                    logger.warning(f"⚠️ Failed to parse due_date from text: '{extraction_text}', attributes: {attributes}")
             elif extraction_class == 'issue_date':
                 parsed_date = _parse_date(extraction_text, attributes)
                 if parsed_date is not None:
                     core_data['issue_date'] = parsed_date
                     logger.info(f"📅 Parsed issue_date: {core_data['issue_date']}")
+                else:
+                    logger.warning(f"⚠️ Failed to parse issue_date from text: '{extraction_text}', attributes: {attributes}")
         else:
             # Store all other fields in JSONB
             jsonb_data[extraction_class] = attributes
+            logger.info(f"📦 Added to JSONB: {extraction_class} = {attributes}")
+    
+    logger.info(f"📊 Final core_data: {core_data}")
+    logger.info(f"📦 Final jsonb_data: {jsonb_data}")
 
     # Ensure required fields have defaults
     if 'amount_due' not in core_data or core_data['amount_due'] is None:
