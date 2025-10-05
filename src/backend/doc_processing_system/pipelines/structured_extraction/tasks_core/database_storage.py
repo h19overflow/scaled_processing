@@ -4,7 +4,8 @@ Processes langextract JSON output and stores bill data in the database.
 """
 
 import logging
-from typing import Dict, Any
+import decimal
+from typing import Dict, Any, Optional
 from datetime import datetime
 from decimal import Decimal
 from prefect import task
@@ -97,7 +98,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
 def _create_and_store_bill(extractions: list, document_name: str, connection_manager: ConnectionManager) -> str:
     """Create and store bill record from extractions."""
     # Map extraction fields to BillModel
-    CORE_FIELDS = {'amount_due', 'due_date','issue_date'}
+    CORE_FIELDS = {'amount_due', 'due_date', 'issue_date'}
 
     core_data = {}
     jsonb_data = {}
@@ -112,11 +113,20 @@ def _create_and_store_bill(extractions: list, document_name: str, connection_man
         if extraction_class in CORE_FIELDS:
             # Process core BillModel fields
             if extraction_class == 'amount_due':
-                core_data['amount_due'] = _parse_amount(attributes)
-                logger.info(f"💰 Parsed amount_due: {core_data['amount_due']}")
+                parsed_amount = _parse_amount(attributes)
+                if parsed_amount is not None:
+                    core_data['amount_due'] = parsed_amount
+                    logger.info(f"💰 Parsed amount_due: {core_data['amount_due']}")
             elif extraction_class == 'due_date':
-                core_data['due_date'] = _parse_date(extraction_text, attributes)
-                logger.info(f"📅 Parsed due_date: {core_data['due_date']}")
+                parsed_date = _parse_date(extraction_text, attributes)
+                if parsed_date is not None:
+                    core_data['due_date'] = parsed_date
+                    logger.info(f"📅 Parsed due_date: {core_data['due_date']}")
+            elif extraction_class == 'issue_date':
+                parsed_date = _parse_date(extraction_text, attributes)
+                if parsed_date is not None:
+                    core_data['issue_date'] = parsed_date
+                    logger.info(f"📅 Parsed issue_date: {core_data['issue_date']}")
         else:
             # Store all other fields in JSONB
             jsonb_data[extraction_class] = attributes
@@ -129,16 +139,25 @@ def _create_and_store_bill(extractions: list, document_name: str, connection_man
     if 'due_date' not in core_data or core_data['due_date'] is None:
         core_data['due_date'] = datetime.now()
         logger.warning("⚠️ due_date not extracted, using current date")
+    
+    # Handle issue_date - use issue_date if available, otherwise fall back to due_date
+    if 'issue_date' not in core_data or core_data['issue_date'] is None:
+        core_data['issue_date'] = core_data['due_date']
+        logger.info(f"📅 Using due_date as issue_date: {core_data['issue_date']}")
 
-    # Convert amount_due to Decimal
-    amount_due_decimal = Decimal(str(core_data['amount_due']))
+    # Convert amount_due to Decimal with error handling
+    try:
+        amount_due_decimal = Decimal(str(core_data['amount_due']))
+    except (ValueError, TypeError, decimal.InvalidOperation) as e:
+        logger.error(f"Failed to convert amount_due to Decimal: {e}, using 0.00")
+        amount_due_decimal = Decimal('0.00')
 
-    logger.info(f"💾 Creating BillModel - amount_due: {amount_due_decimal}, due_date: {core_data['due_date']}")
+    logger.info(f"💾 Creating BillModel - amount_due: {amount_due_decimal}, issue_date: {core_data['issue_date']}, due_date: {core_data['due_date']}")
 
     # Create BillModel instance
     bill = BillModel(
         document_name=document_name,
-        issue_date=core_data['due_date'],  # Use due_date as issue_date for now
+        issue_date=core_data['issue_date'],
         due_date=core_data['due_date'],
         amount_due=amount_due_decimal,
         status=BillStatus.PENDING,
@@ -155,32 +174,41 @@ def _create_and_store_bill(extractions: list, document_name: str, connection_man
         return str(bill.id)
 
 
-def _parse_date(date_text: str, attributes: dict = None) -> datetime:
-    """Parse Malaysian date format to datetime."""
+def _parse_date(date_text: str, attributes: dict = None) -> Optional[datetime]:
+    """Parse Malaysian date format to datetime with robust error handling."""
     if not date_text:
         return None
 
-    # Check if ISO date is in attributes
+    # Check if ISO date is in attributes first (most reliable)
     if attributes and 'iso_date' in attributes:
         try:
-            return datetime.fromisoformat(attributes['iso_date'])
-        except (ValueError, TypeError):
-            pass
+            iso_date = attributes['iso_date']
+            if iso_date:
+                return datetime.fromisoformat(iso_date)
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Failed to parse ISO date '{attributes.get('iso_date')}': {e}")
 
-    # Parse Malaysian date formats
+    # Parse Malaysian date formats from text
     try:
+        # Clean the date text
+        date_text = date_text.strip()
+        
         # Format 1: DD.MM.YYYY (e.g., "01.08.2025")
         if '.' in date_text and len(date_text.split('.')) == 3:
             day, month, year = date_text.split('.')
             return datetime(int(year), int(month), int(day))
 
-        # Format 2: DD MMM YYYY (e.g., "31 Ogos 2025")
+        # Format 2: DD MMM YYYY (e.g., "31 Ogos 2025", "30 September 2025")
         elif ' ' in date_text:
             month_map = {
+                # Malay months
                 'Jan': 1, 'Feb': 2, 'Mac': 3, 'Apr': 4, 'Mei': 5, 'Jun': 6,
                 'Jul': 7, 'Ogos': 8, 'Sep': 9, 'Okt': 10, 'Nov': 11, 'Dis': 12,
+                # English months (full and abbreviated)
                 'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
-                'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
+                'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12,
+                'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+                'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
             }
 
             parts = date_text.strip().split()
@@ -189,18 +217,38 @@ def _parse_date(date_text: str, attributes: dict = None) -> datetime:
                 month = month_map.get(month_str)
                 if month:
                     return datetime(int(year), month, int(day))
-    except (ValueError, IndexError):
-        pass
+                else:
+                    logger.warning(f"Unknown month name: {month_str}")
+        
+        # Format 3: YYYY-MM-DD (ISO format)
+        elif '-' in date_text and len(date_text.split('-')) == 3:
+            year, month, day = date_text.split('-')
+            return datetime(int(year), int(month), int(day))
+            
+    except (ValueError, IndexError, TypeError) as e:
+        logger.error(f"Failed to parse date '{date_text}': {e}")
 
     return None
 
 
-def _parse_amount(attributes: dict = None) -> float:
-    """Parse amount from attributes."""
-    if attributes and 'amount_due' in attributes:
+def _parse_amount(attributes: dict = None) -> Optional[float]:
+    """Parse amount from attributes with robust error handling."""
+    if not attributes:
+        return None
+        
+    if 'amount_due' in attributes:
         try:
-            return float(attributes['amount_due'])
-        except (ValueError, TypeError):
-            pass
+            amount = attributes['amount_due']
+            if amount is None:
+                return None
+            
+            # Handle string amounts with commas
+            if isinstance(amount, str):
+                # Remove commas and RM prefix if present
+                amount = amount.replace(',', '').replace('RM', '').strip()
+                
+            return float(amount)
+        except (ValueError, TypeError) as e:
+            logger.error(f"Failed to parse amount '{attributes.get('amount_due')}': {e}")
 
-    return 0.0
+    return None
