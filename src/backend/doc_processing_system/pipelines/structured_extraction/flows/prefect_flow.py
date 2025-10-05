@@ -7,7 +7,18 @@ from ..models.state import PipelineState
 from ..tasks_core.chunking import chunk_document
 from ..tasks_core.config_gen import generate_config
 from ..tasks_core.database_storage import store_in_database
-
+# TODO the flow is hanging , it's not being triggered by anything 
+# TODO the flow is not being triggered by the document_pipeline_completed_consumer.py
+# Even though the logs show that it's been sent 
+# Logs Successfully parsed C:\Users\User\Projects\scaled_processing\data\documents\raw\GSPP_9006_202507_Billing_NEM.pdf to data\temp\mineru\GSPP_9006_202507_Billing_NEM_c6a89b75
+# 12:05:58.586 | INFO    | Task run 'mineru-processing-e33' - 🔥 AFTER processor.extract_document() call - Status: completed
+# 12:05:58.587 | INFO    | Task run 'mineru-processing-e33' - ✅ Docling processing completed for: GSPP_9006_202507_Billing_NEM_c6a89b75
+# 12:05:58.587 | INFO    | Task run 'mineru-processing-e33' - 📝 Markdown saved to: data\temp\mineru\GSPP_9006_202507_Billing_NEM_c6a89b75\GSPP_9006_202507_Billing_NEM_c6a89b75.md
+# 12:05:58.589 | INFO    | Task run 'mineru-processing-e33' - Finished in state Completed()
+# 12:05:58.590 | INFO    | Flow run 'quaint-jaybird' - ✅ STEP 3 COMPLETE: Document processing - Status: completed
+# 12:05:58.592 | INFO    | Flow run 'quaint-jaybird' - 🔄 STEP 4: Checking chunking enabled: False
+# 12:05:58.592 | INFO    | Flow run 'quaint-jaybird' - ⏭️ STEP 4 SKIPPED: Chunking disabled - preparing early return
+# 12:05:58.605 | INFO    | Flow run 'quaint-jaybird' - ✅ Sent document_pipeline_completed message for: GSPP_9006_202507_Billing_NEM_c6a89b75
 @flow(name="structured-extraction-flow", description="Extract structured information from document.")
 def structured_extraction_flow(initial_state: PipelineState):
     """Extract structured information from document."""
@@ -36,25 +47,16 @@ def structured_extraction_flow(initial_state: PipelineState):
         logger.error(f"Chunking failed: {state_dict.get('error')}")
         return PipelineState(**state_dict)
     
-    # Step 2: Classify the document
-    logger.info("Step 2: Classifying document...")
-    # Create new PipelineState object for classification
     temp_state = PipelineState(**state_dict)
     
-    # Run classification (async task)-> automated for invoices for now
     updated_state = {
         "classification": 'invoice',
         "classification_confidence": 0.95,
         "status": "classified"
     }
-    # Update state with classification results  
     state_dict.update(updated_state)
     logger.info(f"After classification: status={state_dict.get('status')}, classification={state_dict.get('classification')}")
     
-    # Check if classification was successful
-    if state_dict.get("status") == "classification_failed":
-        logger.warning(f"Classification failed: {state_dict.get('error', 'Unknown error')}")
-        # Continue with unknown classification
     
     # Step 3: Generate config and extract data
     logger.info("Step 3: Generating config and extracting data...")

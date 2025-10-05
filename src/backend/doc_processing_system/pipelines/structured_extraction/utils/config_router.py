@@ -25,7 +25,7 @@ Role in System:
 import os
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
-from .extraction_agent import extraction_agent
+from ..agents.extraction_agent import extraction_agent
 load_dotenv()
 
 

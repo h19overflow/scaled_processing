@@ -12,7 +12,7 @@ from prefect import task, get_run_logger
 from src.backend.doc_processing_system.core_deps.database.CRUD.document_crud import DocumentCRUD
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 
-
+# TODO Check logic , currnetly the document_id is generated from the file path, this is not unique, and multiple files with the same name will have the same document_id.
 @task(name="duplicate-detection", retries=2)
 def duplicate_detection_task(raw_file_path: str) -> Dict[str, Any]:
     """
