@@ -23,6 +23,7 @@ from src.backend.api.schemas import (
 )
 from src.backend.api.job_tracker import JobTracker
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
+from src.backend.doc_processing_system.messaging.message_schemas import create_message
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 from src.backend.doc_processing_system.core_deps.database.models import BillModel
 
@@ -102,17 +103,24 @@ async def process_document_sync(
         # Create job in tracker
         job_tracker.create_job(job_id, file.filename, str(file_path))
 
-        # Publish to Kafka
+        # Create metadata matching file_watcher structure
+        file_stat = os.stat(file_path)
+        metadata = {
+            "file_path": str(file_path.absolute()),
+            "file_name": file.filename,
+            "file_size": file_stat.st_size,
+            "file_extension": file_path.suffix.lower(),
+            "created_time": file_stat.st_ctime
+        }
+
+        # Create standardized message
+        message = create_message("file_detected", metadata, "api_upload")
+
+        # Publish to Kafka (key is file_name, not job_id)
         success = kafka_producer.produce_message(
             topic="file_detected",
-            key=job_id,
-            value={
-                "job_id": job_id,
-                "file_path": str(file_path.absolute()),
-                "filename": file.filename,
-                "user_id": "api_user",
-                "timestamp": datetime.utcnow().isoformat()
-            }
+            key=metadata["file_name"],
+            value=message
         )
 
         if not success:
@@ -196,17 +204,24 @@ async def process_document_async(
         # Create job in tracker
         job_tracker.create_job(job_id, file.filename, str(file_path))
 
-        # Publish to Kafka
+        # Create metadata matching file_watcher structure
+        file_stat = os.stat(file_path)
+        metadata = {
+            "file_path": str(file_path.absolute()),
+            "file_name": file.filename,
+            "file_size": file_stat.st_size,
+            "file_extension": file_path.suffix.lower(),
+            "created_time": file_stat.st_ctime
+        }
+
+        # Create standardized message
+        message = create_message("file_detected", metadata, "api_upload")
+
+        # Publish to Kafka (key is file_name, not job_id)
         success = kafka_producer.produce_message(
             topic="file_detected",
-            key=job_id,
-            value={
-                "job_id": job_id,
-                "file_path": str(file_path.absolute()),
-                "filename": file.filename,
-                "user_id": "api_user",
-                "timestamp": datetime.utcnow().isoformat()
-            }
+            key=metadata["file_name"],
+            value=message
         )
 
         if not success:

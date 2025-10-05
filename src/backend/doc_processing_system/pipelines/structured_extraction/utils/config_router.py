@@ -14,9 +14,9 @@ Fields might appear in malay.
 Extract these fields:  
 - postal_address: Customer postal address  
 - invoice_number: Invoice number    
-- amount_due: The amount due at the end of the billing period  
-- due_date: Payment due date  
+- due_date: Payment due date  will be in this format Sila bayar sebelum 31 Ogos 2025 where 31 Ogos 2025 is the due date
 - biller_code: Biller code  
+- the amount due will be in this format JUMLAH BIL ANDA RM170,358.25 where 170358.25 is the amount due
 
 
     """).strip()
@@ -65,14 +65,19 @@ Ref-1: 210299319006
                     attributes={"postal_address": "NO. 24, JALAN ALOI 3, KAWASAN PERUSAHAAN BUKIT CHANGGANG UTAMA, 42700 BANTING SELANGOR"}
                 ),
                 lx.data.Extraction(
+                    extraction_class="issue_date",
+                    extraction_text="01.08.2025",
+                    attributes={"issue_date": "01.08.2025", "iso_date": "2025-08-01"}
+                ),
+                lx.data.Extraction(
                     extraction_class="invoice_number",
                     extraction_text="000271377327",
                     attributes={"invoice_number": "000271377327"}
                 ),
                 lx.data.Extraction(
                     extraction_class="amount_due",
-                    extraction_text="BAYARAN BAGI TEMPOH\n15.06.2025 - 14.07.2025\nRM1,255.75",
-                    attributes={"amount_due": 1255.75, "currency": "MYR", "type": "final_payable"}
+                    extraction_text="JUMLAH BIL ANDA RM170,358.25",
+                    attributes={"amount_due": 170358.25, "currency": "MYR", "type": "final_payable"}
                 ),
                 lx.data.Extraction(
                     extraction_class="due_date",
@@ -97,7 +102,7 @@ def process_document(text: str):
         text_or_documents=text,
         prompt_description=prompt,
         examples=examples,
-        model_id="gemini-2.-flash",
+        model_id="gemini-2.0-flash",
         max_workers=1,
         max_char_buffer=5000,  # Smaller buffer for better JSON stability
         temperature=0.0,       # Small temperature for controlled randomness

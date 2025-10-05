@@ -97,7 +97,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
 def _create_and_store_bill(extractions: list, document_name: str, connection_manager: ConnectionManager) -> str:
     """Create and store bill record from extractions."""
     # Map extraction fields to BillModel
-    CORE_FIELDS = {'amount_due', 'due_date'}
+    CORE_FIELDS = {'amount_due', 'due_date','issue_date'}
 
     core_data = {}
     jsonb_data = {}
