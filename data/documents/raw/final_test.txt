@@ -1,0 +1,25 @@
+BILL STATEMENT
+
+Customer Information:
+ABC Company Ltd
+456 Business Ave
+Business City, BC 12345
+
+Invoice Details:
+Invoice Number: INV-2024-12345
+Issue Date: December 1, 2024
+Due Date: December 31, 2024
+Account Number: ACC-987654321
+
+Charges:
+Service Fee: $500.00
+Processing Fee: $50.00
+Total Amount Due: $550.00
+
+Payment Methods:
+Online Banking
+Credit Card
+Check Payment
+
+Biller Code: 12345
+Reference: ACC-987654321

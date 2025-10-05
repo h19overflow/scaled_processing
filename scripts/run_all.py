@@ -8,6 +8,21 @@ import logging
 import signal
 import sys
 import os
+import tempfile
+
+# Add the project root to Python path for multiprocessing
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Configure Prefect to run in ephemeral mode (no server required)
+os.environ['PREFECT_API_URL'] = ''  # This disables server connection
+# Create a temporary file for Prefect profiles to avoid reading default profile
+import tempfile
+temp_profiles_file = tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False)
+temp_profiles_file.write('[profiles.default]\n')  # Empty default profile
+temp_profiles_file.close()
+os.environ['PREFECT_PROFILES_PATH'] = temp_profiles_file.name
 
 # Pre-load onnxruntime DLLs before spawning child processes (Windows fix)
 os.environ['OMP_NUM_THREADS'] = '1'
@@ -26,6 +41,11 @@ def setup_logging():
 def run_file_watcher():
     """Run the file watcher process."""
     try:
+        # Ensure the project root is in the path for this process
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+            
         from src.backend.doc_processing_system.utils.file_watcher import main
         main()
     except Exception as e:
@@ -35,6 +55,20 @@ def run_file_watcher():
 def run_document_consumer():
     """Run the document processing consumer."""
     try:
+        # Ensure the project root is in the path for this process
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+        
+        # Configure Prefect to run in ephemeral mode (no server required)
+        os.environ['PREFECT_API_URL'] = ''  # This disables server connection
+        # Create a temporary file for Prefect profiles to avoid reading default profile
+        import tempfile
+        temp_profiles_file = tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False)
+        temp_profiles_file.write('[profiles.default]\n')  # Empty default profile
+        temp_profiles_file.close()
+        os.environ['PREFECT_PROFILES_PATH'] = temp_profiles_file.name
+            
         from src.backend.doc_processing_system.pipelines.document_processing.consumers.file_detected_consumer import FileDetectedConsumer
         consumer = FileDetectedConsumer(
             user_id="default",
@@ -50,6 +84,20 @@ def run_document_consumer():
 def run_structured_consumer():
     """Run the structured extraction consumer."""
     try:
+        # Ensure the project root is in the path for this process
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+            
+        # Configure Prefect to run in ephemeral mode (no server required)
+        os.environ['PREFECT_API_URL'] = ''  # This disables server connection
+        # Create a temporary file for Prefect profiles to avoid reading default profile
+        import tempfile
+        temp_profiles_file = tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False)
+        temp_profiles_file.write('[profiles.default]\n')  # Empty default profile
+        temp_profiles_file.close()
+        os.environ['PREFECT_PROFILES_PATH'] = temp_profiles_file.name
+            
         from src.backend.doc_processing_system.pipelines.structured_extraction.consumers.document_pipeline_completed_consumer import main
         main()
     except Exception as e:
@@ -59,6 +107,11 @@ def run_structured_consumer():
 def run_api_server():
     """Run the FastAPI server."""
     try:
+        # Ensure the project root is in the path for this process
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+            
         import uvicorn
         uvicorn.run(
             "src.backend.api.main:app",

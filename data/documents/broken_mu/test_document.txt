@@ -1,0 +1,6 @@
+This is a test invoice document.
+Invoice #: INV-001
+Date: 2024-01-01
+Amount Due: $100.00
+Customer: Test Customer
+Description: Test service
