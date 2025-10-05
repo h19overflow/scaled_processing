@@ -45,9 +45,12 @@ def generate_config(state: PipelineState) -> dict[str, Any] | None:
         if isinstance(result, dict):
             if result.get('status') == 'completed':
                 logger.info(f"✅ Extraction completed successfully with {result.get('total_extractions', 0)} extractions")
+                # Use state's document_id, not the result's (which is always None from config_router)
+                document_id = getattr(state, 'document_id', None)
+                logger.info(f"📋 Using document_id from state: {document_id}")
                 return {
                     'extractions': result.get('extractions', []),
-                    'document_id': result.get('document_id', getattr(state, 'document_id', None)),
+                    'document_id': document_id,
                     'status': 'config_generation_completed',
                     'total_extractions': result.get('total_extractions', 0)
                 }

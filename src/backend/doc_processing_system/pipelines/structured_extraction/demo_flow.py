@@ -3,35 +3,27 @@ Demo script to test the structured extraction flow with dummy data.
 """
 
 from src.backend.doc_processing_system.pipelines.structured_extraction.models.state import PipelineState
-from src.backend.doc_processing_system.pipelines.structured_extraction.core.prefect_flow import structured_extraction_flow
+from src.backend.doc_processing_system.pipelines.structured_extraction.flows.prefect_flow import structured_extraction_flow
 
 DUMMY_INVOICE_TEXT = """
-INVOICE
+ALAMAT POS
+TENAGA NASIONAL BERHAD
+NO. 15, JALAN SULTAN ISMAIL
+50250 KUALA LUMPUR
 
-Invoice Number: INV-2024-001
-Date: March 15, 2024
+TARIKH BIL: 15.01.2025
+TEMPOH BIL: 15.12.2024 - 14.01.2025 (30 Hari)
+NO. INVOIS: 000445566778
+NO. AKAUN: 401234567890
 
-Bill To:
-John Doe Company
-123 Main Street
-Anytown, ST 12345
+Ringkasan Bil Anda:
+BAKI TERDAHULU RM125.50
+CAJ SEMASA RM450.00
+JUMLAH BIL ANDA RM575.50
 
-From:
-ABC Services Inc.
-456 Business Ave
-Corporate City, CC 67890
-
-Description                    Quantity    Unit Price    Total
-Web Development Services            40        $125.00    $5,000.00
-Design Consulting                   10        $150.00    $1,500.00
-Project Management                   8        $100.00      $800.00
-
-Subtotal: $7,300.00
-Tax (8.5%): $620.50
-Total Amount Due: $7,920.50
-
-Payment Terms: Net 30 days
-Due Date: April 14, 2024
+Sila bayar sebelum: 31 January 2025
+Biller Code: 1234
+Ref-1: 401234567890
 """
 
 DUMMY_RESUME_TEXT = """
