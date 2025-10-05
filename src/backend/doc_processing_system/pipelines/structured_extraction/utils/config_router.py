@@ -203,21 +203,82 @@ Example patterns:
 
 def process_document(text: str) -> Dict[str, Any]:
     """Process document using PydanticAI agent with Gemini 2.0 Flash"""
-    try:
-        # Run the agent
-        result = extraction_agent.run_sync(text)
-        
-        # Convert to extraction list format for database compatibility
-        extraction_list = result.data.to_extraction_list()
-        
-        return {
-            "extractions": extraction_list,
-            "document_id": None,  # Will be set by calling code
-            "status": "completed",
-            "total_extractions": len(extraction_list)
-        }
+    import asyncio
+    import logging
+    import os
     
+    logger = logging.getLogger(__name__)
+    
+    def run_with_new_loop():
+        """Run extraction with a fresh event loop"""
+        # Create a completely isolated event loop
+        loop = asyncio.new_event_loop()
+        
+        try:
+            # Set this loop as the current loop for this thread
+            asyncio.set_event_loop(loop)
+            
+            # Define the async extraction function
+            async def extract():
+                result = await extraction_agent.run(text)
+                return result.data.to_extraction_list()
+            
+            # Run the extraction
+            extraction_list = loop.run_until_complete(extract())
+            
+            return {
+                "extractions": extraction_list,
+                "document_id": None,
+                "status": "completed",
+                "total_extractions": len(extraction_list)
+            }
+            
+        except Exception as e:
+            logger.error(f"Extraction failed in new loop: {e}")
+            return {
+                "extractions": [],
+                "document_id": None,
+                "status": "failed",
+                "error": str(e),
+                "total_extractions": 0
+            }
+        finally:
+            # Clean up the loop
+            try:
+                loop.close()
+            except:
+                pass
+            # Remove from thread local storage
+            try:
+                asyncio.set_event_loop(None)
+            except:
+                pass
+    
+    try:
+        logger.info("Starting document extraction...")
+        
+        # First attempt: try run_sync (works in most cases)
+        try:
+            result = extraction_agent.run_sync(text)
+            extraction_list = result.data.to_extraction_list()
+            
+            return {
+                "extractions": extraction_list,
+                "document_id": None,
+                "status": "completed",
+                "total_extractions": len(extraction_list)
+            }
+            
+        except RuntimeError as sync_error:
+            if "event loop" in str(sync_error).lower():
+                logger.warning(f"run_sync failed due to event loop issue: {sync_error}")
+                logger.info("Falling back to isolated event loop approach...")
+                return run_with_new_loop()
+            else:
+                raise sync_error
+        
     except Exception as e:
+        logger.error(f"Document extraction failed: {e}")
         return {
             "extractions": [],
             "document_id": None,
