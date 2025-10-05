@@ -1,3 +1,27 @@
+"""
+config_router.py - Orchestrates document processing using PydanticAI for structured extraction.
+
+This module serves as the entry entry point for structured data extraction from document text.
+It leverages an xtraction_agent (PydanticAI agent) to parse and extract information
+based on predefined schemas. It handles asynchronous execution contexts, ensuring
+compatibility whether run in a main thread or a worker thread with or without an
+existing event loop.
+
+Dependencies:
+- os
+- 	yping (List, Dict, Any, Optional)
+- dotenv (load_dotenv)
+- .extraction_agent (from .extraction_agent)
+- .extraction_schemas (from .extraction_schemas)
+- asyncio
+- logging
+- 	hreading
+
+Role in System:
+- Provides a unified process_document function for structured extraction.
+- Manages asynchronous execution to prevent event loop conflicts.
+- Integrates with PydanticAI agents for robust data parsing.
+"""
 import os
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
@@ -7,7 +31,28 @@ load_dotenv()
 
 
 def process_document(text: str) -> Dict[str, Any]:
-    """Process document using PydanticAI agent with Gemini 2.0 Flash"""
+    """
+    Processes document text using a PydanticAI agent with Gemini 2.0 Flash for structured extraction.
+
+    This function intelligently handles asynchronous execution environments. It detects if
+    it's running in a worker thread or if an event loop is already active, and adapts
+    its execution strategy accordingly to prevent RuntimeError related to event loops.
+
+    Args:
+        text: The input document content as a string from which to extract structured data.
+
+    Returns:
+        A dictionary containing the extraction results:
+        - "extractions": A list of extracted data, where each item is a dictionary
+                         representing an extracted entity with its class, text, and attributes.
+        - "document_id": Currently None, reserved for future use.
+        - "status": "completed" if extraction was successful, "failed" otherwise.
+        - "total_extractions": The number of extracted entities.
+
+    Raises:
+        Exception: Catches and logs any exceptions during the extraction process,
+                   returning a failed status with an error message.
+    """
     import asyncio
     import logging
     import threading
@@ -15,13 +60,28 @@ def process_document(text: str) -> Dict[str, Any]:
     logger = logging.getLogger(__name__)
 
     def run_with_new_loop():
-        """Run extraction with a fresh event loop"""
+        """
+        Runs the extraction process within a new, isolated asyncio event loop.
+
+        This is used when the function is called from a context where an event loop
+        might not exist (e.g., a new thread) or where an existing loop is already
+        running, preventing conflicts.
+
+        Returns:
+            A dictionary containing the extraction results, similar to process_document.
+        """
         loop = asyncio.new_event_loop()
 
         try:
             asyncio.set_event_loop(loop)
 
             async def extract():
+                """
+                Asynchronously runs the PydanticAI extraction agent.
+
+                Returns:
+                    A list of extracted data in a standardized format.
+                """
                 result = await extraction_agent.run(text)
                 return result.data.to_extraction_list()
 

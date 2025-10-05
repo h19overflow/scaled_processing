@@ -1,5 +1,7 @@
+
+#TODO sometimes the agent does not extract the amount_due field
 from pydantic_ai import Agent
-from .extraction_schemas import BillExtractionResult
+from ..models.extraction_schemas import BillExtractionResult
 # Create PydanticAI agent for bill extraction
 extraction_agent = Agent(
     'gemini-2.0-flash',
@@ -10,7 +12,7 @@ Extract the following information from utility bills:
 - postal_address: Customer postal address (combine multiple lines into single address)
 - issue_date: Bill issue date (TARIKH BIL) in DD.MM.YYYY format
 - invoice_number: Invoice number (NO. INVOIS)
-- amount_due: Final amount due (from "JUMLAH BIL ANDA RM[amount]") as numeric value only
+- amount_due: Final amount due (Caj Semasa NEM RM104,965.38 or Caj Semasa RM104,965.38") as numeric value only
 - due_date: Payment due date (from "Sila bayar sebelum: [date]") 
 - biller_code: Biller code for payment
 - account_number: Account number (NO. AKAUN) if available
