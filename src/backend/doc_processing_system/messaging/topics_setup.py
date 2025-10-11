@@ -82,6 +82,16 @@ if __name__ == "__main__":
                 "retention.ms": "604800000"
             }
         }
+        ,
+        "job_status_updates": {
+            "num_partitions": 6,
+            "replication_factor": 1,
+            "config": {
+                "cleanup.policy": "delete",
+                "compression.type": "lz4",
+                "retention.ms": "604800000"  # 7 days
+            }
+        }
     }
 
     create_topics(topics)

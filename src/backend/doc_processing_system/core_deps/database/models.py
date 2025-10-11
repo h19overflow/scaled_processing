@@ -28,6 +28,14 @@ class BillStatus(enum.Enum):
     PAID = "PAID"
 
 
+class JobStatus(enum.Enum):
+    """Job processing status enum for tracking async document processing."""
+    QUEUED = "QUEUED"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
 class BillModel(Base):
     """SQLAlchemy model for bills table."""
     __tablename__ = "bill"
@@ -197,7 +205,7 @@ class QueryLogModel(Base):
 class QueryResultModel(Base):
     """SQLAlchemy model for query results table."""
     __tablename__ = "query_results"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     query_id = Column(String(255), ForeignKey("query_logs.query_id", ondelete="CASCADE"), nullable=False, index=True)
     result_type = Column(String(50), nullable=False)
@@ -205,10 +213,10 @@ class QueryResultModel(Base):
     confidence_score = Column(Float, default=0.0)
     source_documents = Column(ARRAY(String))
     created_at = Column(DateTime(timezone=True), default=func.now())
-    
+
     # Relationships
     query_log = relationship("QueryLogModel", back_populates="results")
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
         return {
@@ -219,6 +227,35 @@ class QueryResultModel(Base):
             "confidence_score": self.confidence_score,
             "source_documents": self.source_documents or [],
             "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class JobModel(Base):
+    """SQLAlchemy model for job tracking table."""
+    __tablename__ = "jobs"
+
+    job_id = Column(String(255), primary_key=True)
+    document_name = Column(String(255), nullable=False, index=True)
+    file_path = Column(String(500), nullable=False)
+    status = Column(Enum(JobStatus), nullable=False, default=JobStatus.QUEUED, index=True)
+    bill_data = Column(JSON)
+    error = Column(Text)
+    created_at = Column(DateTime(timezone=True), default=func.now(), index=True)
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    completed_at = Column(DateTime(timezone=True))
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert model to dictionary."""
+        return {
+            "job_id": self.job_id,
+            "document_name": self.document_name,
+            "file_path": self.file_path,
+            "status": self.status.value if self.status else None,
+            "bill_data": self.bill_data or {},
+            "error": self.error,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None
         }
 
 
