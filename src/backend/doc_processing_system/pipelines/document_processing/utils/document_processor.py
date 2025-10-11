@@ -2,7 +2,7 @@
 DocumentProcessor - Smart document extraction with MinerU backend.
 Extracts rich markdown and tables from documents using MinerU processing.
 """
-
+# TODO, Document that the processor need compatible CUDA version to work. in this case it is 12.9
 import logging
 import json
 from pathlib import Path
@@ -281,7 +281,7 @@ if __name__ == "__main__":
 
     doc_processor = DocumentProcessor()
     starting = datetime.datetime.now()
-    result = doc_processor.extract_document(r"C:\Users\User\Projects\scaled_processing\data\documents\raw\GSPP_0901_202507_Billing.pdf", "test_doc")
+    result = doc_processor.extract_document(r"data\documents\broken_mu\GSPP_9006_202508_Billing_NEM.pdf", "test_doc")
     ending = datetime.datetime.now()
     print(f"Document processing completed in {(ending - starting).total_seconds()} seconds")
     print(json.dumps(result, indent=4))

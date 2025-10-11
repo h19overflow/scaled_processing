@@ -341,19 +341,21 @@ if __name__ == '__main__':
 
     # Define your specific file paths
     individual_files = [
-        Path(__dir__) / "pdfs" / "GSPP_5407_202507_Billing.pdf",
-    ]
-
+        Path(__dir__) / "data" / "broken_mu" / "GSPP_5407_202507_Billing_NEM.pdf",
+    ]   
+    print(individual_files)
     # Custom output directory (flatter structure)
     output_dir = os.path.join(__dir__, "output")
 
     # Process each file individually
     for pdf_file in individual_files:
         if pdf_file.exists():
-            parse_single_file(
+            try:
+                parse_single_file(
                 file_path=pdf_file,
                 output_dir=output_dir,
                 backend="pipeline"
             )
-            # Output will be: output/document1_output/document1.md
-            #                 output/document2_output/document2.md
+            except Exception as e:
+                logger.error(f"Error parsing {pdf_file}: {e}")
+          
