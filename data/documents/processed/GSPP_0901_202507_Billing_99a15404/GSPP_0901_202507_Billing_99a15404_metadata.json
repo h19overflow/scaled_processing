@@ -1,0 +1,14 @@
+{
+  "document_id": "GSPP_0901_202507_Billing_99a15404",
+  "user_id": "default",
+  "processing_timestamp": "2025-10-11T15:16:41.800796",
+  "filename": "GSPP_0901_202507_Billing.pdf",
+  "page_count": 0,
+  "content_length": 1469,
+  "file_type": "pdf",
+  "file_size": 275832,
+  "vision_processing": true,
+  "document_directory": "data\\documents\\processed\\GSPP_0901_202507_Billing_99a15404",
+  "processed_file": "GSPP_0901_202507_Billing_99a15404_processed.md",
+  "status": "completed"
+}
