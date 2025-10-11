@@ -13,7 +13,6 @@ class Settings(BaseSettings):
     
     # API Keys
     GEMINI_API_KEY: str
-    OPENAI_API_KEY: str = ""
     WANDB_API_KEY: str = ""
     
     # Database Configuration
@@ -21,10 +20,6 @@ class Settings(BaseSettings):
     
     # Kafka Configuration
     KAFKA_BOOTSTRAP_SERVERS: List[str] = ["localhost:9092"]
-    
-    # ChromaDB Configuration
-    CHROMA_HOST: str = "localhost"
-    CHROMA_PORT: int = 8000
     
     # Prefect Configuration
     PREFECT_API_URL: str = "http://localhost:4200/api"

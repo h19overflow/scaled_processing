@@ -125,7 +125,7 @@ def run_api_server():
         uvicorn.run(
             "src.backend.api.main:app",
             host="0.0.0.0",
-            port=8080,
+            port=8081,
             log_level="info"
         )
     except Exception as e:
@@ -203,8 +203,8 @@ def main():
 
         logger.info("✅ All processes started successfully!")
         logger.info("📁 Drop files into: C:/Users/User/Projects/scaled_processing/data/documents/raw")
-        logger.info("🌐 API available at: http://localhost:8080")
-        logger.info("📖 API docs at: http://localhost:8080/docs")
+        logger.info("🌐 API available at: http://localhost:8081")
+        logger.info("📖 API docs at: http://localhost:8081/docs")
         logger.info("🛑 Press Ctrl+C to stop all processes")
 
         # Wait for all processes

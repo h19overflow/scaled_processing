@@ -68,7 +68,8 @@ app = FastAPI(
     title="Document Processing Microservice",
     description="Malaysian utility bill processing API with Kafka integration",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    prefix="/api/v1"
 )
 security = HTTPBearer()
 

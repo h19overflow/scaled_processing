@@ -28,105 +28,7 @@ from src.backend.doc_processing_system.core_deps.database.models import BillMode
 from src.backend.api.endpoints.utils import _validate_file, _wait_for_completion, _fetch_bill_data, get_kafka_producer, get_db_manager,UPLOAD_DIR,logger
 from src.backend.doc_processing_system.core_deps.database.CRUD.job_CRUD import JobCRUD
 
-router = APIRouter(prefix="/api/v1", tags=["Document Processing"])
-
-
-
-@router.post("/process", response_model=ProcessResponse)
-async def process_document_sync(
-    file: UploadFile = File(...),
-    kafka_producer: ProducerHandler = Depends(get_kafka_producer),
-    db_manager: ConnectionManager = Depends(get_db_manager)
-):
-    """
-    Process document synchronously.
-
-    Uploads file, publishes to Kafka, waits for completion (max 120s).
-    Returns extracted bill data or timeout/error.
-
-    Args:
-        file: Uploaded document file (PDF/image)
-        kafka_producer: Kafka message producer
-        db_manager: Database connection manager
-
-    Returns:
-        ProcessResponse with bill data or error
-
-    Raises:
-        HTTPException: For validation errors, timeouts, or processing failures
-    """
-    logger.info(f"Received sync processing request for: {file.filename}")
-
-    # Validate file
-    validation_error = await _validate_file(file)
-    if validation_error:
-        raise HTTPException(status_code=400, detail=validation_error)
-
-    # Generate job ID and save file
-    job_id = str(uuid.uuid4())
-    file_extension = Path(file.filename).suffix
-    saved_filename = f"{job_id}{file_extension}"
-    file_path = UPLOAD_DIR / saved_filename
-
-    try:
-        # Save uploaded file
-        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        logger.info(f"File saved to: {file_path}")
-
-
-        # Create metadata matching file_watcher structure
-        file_stat = os.stat(file_path)
-        metadata = {
-            "file_path": str(file_path.absolute()),
-            "file_name": file.filename,
-            "file_size": file_stat.st_size,
-            "file_extension": file_path.suffix.lower(),
-            "created_time": file_stat.st_ctime
-        }
-
-        # Create standardized message
-        message = create_message("file_detected", metadata, "api_upload")
-
-        success = kafka_producer.produce_message(
-            topic="file_detected",
-            key=metadata["file_name"],
-            value=message
-        )
-
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to publish message to Kafka")
-
-        logger.info(f"Published message to Kafka for job: {job_id}")
-
-        # Wait for completion (with timeout)
-        bill_data = await _wait_for_completion(job_id, db_manager, file.filename)
-
-        return ProcessResponse(
-            status="completed",
-            document_name=file.filename,
-            job_id=job_id,
-            bill_data=bill_data,
-            error=None,
-            processed_at=datetime.utcnow()
-        )
-
-    except asyncio.TimeoutError:
-        logger.warning(f"Processing timeout for job: {job_id}")
-        return ProcessResponse(
-            status="processing",
-            document_name=file.filename,
-            job_id=job_id,
-            bill_data=None,
-            error="Processing timeout - job still running. Use job_id to check status.",
-            processed_at=datetime.utcnow()
-        )
-
-    except Exception as e:
-        logger.error(f"Processing error for job {job_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+router = APIRouter(prefix="/document_processing", tags=["Document Processing"])
 
 
 @router.post("/process/async", response_model=AsyncProcessResponse, status_code=202)
@@ -163,6 +65,7 @@ async def process_document_async(
     # Generate job ID and save file
     saved_filename = f"{file.filename}"
     file_path = UPLOAD_DIR / saved_filename
+    job_created = None
 
     try:
         # Save uploaded file
@@ -172,20 +75,23 @@ async def process_document_async(
 
         logger.info(f"File saved to: {file_path}")
         # Create job record in database
-        job_created = JobCRUD(db_manager).create_job(
+        job_created, success = JobCRUD(db_manager).create_job(
             document_name=file.filename,
             file_path=str(file_path.absolute())
         )
         response.headers["Retry-After"] = "5"
 
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to create job record")
         return AsyncProcessResponse(
             job_id=job_created[0],
             status="queued",
-            message=f"Document queued for processing. Poll GET /api/v1/status/{job_created} every 5 seconds."
+            message=f"Document queued for processing. Poll GET /api/v1/status/{job_created[0]} every 5 seconds."
         )
 
     except Exception as e:
-        logger.error(f"Error queuing job {job_created}: {e}")
+        job_id_str = f" {job_created[0]}" if job_created else ""
+        logger.error(f"Error queuing job{job_id_str}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to queue job: {str(e)}")
 
 # TODO , Setup up tracking such that we can use it to fetch the bill when it's done 
@@ -215,19 +121,20 @@ async def get_job_status(
 
     # If completed, try to fetch bill data from database
     bill_data = None
-    if job.status == "completed" and not job.bill_data:
-        bill_data = await _fetch_bill_data(job.document_name, db_manager)
+    if job.get("status") == "completed" and not job.get("bill_data"):
+        bill_data = await _fetch_bill_data(job.get("document_name"), db_manager)
         if bill_data:
-            job.bill_data = bill_data
+            job.get("bill_data") == bill_data
+            job.get("status") == "completed"
 
     return StatusResponse(
         job_id=job_id,
-        status=job.status,
-        document_name=job.document_name,
-        bill_data=job.bill_data,
-        error=job.error,
-        created_at=job.created_at,
-        completed_at=job.completed_at
+        status=job.get("status"),
+        document_name=job.get("document_name"),
+        bill_data=job.get("bill_data"),
+        error=job.get("error"),
+        created_at=job.get("created_at"),
+        completed_at=job.get("completed_at")    
     )
 
 

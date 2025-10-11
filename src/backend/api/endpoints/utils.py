@@ -8,6 +8,9 @@ import asyncio
 from src.backend.doc_processing_system.core_deps.database.models import BillModel
 import logging
 from src.backend.doc_processing_system.core_deps.database.CRUD.job_CRUD import JobCRUD
+
+
+
 MAX_FILE_SIZE_MB = 50
 PROCESSING_TIMEOUT_SECONDS = 120
 ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
@@ -77,8 +80,8 @@ async def _wait_for_completion(
 
         # Check job tracker status
         job = JobCRUD(db_manager).get_job(job_id)
-        if job and job.status == "failed":
-            raise Exception(job.error or "Processing failed")
+        if job and job.get("status") == "failed":
+            raise Exception(job.get("error") or "Processing failed")
 
         # Check database for bill data
         bill_data = await _fetch_bill_data(document_name, db_manager)

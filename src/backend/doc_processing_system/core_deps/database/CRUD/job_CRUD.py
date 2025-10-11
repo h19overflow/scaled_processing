@@ -13,6 +13,7 @@ from typing import Optional
 import os
 from datetime import datetime
 import uuid
+from pathlib import Path
 
 class JobCRUD(BaseRepository):
     """CRUD operations for job entities."""
@@ -25,22 +26,23 @@ class JobCRUD(BaseRepository):
         return str(uuid.uuid4())
     
    
-    def create_job(self, docuement_name: str, file_path: str) -> str:
+    def create_job(self, document_name: str, file_path: str) -> str:
         """Create a new job."""
         with self.connection_manager.get_session() as session:
             job_id = self._generate_job_id()
             session.add(JobModel(
                 job_id=job_id,
-                document_name=docuement_name,
+                document_name=document_name,
                 file_path=file_path
             ))
             session.commit()
+            file_path_obj = Path(file_path)
             file_stat = os.stat(file_path)
         metadata = {
-            "file_path": str(file_path.absolute()),
-            "file_name": docuement_name,
+            "file_path": str(file_path_obj.absolute()),
+            "file_name": document_name,
             "file_size": file_stat.st_size,
-            "file_extension": file_path.suffix.lower(),
+            "file_extension": file_path_obj.suffix.lower(),
             "created_time": file_stat.st_ctime,
             "job_id": job_id  # Include job_id for tracking
         }
@@ -55,18 +57,33 @@ class JobCRUD(BaseRepository):
             value=message
         )
         
-        return job_id, 
+        return job_id, success
         
         
         
-    def get_job(self, job_id: str) -> JobModel:
-        """Get a job by id."""
+    def get_job(self, job_id: str) -> Optional[JobModel]:
+        """
+        Get a job by id.
+
+        Returns a detached JobModel with all attributes eagerly loaded,
+        safe to use outside the session context.
+
+        Args:
+            job_id: Job identifier
+
+        Returns:
+            JobModel if found, None otherwise
+        """
         with self.connection_manager.get_session() as session:
             job = session.query(JobModel).filter(JobModel.job_id == job_id).first()
+
             if job:
-                return job
-            else:
-                return None
+                self.logger.info(f"Job {job.to_dict()} found")
+                return job.to_dict()
+            
+
+            return None
+        
     def update_job_status(self, job_id: str, status: str, error: Optional[str] = None, bill_data: Optional[dict] = None) -> bool:
         """
         Update job status and optionally set error or bill_data.

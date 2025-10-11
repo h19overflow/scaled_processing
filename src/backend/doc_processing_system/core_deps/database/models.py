@@ -85,7 +85,6 @@ class DocumentModel(Base):
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
     
     # Relationships
-    chunks = relationship("ChunkModel", back_populates="document", cascade="all, delete-orphan")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
