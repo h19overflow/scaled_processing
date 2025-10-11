@@ -3,7 +3,6 @@ Demo script to test the structured extraction flow with dummy data.
 """
 
 from src.backend.doc_processing_system.pipelines.structured_extraction.models.state import PipelineStatePipelineState
-from src.backend.doc_processing_system.pipelines.structured_extraction.flows.prefect_flow import structured_extraction_flow
 
 DUMMY_INVOICE_TEXT = """
 ALAMAT POS

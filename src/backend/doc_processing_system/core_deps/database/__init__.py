@@ -6,7 +6,6 @@ Contains connection manager, models, repository patterns, and modular CRUD opera
 from .connection_manager import ConnectionManager
 from .models import (
     DocumentModel,
-    StructuredDocumentModel,
     BillModel,
     BillStatus,
     Base
@@ -15,14 +14,12 @@ from .models import (
 from .CRUD import (
     BaseRepository,
     DocumentCRUD,
-    ExtractionCRUD,
 )
 
 __all__ = [
     # Connection and Models
     "ConnectionManager",
     "DocumentModel",
-    "StructuredDocumentModel",
     "BillModel",
     "BillStatus",
     "Base",
@@ -30,5 +27,4 @@ __all__ = [
     # CRUD Operations
     "BaseRepository",
     "DocumentCRUD",
-    "ExtractionCRUD",
 ]
