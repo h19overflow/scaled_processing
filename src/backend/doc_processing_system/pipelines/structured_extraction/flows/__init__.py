@@ -1,7 +1,6 @@
 """
 Core orchestration components for structured extraction.
+Note: Prefect flows are deprecated. Consumers call task functions directly.
 """
 
-from .prefect_flow import structured_extraction_flow
-
-__all__ = ["structured_extraction_flow"]
+__all__ = []

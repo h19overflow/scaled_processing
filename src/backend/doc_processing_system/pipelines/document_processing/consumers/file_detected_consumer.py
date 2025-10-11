@@ -53,7 +53,7 @@ class FileDetectedConsumer(ConsumerHandler):
         self.logger.info(f"🔥 CREATING EVENT LOOP for {metadata['file_name']}")
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-
+        
         try:
             self.logger.info(f"🔥 STARTING FLOW EXECUTION for {metadata['file_name']}")
             result = loop.run_until_complete(
@@ -114,8 +114,6 @@ class FileDetectedConsumer(ConsumerHandler):
 if __name__ == "__main__":
     consumer = FileDetectedConsumer(
         user_id="default",
-        enable_vision_enhancement=False,
-        enable_chunking=False,
         num_consumers=6
     )
     consumer.start()

@@ -1,7 +1,7 @@
 """
-Prefect flows for document processing workflows.
+Document processing flows.
 """
 
-from .document_processing_flow import document_processing_flow, process_document_with_flow
+from .document_processing_flow import process_document_with_flow
 
-__all__ = ["document_processing_flow", "process_document_with_flow"]
+__all__ = ["process_document_with_flow"]

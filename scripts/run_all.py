@@ -8,22 +8,11 @@ import logging
 import signal
 import sys
 import os
-import tempfile
 
 # Add the project root to Python path for multiprocessing
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-
-# Configure Prefect to disable ephemeral servers (prevents multiple server startups)
-os.environ['PREFECT_API_URL'] = ''  # This disables server connection
-os.environ['PREFECT_SERVER__EPHEMERAL__ENABLED'] = 'false'  # Disable auto-starting temporary servers
-# Create a temporary file for Prefect profiles to avoid reading default profile
-import tempfile
-temp_profiles_file = tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False)
-temp_profiles_file.write('[profiles.default]\n')  # Empty default profile
-temp_profiles_file.close()
-os.environ['PREFECT_PROFILES_PATH'] = temp_profiles_file.name
 
 # Pre-load onnxruntime DLLs before spawning child processes (Windows fix)
 os.environ['OMP_NUM_THREADS'] = '1'
@@ -69,17 +58,7 @@ def run_document_consumer():
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
-        
-        # Configure Prefect to disable ephemeral servers (prevents multiple server startups)
-        os.environ['PREFECT_API_URL'] = ''  # This disables server connection
-        os.environ['PREFECT_SERVER__EPHEMERAL__ENABLED'] = 'false'  # Disable auto-starting temporary servers
-        # Create a temporary file for Prefect profiles to avoid reading default profile
-        import tempfile
-        temp_profiles_file = tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False)
-        temp_profiles_file.write('[profiles.default]\n')  # Empty default profile
-        temp_profiles_file.close()
-        os.environ['PREFECT_PROFILES_PATH'] = temp_profiles_file.name
-            
+
         from src.backend.doc_processing_system.pipelines.document_processing.consumers.file_detected_consumer import FileDetectedConsumer
         consumer = FileDetectedConsumer(
             user_id="default",
@@ -98,17 +77,7 @@ def run_structured_consumer():
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
-            
-        # Configure Prefect to disable ephemeral servers (prevents multiple server startups)
-        os.environ['PREFECT_API_URL'] = ''  # This disables server connection
-        os.environ['PREFECT_SERVER__EPHEMERAL__ENABLED'] = 'false'  # Disable auto-starting temporary servers
-        # Create a temporary file for Prefect profiles to avoid reading default profile
-        import tempfile
-        temp_profiles_file = tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False)
-        temp_profiles_file.write('[profiles.default]\n')  # Empty default profile
-        temp_profiles_file.close()
-        os.environ['PREFECT_PROFILES_PATH'] = temp_profiles_file.name
-            
+
         from src.backend.doc_processing_system.pipelines.structured_extraction.consumers.document_pipeline_completed_consumer import main
         main()
     except Exception as e:

@@ -8,7 +8,6 @@ import decimal
 from typing import Dict, Any, Optional
 from datetime import datetime
 from decimal import Decimal
-from prefect import task
 
 from ..models.state import PipelineState
 from ....core_deps.database import ConnectionManager, BillModel, BillStatus
@@ -16,10 +15,6 @@ from ....core_deps.database import ConnectionManager, BillModel, BillStatus
 logger = logging.getLogger(__name__)
 
 
-@task(name="database-storage",
-      retries=2,
-      retry_delay_seconds=10,
-      description="Store structured extraction results in database.")
 def store_in_database(state: PipelineState) -> dict[str, Any] | None:
     """Store extraction results in database."""
     try:
