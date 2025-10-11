@@ -52,6 +52,15 @@ def run_file_watcher():
         logging.error(f"File watcher failed: {e}")
         raise
 
+def run_job_status_consumer():
+    """Run the job status consumer."""
+    try:
+        from src.backend.doc_processing_system.messaging.job_status_consumer import main
+        main()
+    except Exception as e:
+        logging.error(f"Job status consumer failed: {e}")
+        raise
+
 def run_document_consumer():
     """Run the document processing consumer."""
     try:
@@ -155,6 +164,15 @@ def main():
         )
         file_watcher_process.start()
         processes.append(file_watcher_process)
+
+        # Start job status consumer
+        logger.info("Starting Job Status Consumer...")
+        job_status_consumer_process = multiprocessing.Process(
+            target=run_job_status_consumer,
+            name="JobStatusConsumer"
+        )
+        job_status_consumer_process.start()
+        processes.append(job_status_consumer_process)
 
         # Start document processing consumer
         logger.info("Starting Document Processing Consumers...")

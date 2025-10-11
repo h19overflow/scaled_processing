@@ -1,20 +1,64 @@
+# add a docstring to the module and arrange the imports in a neat way
+"""
+Job CRUD operations.
+Handles all database operations related to jobs.
+"""
+
 from src.backend.doc_processing_system.core_deps.database.CRUD.base_repository import BaseRepository
 from src.backend.doc_processing_system.core_deps.database.models import JobModel,JobStatus
-from datetime import datetime
-from typing import Optional
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
+from src.backend.doc_processing_system.messaging.message_schemas import create_message
+from src.backend.doc_processing_system.messaging.producer import ProducerHandler
+from typing import Optional
+import os
+from datetime import datetime
+import uuid
+
 class JobCRUD(BaseRepository):
     """CRUD operations for job entities."""
     
     def __init__(self, connection_manager: ConnectionManager):
         super().__init__(connection_manager)
-
-    def create_job(self, job: JobModel) -> str:
+        self.producer = ProducerHandler("localhost:9092")
+    def _generate_job_id(self) -> str:
+        """Generate a new job ID."""
+        return str(uuid.uuid4())
+    
+   
+    def create_job(self, docuement_name: str, file_path: str) -> str:
         """Create a new job."""
         with self.connection_manager.get_session() as session:
-            session.add(job)
+            job_id = self._generate_job_id()
+            session.add(JobModel(
+                job_id=job_id,
+                document_name=docuement_name,
+                file_path=file_path
+            ))
             session.commit()
-            return job.job_id
+            file_stat = os.stat(file_path)
+        metadata = {
+            "file_path": str(file_path.absolute()),
+            "file_name": docuement_name,
+            "file_size": file_stat.st_size,
+            "file_extension": file_path.suffix.lower(),
+            "created_time": file_stat.st_ctime,
+            "job_id": job_id  # Include job_id for tracking
+        }
+
+        # Create standardized message
+        message = create_message("file_detected", metadata, "api_upload")
+
+        # Publish to Kafka (key is job_id for better tracking)
+        success = self.producer.produce_message(
+            topic="file_detected",
+            key=job_id,
+            value=message
+        )
+        
+        return job_id, 
+        
+        
+        
     def get_job(self, job_id: str) -> JobModel:
         """Get a job by id."""
         with self.connection_manager.get_session() as session:

@@ -13,7 +13,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 from pathlib import Path
-
+from src.backend.doc_processing_system.core_deps.database.models import JobModel
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Depends, Response
 
 from src.backend.api.schemas import (
@@ -161,9 +161,7 @@ async def process_document_async(
         raise HTTPException(status_code=400, detail=validation_error)
 
     # Generate job ID and save file
-    job_id = str(uuid.uuid4())
-    file_extension = Path(file.filename).suffix
-    saved_filename = f"{job_id}{file_extension}"
+    saved_filename = f"{file.filename}"
     file_path = UPLOAD_DIR / saved_filename
 
     try:
@@ -173,54 +171,21 @@ async def process_document_async(
             shutil.copyfileobj(file.file, buffer)
 
         logger.info(f"File saved to: {file_path}")
-
         # Create job record in database
         job_created = JobCRUD(db_manager).create_job(
-            job_id=job_id,
             document_name=file.filename,
             file_path=str(file_path.absolute())
         )
-
-        if not job_created:
-            raise HTTPException(status_code=500, detail="Failed to create job record")
-
-        # Create metadata matching file_watcher structure
-        file_stat = os.stat(file_path)
-        metadata = {
-            "file_path": str(file_path.absolute()),
-            "file_name": file.filename,
-            "file_size": file_stat.st_size,
-            "file_extension": file_path.suffix.lower(),
-            "created_time": file_stat.st_ctime,
-            "job_id": job_id  # Include job_id for tracking
-        }
-
-        # Create standardized message
-        message = create_message("file_detected", metadata, "api_upload")
-
-        # Publish to Kafka (key is job_id for better tracking)
-        success = kafka_producer.produce_message(
-            topic="file_detected",
-            key=job_id,
-            value=message
-        )
-
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to publish message to Kafka")
-
-        logger.info(f"Published message to Kafka for job: {job_id}")
-
-        # Set Retry-After header to indicate polling interval (5 seconds)
         response.headers["Retry-After"] = "5"
 
         return AsyncProcessResponse(
-            job_id=job_id,
+            job_id=job_created[0],
             status="queued",
-            message=f"Document queued for processing. Poll GET /api/v1/status/{job_id} every 5 seconds."
+            message=f"Document queued for processing. Poll GET /api/v1/status/{job_created} every 5 seconds."
         )
 
     except Exception as e:
-        logger.error(f"Error queuing job {job_id}: {e}")
+        logger.error(f"Error queuing job {job_created}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to queue job: {str(e)}")
 
 # TODO , Setup up tracking such that we can use it to fetch the bill when it's done 
