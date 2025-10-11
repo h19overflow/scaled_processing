@@ -5,27 +5,32 @@ Consumer that processes file_detected Kafka messages and triggers document proce
 import asyncio
 import json
 from src.backend.doc_processing_system.messaging.consumer import ConsumerHandler
+from src.backend.doc_processing_system.messaging.producer import ProducerHandler
+from src.backend.doc_processing_system.messaging.message_schemas import create_message
 from src.backend.doc_processing_system.pipelines.document_processing.flows.document_processing_flow import process_document_with_flow
 
 
 class FileDetectedConsumer(ConsumerHandler):
     """Consumes file_detected messages from Kafka and processes documents."""
     def __init__(
-        self, 
-        user_id: str = "default", 
+        self,
+        user_id: str = "default",
         enable_vision_enhancement: bool = False,
         enable_chunking: bool = False,
-        num_consumers: int = 6
+        num_consumers: int = 6,
+        broker: str = "localhost:9092"
     ):
         super().__init__(
-            broker="localhost:9092",
-            topics=["file_detected"], 
+            broker=broker,
+            topics=["file_detected"],
             group_id="doc_processors",
             num_consumers=num_consumers
         )
         self.user_id = user_id
         self.enable_vision_enhancement = enable_vision_enhancement
         self.enable_chunking = enable_chunking
+        # Initialize producer for job status updates
+        self.status_producer = ProducerHandler(broker=broker)
     
     def handle_message(self, topic: str, key: str, value: str) -> None:
         """Handle Kafka message and trigger document processing."""
@@ -33,9 +38,14 @@ class FileDetectedConsumer(ConsumerHandler):
         message = json.loads(value)
         metadata = message["data"]
         file_path = metadata["file_path"]
+        job_id = metadata.get("job_id") or key  # Use job_id from metadata or fallback to key
 
-        self.logger.info(f"🔥 PROCESSING: {metadata['file_name']} at path: {file_path}")
-        
+        self.logger.info(f"🔥 PROCESSING: {metadata['file_name']} at path: {file_path}, job_id: {job_id}")
+
+        # Publish PROCESSING status to job_status_updates topic
+        if job_id:
+            self._publish_job_status(job_id, "PROCESSING")
+
         # Create new event loop for async processing
         self.logger.info(f"🔥 CREATING EVENT LOOP for {metadata['file_name']}")
         loop = asyncio.new_event_loop()
@@ -48,15 +58,55 @@ class FileDetectedConsumer(ConsumerHandler):
                     raw_file_path=file_path,
                     user_id=self.user_id,
                     enable_chunking=False,
+                    job_id=job_id
                 )
             )
             self.logger.info(f"🔥 FLOW COMPLETED: {metadata['file_name']} - Status: {result.get('status')}")
+
+            # Note: Don't publish COMPLETED here - the document_pipeline_completed consumer will do it
+            # when it receives the completion event from this flow
+
         except Exception as e:
             self.logger.error(f"🔥 FLOW FAILED: {metadata['file_name']} - Error: {e}")
+            # Publish FAILED status
+            if job_id:
+                self._publish_job_status(job_id, "FAILED", error=str(e))
             raise
         finally:
             self.logger.info(f"🔥 CLOSING EVENT LOOP for {metadata['file_name']}")
             loop.close()
+
+    def _publish_job_status(self, job_id: str, status: str, error: str = None, bill_data: dict = None) -> None:
+        """
+        Publish job status update to Kafka.
+
+        Args:
+            job_id: Job identifier
+            status: Job status (PROCESSING, COMPLETED, FAILED)
+            error: Optional error message
+            bill_data: Optional bill data
+        """
+        try:
+            status_data = {
+                "job_id": job_id,
+                "status": status
+            }
+
+            if error:
+                status_data["error"] = error
+            if bill_data:
+                status_data["bill_data"] = bill_data
+
+            message = create_message("job_status_update", status_data, "file_detected_consumer")
+
+            self.status_producer.produce_message(
+                topic="job_status_updates",
+                key=job_id,
+                value=message
+            )
+            self.logger.info(f"Published job status update: {job_id} -> {status}")
+        except Exception as e:
+            self.logger.error(f"Failed to publish job status for {job_id}: {e}")
 
 
 if __name__ == "__main__":

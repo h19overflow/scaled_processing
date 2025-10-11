@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Optional
 from pathlib import Path
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Depends, Response
 
 from src.backend.api.schemas import (
     ProcessResponse,
@@ -129,23 +129,26 @@ async def process_document_sync(
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
 
 
-@router.post("/process/async", response_model=AsyncProcessResponse)
+@router.post("/process/async", response_model=AsyncProcessResponse, status_code=202)
 async def process_document_async(
+    response: Response,
     file: UploadFile = File(...),
-    kafka_producer: ProducerHandler = Depends(get_kafka_producer)
+    kafka_producer: ProducerHandler = Depends(get_kafka_producer),
+    db_manager: ConnectionManager = Depends(get_db_manager)
 ):
     """
     Process document asynchronously.
 
-    Uploads file, publishes to Kafka, returns job ID immediately.
-    Client polls /status/{job_id} for completion.
+    Uploads file, creates job record, publishes to Kafka, returns job ID immediately.
+    Client polls /status/{job_id} for completion every 5 seconds (see Retry-After header).
 
     Args:
         file: Uploaded document file (PDF/image)
         kafka_producer: Kafka message producer
+        db_manager: Database connection manager
 
     Returns:
-        AsyncProcessResponse with job_id
+        AsyncProcessResponse with job_id (HTTP 202 Accepted)
 
     Raises:
         HTTPException: For validation errors or Kafka failures
@@ -171,6 +174,15 @@ async def process_document_async(
 
         logger.info(f"File saved to: {file_path}")
 
+        # Create job record in database
+        job_created = db_manager.create_job(
+            job_id=job_id,
+            document_name=file.filename,
+            file_path=str(file_path.absolute())
+        )
+
+        if not job_created:
+            raise HTTPException(status_code=500, detail="Failed to create job record")
 
         # Create metadata matching file_watcher structure
         file_stat = os.stat(file_path)
@@ -179,16 +191,17 @@ async def process_document_async(
             "file_name": file.filename,
             "file_size": file_stat.st_size,
             "file_extension": file_path.suffix.lower(),
-            "created_time": file_stat.st_ctime
+            "created_time": file_stat.st_ctime,
+            "job_id": job_id  # Include job_id for tracking
         }
 
         # Create standardized message
         message = create_message("file_detected", metadata, "api_upload")
 
-        # Publish to Kafka (key is file_name, not job_id)
+        # Publish to Kafka (key is job_id for better tracking)
         success = kafka_producer.produce_message(
             topic="file_detected",
-            key=metadata["file_name"],
+            key=job_id,
             value=message
         )
 
@@ -197,10 +210,13 @@ async def process_document_async(
 
         logger.info(f"Published message to Kafka for job: {job_id}")
 
+        # Set Retry-After header to indicate polling interval (5 seconds)
+        response.headers["Retry-After"] = "5"
+
         return AsyncProcessResponse(
             job_id=job_id,
             status="queued",
-            message=f"Document queued for processing. Use GET /api/v1/status/{job_id} to check progress."
+            message=f"Document queued for processing. Poll GET /api/v1/status/{job_id} every 5 seconds."
         )
 
     except Exception as e:

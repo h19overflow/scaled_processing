@@ -44,20 +44,24 @@ import uuid
 import logging
 from pathlib import Path
 from src.backend.doc_processing_system.messaging.consumer import ConsumerHandler
+from src.backend.doc_processing_system.messaging.producer import ProducerHandler
+from src.backend.doc_processing_system.messaging.message_schemas import create_message
 from src.backend.doc_processing_system.pipelines.structured_extraction.models.state import PipelineState
 
 class StructuringConsumer(ConsumerHandler):
     """Consumer for document pipeline completed events to trigger structured extraction."""
 
-    def __init__(self):
+    def __init__(self, broker: str = "localhost:9092"):
         super().__init__(
-            broker="localhost:9092",
+            broker=broker,
             topics=["document_pipeline_completed"],
             group_id="structuring_processors",
             num_consumers=6,
         )
         self.logger = logging.getLogger(__name__)
         self.logger.info("🚀 StructuringConsumer initialized - waiting for messages on topic: document_pipeline_completed")
+        # Initialize producer for job status updates
+        self.status_producer = ProducerHandler(broker=broker)
 
     def handle_message(self, topic: str, key: str, value: str) -> None:
         """Handle incoming document pipeline completed message."""
@@ -68,11 +72,13 @@ class StructuringConsumer(ConsumerHandler):
             # Extract data from the message
             data = message.get("data", {})
             event_type = message.get("event_type")
+            job_id = data.get("job_id") or key  # Extract job_id for tracking
 
             self.logger.info(f"📋 Message structure:")
             self.logger.info(f"  - Event type: {event_type}")
             self.logger.info(f"  - Data keys: {list(data.keys())}")
             self.logger.info(f"  - Filename: {data.get('filename', 'MISSING')}")
+            self.logger.info(f"  - Job ID: {job_id}")
             self.logger.info(f"  - Has processed_content: {'processed_content' in data}")
             if 'processed_content' in data:
                 content_len = len(data.get('processed_content', ''))
@@ -83,28 +89,45 @@ class StructuringConsumer(ConsumerHandler):
             # Validate processed content exists
             if not data.get('processed_content'):
                 self.logger.error(f"SKIPPING - No processed content in message for {data.get('filename', 'unknown')}")
+                if job_id:
+                    self._publish_job_status(job_id, "FAILED", error="No processed content in message")
                 return
-                
+
             self.logger.info(f"Processing document with {len(data.get('processed_content', ''))} characters")
-            
+
             # Create initial pipeline state from message data
             initial_state = self._create_pipeline_state(data)
-            
+
             # Invoke the structured extraction flow
             self.logger.info(f"Starting structured extraction for document: {initial_state.document_name}")
             result = self._run_extraction_pipeline(initial_state)
-            
-            # Log the result
+
+            # Log the result and publish job status
             if result.status == "completed":
                 self.logger.info(f"Successfully completed structured extraction for {initial_state.document_name}")
+                # Publish COMPLETED status with bill data if available
+                if job_id:
+                    # Fetch bill data from the result (if available in extractions)
+                    bill_data = self._extract_bill_data(result)
+                    self._publish_job_status(job_id, "COMPLETED", bill_data=bill_data)
             else:
                 self.logger.warning(f"Structured extraction completed with status: {result.status}")
                 if result.error:
                     self.logger.error(f"Error: {result.error}")
-                    
+                    if job_id:
+                        self._publish_job_status(job_id, "FAILED", error=result.error)
+
         except Exception as e:
             self.logger.error(f"Failed to process message: {e}")
             self.logger.error(f"Message content: {value}")
+            # Try to extract job_id from message and publish FAILED status
+            try:
+                message = json.loads(value)
+                job_id = message.get("data", {}).get("job_id") or key
+                if job_id:
+                    self._publish_job_status(job_id, "FAILED", error=str(e))
+            except:
+                pass
 
     def _create_pipeline_state(self, data: dict) -> PipelineState:
         """Create PipelineState from Kafka message data."""
@@ -222,11 +245,63 @@ class StructuringConsumer(ConsumerHandler):
         """Generate deterministic UUID from filename."""
         if not filename:
             return str(uuid.uuid4())
-        
+
         # Use filename stem (without extension) to generate deterministic UUID
         file_stem = Path(filename).stem
         namespace = uuid.NAMESPACE_DNS
         return str(uuid.uuid5(namespace, file_stem))
+
+    def _publish_job_status(self, job_id: str, status: str, error: str = None, bill_data: dict = None) -> None:
+        """
+        Publish job status update to Kafka.
+
+        Args:
+            job_id: Job identifier
+            status: Job status (PROCESSING, COMPLETED, FAILED)
+            error: Optional error message
+            bill_data: Optional bill data
+        """
+        try:
+            status_data = {
+                "job_id": job_id,
+                "status": status
+            }
+
+            if error:
+                status_data["error"] = error
+            if bill_data:
+                status_data["bill_data"] = bill_data
+
+            message = create_message("job_status_update", status_data, "structuring_consumer")
+
+            self.status_producer.produce_message(
+                topic="job_status_updates",
+                key=job_id,
+                value=message
+            )
+            self.logger.info(f"Published job status update: {job_id} -> {status}")
+        except Exception as e:
+            self.logger.error(f"Failed to publish job status for {job_id}: {e}")
+
+    def _extract_bill_data(self, result: PipelineState) -> dict:
+        """
+        Extract bill data from pipeline result for job tracking.
+
+        Args:
+            result: Pipeline state with extraction results
+
+        Returns:
+            Dictionary containing bill data if available, empty dict otherwise
+        """
+        try:
+            # Check if extractions exist and have data
+            if hasattr(result, 'extractions') and result.extractions:
+                # Return extractions as bill_data
+                return {"extractions": result.extractions}
+            return {}
+        except Exception as e:
+            self.logger.error(f"Failed to extract bill data: {e}")
+            return {}
 
 
 def main():

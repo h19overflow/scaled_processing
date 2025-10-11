@@ -34,7 +34,7 @@ def get_markdown_path_for_processing(docling_result: Dict[str, Any]) -> str:
     return docling_result["processed_markdown_path"]
 
 
-def send_completion_message(document_id: str, raw_file_path: str, user_id: str, processing_steps: Dict[str, Any], processed_content: str = "") -> None:
+def send_completion_message(document_id: str, raw_file_path: str, user_id: str, processing_steps: Dict[str, Any], processed_content: str = "", job_id: str = None) -> None:
     """Send document_pipeline_completed message."""
     try:
         # Create metadata for completion message
@@ -48,11 +48,16 @@ def send_completion_message(document_id: str, raw_file_path: str, user_id: str, 
             "processing_steps": processing_steps,
             "completed_at": str(datetime.now())
         }
-        
-        # Send completion message
+
+        # Add job_id if provided (for API tracking)
+        if job_id:
+            metadata["job_id"] = job_id
+
+        # Send completion message (use job_id as key if available)
         kafka_producer = ProducerHandler("localhost:9092")
         message = create_message(event_type="document_pipeline_completed", data=metadata, source="document_processing")
-        result = kafka_producer.produce_message(topic="document_pipeline_completed", key=file_path_obj.name, value=message)
+        message_key = job_id if job_id else file_path_obj.name
+        result = kafka_producer.produce_message(topic="document_pipeline_completed", key=message_key, value=message)
         
         if result:
             logger = get_run_logger()
@@ -77,7 +82,8 @@ async def document_processing_flow(
     user_id: str = "default",
     enable_chunking: bool = True,
     enable_pdf_validation: bool = True,
-    force_pdf_repair: bool = False
+    force_pdf_repair: bool = False,
+    job_id: str = None
 ) -> Dict[str, Any]:
     logger = get_run_logger()
     logger.info(f"🚀 Starting document processing flow for: {Path(raw_file_path).name}")
@@ -174,7 +180,7 @@ async def document_processing_flow(
             cleanup_pdf_processing_temp(document_id)
 
             # Send completion message with processed content
-            send_completion_message(document_id, raw_file_path, user_id, processing_steps, content)
+            send_completion_message(document_id, raw_file_path, user_id, processing_steps, content, job_id)
 
             return {
                 "status": "completed",
@@ -210,7 +216,7 @@ async def document_processing_flow(
         cleanup_pdf_processing_temp(document_id)
 
         # Send completion message with processed content
-        send_completion_message(document_id, raw_file_path, user_id, processing_steps, content)
+        send_completion_message(document_id, raw_file_path, user_id, processing_steps, content, job_id)
 
         return {
             "status": "completed",
@@ -240,14 +246,16 @@ async def process_document_with_flow(
     user_id: str = "default",
     enable_chunking: bool = True,
     enable_pdf_validation: bool = True,
-    force_pdf_repair: bool = False
+    force_pdf_repair: bool = False,
+    job_id: str = None
 ) -> Dict[str, Any]:
     return await document_processing_flow(
         raw_file_path,
         user_id,
         enable_chunking,
         enable_pdf_validation,
-        force_pdf_repair
+        force_pdf_repair,
+        job_id
     )
 
 if __name__ == "__main__":
