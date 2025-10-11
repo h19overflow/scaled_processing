@@ -17,7 +17,6 @@ from src.backend.api.endpoints.document_processing import router as document_pro
 from src.backend.api.endpoints.document_health import router as document_health_router
 
 # Import document processing services
-from src.backend.api.job_tracker import JobTracker
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 from src.backend.doc_processing_system.config.settings import get_settings
