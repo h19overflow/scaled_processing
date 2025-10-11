@@ -15,8 +15,9 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Configure Prefect to run in ephemeral mode (no server required)
+# Configure Prefect to disable ephemeral servers (prevents multiple server startups)
 os.environ['PREFECT_API_URL'] = ''  # This disables server connection
+os.environ['PREFECT_SERVER__EPHEMERAL__ENABLED'] = 'false'  # Disable auto-starting temporary servers
 # Create a temporary file for Prefect profiles to avoid reading default profile
 import tempfile
 temp_profiles_file = tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False)
@@ -69,8 +70,9 @@ def run_document_consumer():
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
         
-        # Configure Prefect to run in ephemeral mode (no server required)
+        # Configure Prefect to disable ephemeral servers (prevents multiple server startups)
         os.environ['PREFECT_API_URL'] = ''  # This disables server connection
+        os.environ['PREFECT_SERVER__EPHEMERAL__ENABLED'] = 'false'  # Disable auto-starting temporary servers
         # Create a temporary file for Prefect profiles to avoid reading default profile
         import tempfile
         temp_profiles_file = tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False)
@@ -97,8 +99,9 @@ def run_structured_consumer():
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
             
-        # Configure Prefect to run in ephemeral mode (no server required)
+        # Configure Prefect to disable ephemeral servers (prevents multiple server startups)
         os.environ['PREFECT_API_URL'] = ''  # This disables server connection
+        os.environ['PREFECT_SERVER__EPHEMERAL__ENABLED'] = 'false'  # Disable auto-starting temporary servers
         # Create a temporary file for Prefect profiles to avoid reading default profile
         import tempfile
         temp_profiles_file = tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False)

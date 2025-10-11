@@ -10,16 +10,12 @@ except ImportError:
 
 from ..models.state import PipelineState
 from ..utils.config_router import process_document
-from prefect import task
 from typing import Any
 import logging
 
 logger = logging.getLogger(__name__)
 
-@task(name="config-generation",
-      retries=2,
-      retry_delay_seconds=10,
-      description="Generate extraction configuration and extract structured information from document.")
+
 def generate_config(state: PipelineState) -> dict[str, Any] | None:
     """Generate extraction configuration using config_router based on document classification."""
     try:

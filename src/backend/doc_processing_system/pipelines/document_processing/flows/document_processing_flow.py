@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Dict, Any
+import logging
 
 from prefect import flow, get_run_logger
 from prefect.task_runners import ConcurrentTaskRunner
@@ -21,6 +22,16 @@ from src.backend.doc_processing_system.pipelines.document_processing.tasks_core.
 )
 
 
+def _get_logger(use_prefect: bool = True):
+    """Get appropriate logger based on context."""
+    if use_prefect:
+        try:
+            return get_run_logger()
+        except:
+            return logging.getLogger(__name__)
+    return logging.getLogger(__name__)
+
+
 def get_markdown_path_for_processing(docling_result: Dict[str, Any]) -> str:
     """
     Get the markdown file path from docling processing result.
@@ -34,8 +45,11 @@ def get_markdown_path_for_processing(docling_result: Dict[str, Any]) -> str:
     return docling_result["processed_markdown_path"]
 
 
-def send_completion_message(document_id: str, raw_file_path: str, user_id: str, processing_steps: Dict[str, Any], processed_content: str = "", job_id: str = None) -> None:
+def send_completion_message(document_id: str, raw_file_path: str, user_id: str, processing_steps: Dict[str, Any], processed_content: str = "", job_id: str = None, logger = None) -> None:
     """Send document_pipeline_completed message."""
+    if logger is None:
+        logger = _get_logger(use_prefect=False)
+
     try:
         # Create metadata for completion message
         file_path_obj = Path(raw_file_path)
@@ -58,36 +72,34 @@ def send_completion_message(document_id: str, raw_file_path: str, user_id: str, 
         message = create_message(event_type="document_pipeline_completed", data=metadata, source="document_processing")
         message_key = job_id if job_id else file_path_obj.name
         result = kafka_producer.produce_message(topic="document_pipeline_completed", key=message_key, value=message)
-        
+
         if result:
-            logger = get_run_logger()
             logger.info(f"✅ Sent document_pipeline_completed message for: {document_id}")
-        
+
         kafka_producer.close()
-        
+
     except Exception as e:
-        logger = get_run_logger()
         logger.error(f"Failed to send completion message: {e}")
 
 
-@flow(
-    name="invoice-processing-pipeline",
-    task_runner=ConcurrentTaskRunner(),
-    log_prints=True,
-    retries=1,
-    retry_delay_seconds=10
-)
-async def document_processing_flow(
+async def _process_document_core(
     raw_file_path: str,
     user_id: str = "default",
     enable_chunking: bool = True,
     enable_pdf_validation: bool = True,
     force_pdf_repair: bool = False,
-    job_id: str = None
+    job_id: str = None,
+    logger = None
 ) -> Dict[str, Any]:
-    logger = get_run_logger()
+    """
+    Core document processing logic without Prefect orchestration.
+    This can be called directly by consumers without triggering Prefect servers.
+    """
+    if logger is None:
+        logger = _get_logger(use_prefect=False)
+
     logger.info(f"🚀 Starting document processing flow for: {Path(raw_file_path).name}")
-    
+
     try:
         # STEP 1: Duplicate Detection
         duplicate_result = duplicate_detection_task(raw_file_path)
@@ -180,7 +192,7 @@ async def document_processing_flow(
             cleanup_pdf_processing_temp(document_id)
 
             # Send completion message with processed content
-            send_completion_message(document_id, raw_file_path, user_id, processing_steps, content, job_id)
+            send_completion_message(document_id, raw_file_path, user_id, processing_steps, content, job_id, logger)
 
             return {
                 "status": "completed",
@@ -188,8 +200,6 @@ async def document_processing_flow(
                 "chunking_result": {"status": "disabled", "message": "Chunking disabled"},
                 "processing_steps": processing_steps
             }
-
-
 
         logger.info("🔄 STEP 5: Saving document metadata...")
         save_result = document_saving_task(
@@ -216,14 +226,14 @@ async def document_processing_flow(
         cleanup_pdf_processing_temp(document_id)
 
         # Send completion message with processed content
-        send_completion_message(document_id, raw_file_path, user_id, processing_steps, content, job_id)
+        send_completion_message(document_id, raw_file_path, user_id, processing_steps, content, job_id, logger)
 
         return {
             "status": "completed",
             "document_id": document_id,
             "processing_steps": processing_steps
         }
-            
+
     except Exception as e:
         logger.error(f"❌ Document processing flow failed: {e}")
 
@@ -241,6 +251,34 @@ async def document_processing_flow(
         }
 
 
+@flow(
+    name="invoice-processing-pipeline",
+    task_runner=ConcurrentTaskRunner(),
+    log_prints=True,
+    retries=1,
+    retry_delay_seconds=10
+)
+async def document_processing_flow(
+    raw_file_path: str,
+    user_id: str = "default",
+    enable_chunking: bool = True,
+    enable_pdf_validation: bool = True,
+    force_pdf_repair: bool = False,
+    job_id: str = None
+) -> Dict[str, Any]:
+    """Prefect flow wrapper for document processing."""
+    logger = get_run_logger()
+    return await _process_document_core(
+        raw_file_path=raw_file_path,
+        user_id=user_id,
+        enable_chunking=enable_chunking,
+        enable_pdf_validation=enable_pdf_validation,
+        force_pdf_repair=force_pdf_repair,
+        job_id=job_id,
+        logger=logger
+    )
+
+
 async def process_document_with_flow(
     raw_file_path: str,
     user_id: str = "default",
@@ -249,13 +287,18 @@ async def process_document_with_flow(
     force_pdf_repair: bool = False,
     job_id: str = None
 ) -> Dict[str, Any]:
-    return await document_processing_flow(
-        raw_file_path,
-        user_id,
-        enable_chunking,
-        enable_pdf_validation,
-        force_pdf_repair,
-        job_id
+    """
+    Process document without Prefect orchestration.
+    This function is used by consumers to avoid triggering Prefect servers.
+    """
+    return await _process_document_core(
+        raw_file_path=raw_file_path,
+        user_id=user_id,
+        enable_chunking=enable_chunking,
+        enable_pdf_validation=enable_pdf_validation,
+        force_pdf_repair=force_pdf_repair,
+        job_id=job_id,
+        logger=None  # Will use standard logging
     )
 
 if __name__ == "__main__":

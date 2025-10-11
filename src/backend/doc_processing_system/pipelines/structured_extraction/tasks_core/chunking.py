@@ -3,22 +3,16 @@ Document chunking node.
 """
 
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Any
 
 import tiktoken
 
 from ..config.settings import Settings
 from ..models.document import DocumentChunk
 from ..models.state import PipelineState
-from typing import Dict, Any
-from prefect import task
 
 
-@task(name="document-chunking",
-      retries=2,
-      retry_delay_seconds=10,
-      description="Chunk document into processing batches.")
-def chunk_document(state: PipelineState, settings: Settings) -> Dict[str, Any] :
+def chunk_document(state: PipelineState, settings: Settings) -> Dict[str, Any]:
     """Chunk document into processing batches."""
     try:
         document_input = state.document_text

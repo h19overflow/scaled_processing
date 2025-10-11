@@ -3,36 +3,33 @@ Docling processing task for document processing flow.
 Extracts rich Markdown and images using DoclingProcessor with strict path-based I/O.
 """
 
+import logging
 from typing import Dict, Any
-
-from prefect import task, get_run_logger
-
-
 
 from src.backend.doc_processing_system.pipelines.document_processing.utils.document_processor import DocumentProcessor
 
-@task(name="mineru-processing", retries=2)
+logger = logging.getLogger(__name__)
+
 def docling_processing_task(
     raw_file_path: str,
     document_id: str,
 ) -> Dict[str, Any]:
     """Extract document content using Docling with path-based output.
-    
+
     Args:
         raw_file_path: Path to the raw document file
         document_id: Document ID from duplicate check
         user_id: User who uploaded the document
-        
+
     Returns:
         Dict containing paths to extracted content: {
             "status": "completed",
-            "processed_markdown_path": "/path/to/document.md", 
+            "processed_markdown_path": "/path/to/document.md",
             "extracted_images_dir": "/path/to/images/",
             "document_id": "doc_id",
             "file_info": {...}
         }
     """
-    logger = get_run_logger()
     logger.info(f"📄 Starting Docling processing for document: {document_id}")
     
     try:

@@ -4,28 +4,27 @@ Fast duplicate detection task using file hash only (no embedding models).
 
 import hashlib
 import re
+import logging
 from pathlib import Path
 from typing import Dict, Any
-
-from prefect import task, get_run_logger
 
 from src.backend.doc_processing_system.core_deps.database.CRUD.document_crud import DocumentCRUD
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 
+logger = logging.getLogger(__name__)
+
 # TODO Check logic , currnetly the document_id is generated from the file path, this is not unique, and multiple files with the same name will have the same document_id.
-@task(name="duplicate-detection", retries=2)
 def duplicate_detection_task(raw_file_path: str) -> Dict[str, Any]:
     """
     Fast duplicate detection using file hash only - no heavy ML models.
-    
+
     Args:
         raw_file_path: Path to the raw document file
         user_id: User who uploaded the document
-        
+
     Returns:
         Dict containing duplicate check results
     """
-    logger = get_run_logger()
     raw_path = Path(raw_file_path)
     logger.info(f"🔍 Fast duplicate detection for: {raw_path.name}")
     
@@ -38,7 +37,7 @@ def duplicate_detection_task(raw_file_path: str) -> Dict[str, Any]:
         is_duplicate, existing_doc_id = document_crud.check_duplicate_by_raw_file(str(raw_path))
         
         if is_duplicate:
-            logger.info(f"📋 Document is duplicate: {existing_doc_id}")
+            logger.info(f" Document is duplicate: {existing_doc_id}")
             return {
                 "status": "duplicate",
                 "document_id": existing_doc_id,

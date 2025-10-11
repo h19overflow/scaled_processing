@@ -2,8 +2,10 @@ from pathlib import Path
 from typing import Dict, Any
 import subprocess
 import shutil
+import logging
 import fitz
-from prefect import task, get_run_logger
+
+logger = logging.getLogger(__name__)
 
 # Import PDF processing libraries
 try:
@@ -69,7 +71,6 @@ def check_external_dependencies() -> Dict[str, bool]:
     return dependencies
 
 
-@task(name="validate-pdf", retries=1)
 def validate_pdf_task(raw_file_path: str) -> Dict[str, Any]:
     """
     Validate PDF structure using pdfinfo and qpdf.
@@ -80,7 +81,6 @@ def validate_pdf_task(raw_file_path: str) -> Dict[str, Any]:
     Returns:
         Dict containing validation results and repair recommendation
     """
-    logger = get_run_logger()
     logger.info(f"🔍 Validating PDF: {Path(raw_file_path).name}")
 
     # Check if file is actually a PDF
@@ -183,7 +183,6 @@ def validate_pdf_task(raw_file_path: str) -> Dict[str, Any]:
     }
 
 
-@task(name="repair-pdf", retries=2)
 def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
     """
     Repair corrupted PDF using Ghostscript with QPDF fallback.
@@ -194,7 +193,6 @@ def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
     Returns:
         Dict containing repair results and repaired file path
     """
-    logger = get_run_logger()
     logger.info(f"🔧 Repairing PDF: {Path(raw_file_path).name}")
 
     raw_path = Path(raw_file_path)
@@ -301,7 +299,6 @@ def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
     }
 
 
-@task(name="clean-pdf-pymupdf", retries=1)
 def clean_with_pymupdf_task(pdf_path: str) -> Dict[str, Any]:
     """
     Clean PDF using PyMuPDF to remove incremental updates and optimize structure.
@@ -312,7 +309,6 @@ def clean_with_pymupdf_task(pdf_path: str) -> Dict[str, Any]:
     Returns:
         Dict containing cleaning results and cleaned file path
     """
-    logger = get_run_logger()
     logger.info(f"🧹 Cleaning PDF with PyMuPDF: {Path(pdf_path).name}")
 
     pdf_file = Path(pdf_path)

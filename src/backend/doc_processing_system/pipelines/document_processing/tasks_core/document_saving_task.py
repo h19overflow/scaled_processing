@@ -2,17 +2,17 @@
 Document saving task for document processing flow.
 """
 
+import logging
 from pathlib import Path
 from typing import Dict, Any
 from datetime import datetime
-
-from prefect import task, get_run_logger
 
 from src.backend.doc_processing_system.pipelines.document_processing.utils.document_output_manager import DocumentOutputManager
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
 from src.backend.doc_processing_system.messaging.message_schemas import create_message
 
-@task(name="document-saving", retries=2)
+logger = logging.getLogger(__name__)
+
 def document_saving_task(
     vision_enhanced_markdown_path: str,
     document_id: str,
@@ -30,11 +30,10 @@ def document_saving_task(
         page_count: Number of pages in document
         raw_file_path: Original file path for metadata
         user_id: User who uploaded the document
-        
+
     Returns:
         Dict containing save results and file paths
     """
-    logger = get_run_logger()
     logger.info(f"💾 Saving processed document: {document_id}")
 
     # DEBUG: Confirm function is being called
