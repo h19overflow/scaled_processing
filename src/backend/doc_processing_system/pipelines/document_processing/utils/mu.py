@@ -1,4 +1,7 @@
 # Copyright (c) Opendatalab. All rights reserved.
+
+# TODO , the problem is that the CUDA is not recognized by the mineru processor , so i need to figure it out.
+
 import copy
 import json
 import os
@@ -127,20 +130,13 @@ def repair_pdf_fallback(pdf_bytes: bytes) -> bytes:
     """
     try:
         # Try PyPDF2 repair
-        import PyPDF2
         from io import BytesIO
 
         logger.info("Attempting PDF repair with PyPDF2...")
-        pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_bytes), strict=False)
-        pdf_writer = PyPDF2.PdfWriter()
-
-        # Copy all pages to writer (this often fixes minor corruptions)
-        for page in pdf_reader.pages:
-            pdf_writer.add_page(page)
 
         # Write repaired PDF to bytes
         repaired_stream = BytesIO()
-        pdf_writer.write(repaired_stream)
+        pdf_bytes.write(repaired_stream)
         repaired_bytes = repaired_stream.getvalue()
 
         logger.info("PDF repair successful with PyPDF2")

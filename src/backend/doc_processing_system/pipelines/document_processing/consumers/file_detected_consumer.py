@@ -4,6 +4,7 @@ Consumer that processes file_detected Kafka messages and triggers document proce
 
 import asyncio
 import json
+import logging
 from src.backend.doc_processing_system.messaging.consumer import ConsumerHandler
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
 from src.backend.doc_processing_system.messaging.message_schemas import create_message
@@ -15,8 +16,6 @@ class FileDetectedConsumer(ConsumerHandler):
     def __init__(
         self,
         user_id: str = "default",
-        enable_vision_enhancement: bool = False,
-        enable_chunking: bool = False,
         num_consumers: int = 6,
         broker: str = "localhost:9092"
     ):
@@ -26,20 +25,24 @@ class FileDetectedConsumer(ConsumerHandler):
             group_id="doc_processors",
             num_consumers=num_consumers
         )
+        self.logger = logging.getLogger(__name__)
+        self.logger.info("FileDetectedConsumer initialized - listening for messages on topic: file_detected")
         self.user_id = user_id
-        self.enable_vision_enhancement = enable_vision_enhancement
-        self.enable_chunking = enable_chunking
         # Initialize producer for job status updates
         self.status_producer = ProducerHandler(broker=broker)
     
     def handle_message(self, topic: str, key: str, value: str) -> None:
         """Handle Kafka message and trigger document processing."""
         self.logger.info(f"🔥 RECEIVED MESSAGE: topic={topic}, key={key}")
+        # load the message
         message = json.loads(value)
+        print("Message received: ", message)
+        
         metadata = message["data"]
+        # extract the metadata
         file_path = metadata["file_path"]
         job_id = metadata.get("job_id") or key  # Use job_id from metadata or fallback to key
-
+        
         self.logger.info(f"🔥 PROCESSING: {metadata['file_name']} at path: {file_path}, job_id: {job_id}")
 
         # Publish PROCESSING status to job_status_updates topic
@@ -57,7 +60,6 @@ class FileDetectedConsumer(ConsumerHandler):
                 process_document_with_flow(
                     raw_file_path=file_path,
                     user_id=self.user_id,
-                    enable_chunking=False,
                     job_id=job_id
                 )
             )

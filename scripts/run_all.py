@@ -81,10 +81,9 @@ def run_document_consumer():
         from src.backend.doc_processing_system.pipelines.document_processing.consumers.file_detected_consumer import FileDetectedConsumer
         consumer = FileDetectedConsumer(
             user_id="default",
-            enable_vision_enhancement=False,
-            enable_chunking=False,
             num_consumers=6
         )
+        consumer.logger.info("Document consumer initialized - listening for messages on topic: file_detected")
         consumer.start()
     except Exception as e:
         logging.error(f"Document consumer failed: {e}")
