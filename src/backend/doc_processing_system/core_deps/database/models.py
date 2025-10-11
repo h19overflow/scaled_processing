@@ -105,38 +105,6 @@ class DocumentModel(Base):
         }
 
 
-class ChunkModel(Base):
-    """SQLAlchemy model for chunks table."""
-    __tablename__ = "chunks"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
-    chunk_id = Column(String(255), nullable=False)
-    content = Column(Text, nullable=False)
-    page_number = Column(Integer, nullable=False, index=True)
-    chunk_index = Column(Integer, nullable=False)
-    embedding_vector = Column(ARRAY(Float))
-    chunk_metadata = Column(JSON, default=dict)
-    created_at = Column(DateTime(timezone=True), default=func.now())
-    
-    # Relationships
-    document = relationship("DocumentModel", back_populates="chunks")
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert model to dictionary."""
-        return {
-            "id": str(self.id),
-            "document_id": str(self.document_id),
-            "chunk_id": self.chunk_id,
-            "content": self.content,
-            "page_number": self.page_number,
-            "chunk_index": self.chunk_index,
-            "embedding_vector": self.embedding_vector,
-            "metadata": self.chunk_metadata or {},
-            "created_at": self.created_at.isoformat() if self.created_at else None
-        }
-
-
 class StructuredDocumentModel(Base):
     """SQLAlchemy model for structured document extractions table."""
     __tablename__ = "structured_documents"
@@ -172,62 +140,6 @@ class StructuredDocumentModel(Base):
         }
 
 
-class QueryLogModel(Base):
-    """SQLAlchemy model for query logs table."""
-    __tablename__ = "query_logs"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    query_id = Column(String(255), unique=True, nullable=False)
-    user_id = Column(String(255), nullable=False, index=True)
-    query_text = Column(Text, nullable=False)
-    query_type = Column(String(50), nullable=False)
-    filters = Column(JSON, default=dict)
-    response_time_ms = Column(Integer)
-    created_at = Column(DateTime(timezone=True), default=func.now())
-    
-    # Relationships
-    results = relationship("QueryResultModel", back_populates="query_log", cascade="all, delete-orphan")
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert model to dictionary."""
-        return {
-            "id": str(self.id),
-            "query_id": self.query_id,
-            "user_id": self.user_id,
-            "query_text": self.query_text,
-            "query_type": self.query_type,
-            "filters": self.filters or {},
-            "response_time_ms": self.response_time_ms,
-            "created_at": self.created_at.isoformat() if self.created_at else None
-        }
-
-
-class QueryResultModel(Base):
-    """SQLAlchemy model for query results table."""
-    __tablename__ = "query_results"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    query_id = Column(String(255), ForeignKey("query_logs.query_id", ondelete="CASCADE"), nullable=False, index=True)
-    result_type = Column(String(50), nullable=False)
-    result_data = Column(JSON, nullable=False)
-    confidence_score = Column(Float, default=0.0)
-    source_documents = Column(ARRAY(String))
-    created_at = Column(DateTime(timezone=True), default=func.now())
-
-    # Relationships
-    query_log = relationship("QueryLogModel", back_populates="results")
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert model to dictionary."""
-        return {
-            "id": str(self.id),
-            "query_id": self.query_id,
-            "result_type": self.result_type,
-            "result_data": self.result_data or {},
-            "confidence_score": self.confidence_score,
-            "source_documents": self.source_documents or [],
-            "created_at": self.created_at.isoformat() if self.created_at else None
-        }
 
 
 class JobModel(Base):

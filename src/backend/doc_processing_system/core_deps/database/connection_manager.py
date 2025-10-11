@@ -159,3 +159,8 @@ class ConnectionManager:
                 protocol_user, _ = protocol_user_pass.rsplit(':', 1)
                 return f"{protocol_user}:***@{host_db}"
         return database_url
+    
+    
+if __name__ == "__main__":
+    connection_manager = ConnectionManager()
+    connection_manager.create_tables()
