@@ -1,42 +1,5 @@
 """
 Document Pipeline Completed Consumer for Structured Extraction
-
-DECISION MAP & SOLUTION SUMMARY:
-================================
-
-PROBLEM: 
-- Need to listen to Kafka topic "document_pipeline_completed" 
-- Transform incoming message data into PipelineState
-- Trigger structured extraction flow automatically
-
-SOLUTION DESIGN:
-1. Message Structure Analysis:
-   - Incoming: create_message(event_type="document_pipeline_completed", data=metadata)
-   - Data contains: filename, processed_content, page_count, etc.
-   - Wrapped in standardized message format with timestamp, source
-
-2. State Mapping Strategy:
-   - document_text ← data["processed_content"] (extracted text)
-   - document_name ← data["filename"] (original file name)
-   - document_id ← deterministic UUID from filename (consistency)
-   - Other fields use defaults (status="started", user_id="system")
-
-3. UUID Generation Decision:
-   - Use uuid.uuid5(NAMESPACE_DNS, filename_stem) for deterministic IDs
-   - Same filename always produces same document_id
-   - Ensures database consistency and prevents duplicates
-
-4. Error Handling Approach:
-   - Comprehensive try/catch around entire message processing
-   - Log original message content on failures for debugging
-   - Track pipeline status and log completion results
-
-5. Consumer Architecture:
-   - Extends ConsumerHandler with topic="document_pipeline_completed"
-   - 6 parallel consumers for scalability
-   - Group ID "structuring_processors" for load balancing
-
-FLOW: Kafka Message → Parse JSON → Create PipelineState → Invoke Flow → Log Results
 """
 
 import json

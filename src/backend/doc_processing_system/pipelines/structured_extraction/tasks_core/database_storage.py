@@ -64,6 +64,20 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         # Initialize database connection
         connection_manager = ConnectionManager()
 
+        # Check if bill already exists for this document
+        bill_crud = BillCRUD(connection_manager)
+        existing_bill = bill_crud.get_bill_by_document_name(document_name)
+        
+        if existing_bill:
+            logger.warning(f"Bill already exists for document '{document_name}' with ID: {existing_bill.id}")
+            return {
+                "status": "storage_skipped",
+                "error": f"Bill already exists for document '{document_name}'",
+                "stored_count": 0,
+                "existing_bill_id": str(existing_bill.id),
+                "document_id": document_id
+            }
+
         # Create and store bill record
         try:
             bill_id = _create_and_store_bill(extractions, document_name, connection_manager)
