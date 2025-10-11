@@ -15,7 +15,7 @@ from typing import Dict, Any
 
 from .consumer import ConsumerHandler
 from ..core_deps.database.connection_manager import ConnectionManager
-
+from ..core_deps.database.CRUD.job_CRUD import JobCRUD
 
 class JobStatusConsumer(ConsumerHandler):
     """
@@ -83,7 +83,7 @@ class JobStatusConsumer(ConsumerHandler):
                 return
 
             # Update job in database
-            success = self.db_manager.update_job_status(
+            success = JobCRUD(self.db_manager).update_job_status(
                 job_id=job_id,
                 status=status,
                 error=error,

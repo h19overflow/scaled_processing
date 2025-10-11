@@ -26,7 +26,7 @@ from src.backend.doc_processing_system.messaging.message_schemas import create_m
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 from src.backend.doc_processing_system.core_deps.database.models import BillModel
 from src.backend.api.endpoints.utils import _validate_file, _wait_for_completion, _fetch_bill_data, get_kafka_producer, get_db_manager,UPLOAD_DIR,logger
-
+from src.backend.doc_processing_system.core_deps.database.CRUD.job_CRUD import JobCRUD
 
 router = APIRouter(prefix="/api/v1", tags=["Document Processing"])
 
@@ -175,7 +175,7 @@ async def process_document_async(
         logger.info(f"File saved to: {file_path}")
 
         # Create job record in database
-        job_created = db_manager.create_job(
+        job_created = JobCRUD(db_manager).create_job(
             job_id=job_id,
             document_name=file.filename,
             file_path=str(file_path.absolute())
@@ -244,7 +244,7 @@ async def get_job_status(
     """
     logger.info(f"Status check for job: {job_id}")
 
-    job = db_manager.get_job(job_id)
+    job = JobCRUD(db_manager).get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
 

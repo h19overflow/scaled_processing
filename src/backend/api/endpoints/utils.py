@@ -7,7 +7,7 @@ from src.backend.doc_processing_system.core_deps.database.connection_manager imp
 import asyncio
 from src.backend.doc_processing_system.core_deps.database.models import BillModel
 import logging
-
+from src.backend.doc_processing_system.core_deps.database.CRUD.job_CRUD import JobCRUD
 MAX_FILE_SIZE_MB = 50
 PROCESSING_TIMEOUT_SECONDS = 120
 ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
@@ -76,7 +76,7 @@ async def _wait_for_completion(
             raise asyncio.TimeoutError()
 
         # Check job tracker status
-        job = db_manager.get_job(job_id)
+        job = JobCRUD(db_manager).get_job(job_id)
         if job and job.status == "failed":
             raise Exception(job.error or "Processing failed")
 
