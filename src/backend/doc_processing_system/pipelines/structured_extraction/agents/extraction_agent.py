@@ -1,5 +1,4 @@
 
-#TODO sometimes the agent does not extract the amount_due field
 from pydantic_ai import Agent
 from ..models.extraction_schemas import BillExtractionResult
 # Create PydanticAI agent for bill extraction

@@ -4,7 +4,6 @@ Document processing API endpoints.
 Provides REST API for uploading and processing Malaysian utility bills.
 Integrates with Kafka-based document processing pipeline.
 """
-# TODO , processing times out need to figure out how to handle it 
 import os
 import uuid
 import asyncio
@@ -94,7 +93,6 @@ async def process_document_async(
         logger.error(f"Error queuing job{job_id_str}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to queue job: {str(e)}")
 
-# TODO , Setup up tracking such that we can use it to fetch the bill when it's done 
 @router.get("/status/{job_id}", response_model=StatusResponse)
 async def get_job_status(
     job_id: str,

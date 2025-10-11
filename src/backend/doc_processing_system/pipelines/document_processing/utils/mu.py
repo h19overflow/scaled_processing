@@ -1,6 +1,5 @@
 # Copyright (c) Opendatalab. All rights reserved.
 
-# TODO , the problem is that the CUDA is not recognized by the mineru processor , so i need to figure it out.
 
 import copy
 import json

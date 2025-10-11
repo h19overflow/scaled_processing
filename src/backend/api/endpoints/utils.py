@@ -46,7 +46,6 @@ async def _validate_file(file: UploadFile) -> Optional[str]:
 
     return None
 
-# TODO , Tracking still depends on the job tracker , we need to remove it
 async def _wait_for_completion(
     job_id: str,
     db_manager: ConnectionManager,

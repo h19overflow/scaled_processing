@@ -3,7 +3,6 @@
 Job CRUD operations.
 Handles all database operations related to jobs.
 """
- # TODO , the consumers are not being triggered , which is a problem, i need to have it streamlined , such that all the consumers work.
 from src.backend.doc_processing_system.core_deps.database.CRUD.base_repository import BaseRepository
 from src.backend.doc_processing_system.core_deps.database.models import JobModel,JobStatus
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager

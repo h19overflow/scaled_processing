@@ -11,6 +11,7 @@ from decimal import Decimal
 
 from ..models.state import PipelineState
 from ....core_deps.database import ConnectionManager, BillModel, BillStatus
+from ....core_deps.database.CRUD.bill_CRUD import BillCRUD
 
 logger = logging.getLogger(__name__)
 
@@ -163,23 +164,18 @@ def _create_and_store_bill(extractions: list, document_name: str, connection_man
     logger.info(f"💾 Creating BillModel - amount_due: {amount_due_decimal}, issue_date: {core_data['issue_date']}, due_date: {core_data['due_date']}")
 
     # Create BillModel instance
-    bill = BillModel(
-        document_name=document_name,
-        issue_date=core_data['issue_date'],
-        due_date=core_data['due_date'],
-        amount_due=amount_due_decimal,
-        status=BillStatus.PENDING,
-        extracted_jsonb=jsonb_data,
-        version=1
-    )
+   
 
-    # Store in database
-    with connection_manager.get_session() as session:
-        session.add(bill)
-        session.commit()
-        session.refresh(bill)
-        logger.info(f"✅ Stored bill with ID: {bill.id}")
-        return str(bill.id)
+        # Store in database
+    bill_id = BillCRUD(connection_manager).create(document_name=document_name,
+                                                  issue_date=core_data['issue_date'],
+                                                  due_date=core_data['due_date'], 
+                                                  amount_due=amount_due_decimal, 
+                                                  status=BillStatus.PENDING, 
+                                                  extracted_jsonb=jsonb_data, 
+                                                  version=1)
+    logger.info(f"✅ Stored bill with ID: {bill_id}")
+    return str(bill_id)
 
 
 def _parse_date(date_text: str, attributes: dict = None) -> Optional[datetime]:
