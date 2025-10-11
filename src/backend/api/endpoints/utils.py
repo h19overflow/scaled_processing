@@ -43,7 +43,7 @@ async def _validate_file(file: UploadFile) -> Optional[str]:
 
     return None
 
-
+# TODO , Tracking still depends on the job tracker , we need to remove it
 async def _wait_for_completion(
     job_id: str,
     db_manager: ConnectionManager,
@@ -88,7 +88,7 @@ async def _wait_for_completion(
         # Wait before next poll
         await asyncio.sleep(2)
 
-
+# TODO , Make test cases for this function and check what happens if the bill is not found , or if the bill is found but the data is not in the database
 async def _fetch_bill_data(document_name: str, db_manager: ConnectionManager) -> Optional[dict]:
     """
     Fetch bill data from database.
@@ -113,6 +113,9 @@ async def _fetch_bill_data(document_name: str, db_manager: ConnectionManager) ->
         logger.error(f"Error fetching bill data for {document_name}: {e}")
 
     return None
+
+
+
 def get_kafka_producer(request: Request) -> ProducerHandler:
     """Dependency to get Kafka producer from app state."""
     return request.app.state.kafka_producer

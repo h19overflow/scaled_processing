@@ -13,7 +13,7 @@ load_dotenv()
 
 # Import routers
 from src.backend.api.endpoints.health import router as health_router
-from src.backend.api.endpoints.document_processing import router as document_processing_router
+from src.backend.api.endpoints.document_processing_endpoints import router as document_processing_router
 from src.backend.api.endpoints.document_health import router as document_health_router
 
 # Import document processing services
@@ -38,10 +38,6 @@ async def lifespan(app: FastAPI):
 
         # Initialize document processing services
         logger.info("Initializing document processing services...")
-
-        # Job tracker
-        app.state.job_tracker = JobTracker()
-        logger.info("Job tracker initialized")
 
         # Kafka producer
         settings = get_settings()

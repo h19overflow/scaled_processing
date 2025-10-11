@@ -29,7 +29,6 @@ from src.backend.api.endpoints.utils import _validate_file, _wait_for_completion
 
 
 router = APIRouter(prefix="/api/v1", tags=["Document Processing"])
-logger = logging.getLogger(__name__)
 
 
 
@@ -77,7 +76,6 @@ async def process_document_sync(
 
         logger.info(f"File saved to: {file_path}")
 
-        # Create job in tracker
 
         # Create metadata matching file_watcher structure
         file_stat = os.stat(file_path)
@@ -92,7 +90,6 @@ async def process_document_sync(
         # Create standardized message
         message = create_message("file_detected", metadata, "api_upload")
 
-        # Publish to Kafka (key is file_name, not job_id)
         success = kafka_producer.produce_message(
             topic="file_detected",
             key=metadata["file_name"],
@@ -174,7 +171,6 @@ async def process_document_async(
 
         logger.info(f"File saved to: {file_path}")
 
-        # Create job in tracker
 
         # Create metadata matching file_watcher structure
         file_stat = os.stat(file_path)
@@ -211,7 +207,7 @@ async def process_document_async(
         logger.error(f"Error queuing job {job_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to queue job: {str(e)}")
 
-
+# TODO , Setup up tracking such that we can use it to fetch the bill when it's done 
 @router.get("/status/{job_id}", response_model=StatusResponse)
 async def get_job_status(
     job_id: str,
