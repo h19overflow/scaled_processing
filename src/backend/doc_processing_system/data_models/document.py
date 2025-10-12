@@ -10,39 +10,8 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class FileType(str, Enum):
-    """Supported file types for document processing."""
-    PDF = "pdf"
-    DOCX = "docx"
-    IMAGE = "image"
-    TEXT = "text"
 
 
-class UploadFile(BaseModel):
-    """Model for uploaded file information."""
-    filename: str
-    content_type: str
-    size: int
-    file_data: bytes
-
-
-class DocumentMetadata(BaseModel):
-    """Model for document metadata."""
-    document_id: str
-    file_type: FileType
-    upload_timestamp: datetime
-    user_id: str
-    file_size: int
-
-
-class ParsedDocument(BaseModel):
-    """Model for parsed document content."""
-    document_id: str
-    content: str
-    metadata: DocumentMetadata
-    page_count: int
-    extracted_images: List[Dict[str, Any]] = []
-    tables: List[Dict[str, Any]] = []
 
 
 class ProcessingStatus(str, Enum):

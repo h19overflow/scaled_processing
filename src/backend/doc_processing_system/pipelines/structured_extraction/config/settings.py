@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
-from .models import ChunkingConfig, ModelConfig, ExtractionConfig
+from .models import ModelConfig, ExtractionConfig
 
 load_dotenv()
 
@@ -15,7 +15,6 @@ load_dotenv()
 class Settings(BaseModel):
     """Main settings for structured extraction workflow."""
 
-    chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
     models: ModelConfig = Field(default_factory=ModelConfig)
     extraction: ExtractionConfig = Field(default_factory=ExtractionConfig)
 
