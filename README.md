@@ -1,27 +1,27 @@
 # Scaled Document Processing System
 
-> **A highly flexible, event-driven document processing pipeline capable of processing 12,000+ invoices per day with horizontal scaling and zero-cost structured extraction.**
+> **A highly flexible, event-driven document processing pipeline capable of processing 12,000+ invoices per day with horizontal scaling and intelligent structured extraction.**
 
 ## 🚀 Overview
 
 This system transforms documents (PDFs, images) into structured data through two powerful, interconnected pipelines:
 
-1. **Document Processing Pipeline** - Extracts and enhances document content with VLM capabilities
-2. **Structured Extraction Pipeline** - Converts processed content into structured data (tables, line items) without LLM costs
+1. **Document Processing Pipeline** - Extracts and enhances document content using MinerU backend
+2. **Structured Extraction Pipeline** - Converts processed content into structured data using PydanticAI agents
 
-**Powered by Prefect** for robust workflow orchestration, the architecture features **event-driven messaging** with **horizontal scaling** capabilities, seamlessly integrating with **PostgreSQL** for structured data storage and **Weaviate** for vector-based RAG systems.
+**Powered by Kafka** for robust event-driven messaging, the architecture features **horizontal scaling** capabilities, seamlessly integrating with **PostgreSQL** for structured data storage and **job tracking** for async processing.
 
 ## 📊 System Capabilities
 
 - **Processing Volume**: 12,000+ documents per day on standard hardware
 - **Document Types**: PDFs, Images (JPG, PNG), Multi-page documents
 - **Output Formats**: Structured JSON, Database records, Markdown
-- **Workflow Engine**: Prefect-powered task orchestration with retry logic and monitoring
-- **Advanced Chunking**: Novel 2-stage chunking with Chonkie framework integration
-- **Extraction Engine**: LangExtract-powered structured data extraction
-- **Data Storage**: PostgreSQL for structured data, Weaviate for vector embeddings
-- **Scaling**: Horizontal consumer scaling (currently 6-12 consumers per pipeline)
-- **Cost Efficiency**: Optimized extraction costs through intelligent processing and routing
+- **Document Engine**: MinerU-powered document extraction with PDF validation and repair
+- **Extraction Engine**: PydanticAI-powered structured data extraction
+- **Data Storage**: PostgreSQL for structured data and job tracking
+- **Scaling**: Horizontal consumer scaling (6 consumers per pipeline)
+- **PDF Processing**: Multi-stage PDF validation, repair, and cleaning pipeline
+- **Async Processing**: Event-driven architecture with job status tracking
 
 ## 🏗 Architecture Overview
 
@@ -31,47 +31,44 @@ graph TB
         FileWatcher[File Watcher] --> Kafka[Kafka Message Broker]
         Kafka --> DocProcessors[Document Processors<br/>6 Consumers]
         Kafka --> StructExtractors[Structured Extractors<br/>6 Consumers]
+        Kafka --> JobStatusConsumer[Job Status Consumer]
     end
 
     subgraph "Document Processing Pipeline"
         DocProcessors --> DuplicateCheck[Duplicate Detection]
-        DuplicateCheck --> DoclingExtract[Docling Extraction]
-        DoclingExtract --> VisionEnhance[Vision Enhancement<br/>Optional]
-        VisionEnhance --> Chunking[Advanced Chunking<br/>Optional]
-        Chunking --> DocumentSave[Document Saving]
-        DocumentSave --> VectorStore[Vector Storage<br/>Optional]
+        DuplicateCheck --> PDFValidation[PDF Validation<br/>Optional]
+        PDFValidation --> PDFRepair[PDF Repair<br/>Conditional]
+        PDFRepair --> PDFCleaning[PDF Cleaning<br/>Conditional]
+        PDFCleaning --> MinerUProcess[MinerU Processing]
+        MinerUProcess --> DocumentSave[Document Saving]
+        DocumentSave --> KafkaMessage[Pipeline Completed Message]
     end
 
     subgraph "Structured Extraction Pipeline"
-        StructExtractors --> ChunkDoc[Document Chunking]
-        ChunkDoc --> ClassifyDoc[Document Classification]
-        ClassifyDoc --> ConfigGen[Config Generation]
-        ConfigGen --> StructExtract[Structured Extraction]
-        StructExtract --> DatabaseStore[Database Storage]
+        StructExtractors --> ReadMarkdown[Read Markdown]
+        ReadMarkdown --> MockClassification[Mock Classification<br/>Invoice Type]
+        MockClassification --> ConfigGen[Config Generation]
+        ConfigGen --> PydanticAIExtract[PydanticAI Extraction]
+        PydanticAIExtract --> DatabaseStore[Database Storage]
     end
 
     subgraph "Data Layer"
-        PostgresDB[(PostgreSQL<br/>Structured Data)]
-        WeaviateDB[(Weaviate<br/>Vector Store)]
+        PostgresDB[(PostgreSQL<br/>Bills & Documents)]
+        JobDB[(Job Tracking<br/>Status Updates)]
         DatabaseStore --> PostgresDB
-        VectorStore --> WeaviateDB
+        JobStatusConsumer --> JobDB
     end
 
-    subgraph "Data Outputs"
-        PostgresDB --> Insights[Business Insights]
-        WeaviateDB --> RAGSystem[RAG System]
-        DocumentSave --> ProcessedDocs[Processed Documents]
+    subgraph "Kafka Topics"
+        FileDetectedTopic[file_detected]
+        PipelineCompletedTopic[document_pipeline_completed]
+        JobStatusTopic[job_status_updates]
     end
 
-    subgraph "Workflow Engine"
-        PrefectEngine[Prefect Orchestration<br/>Task Management & Monitoring]
-    end
-
-    DocProcessors -.->|Powered by| PrefectEngine
-    StructExtractors -.->|Powered by| PrefectEngine
-
-    FileWatcher -.->|File Detected| Kafka
-    DocumentSave -.->|Pipeline Completed| Kafka
+    FileWatcher -.->|Publish| FileDetectedTopic
+    DocumentSave -.->|Publish| PipelineCompletedTopic
+    DocProcessors -.->|Status Updates| JobStatusTopic
+    StructExtractors -.->|Status Updates| JobStatusTopic
 ```
 
 ## 🔄 Message Flow Architecture
@@ -81,22 +78,29 @@ sequenceDiagram
     participant FW as File Watcher
     participant K as Kafka
     participant DP as Document Processor
-    participant P as Prefect Engine
+    participant MU as MinerU
     participant SE as Structured Extractor
+    participant PAI as PydanticAI
     participant PG as PostgreSQL
-    participant WV as Weaviate
+    participant JS as Job Status Consumer
 
     FW->>K: file_detected message
     K->>DP: Process document
-    DP->>P: Execute Prefect flow
-    P->>DP: Orchestrated tasks
-    DP->>WV: Store vector embeddings
+    DP->>DP: Duplicate Detection
+    DP->>DP: PDF Validation/Repair
+    DP->>MU: Extract with MinerU
+    MU-->>DP: Markdown + Tables
+    DP->>PG: Save Document
     DP->>K: document_pipeline_completed
+    DP->>JS: Update job status (PROCESSING)
+    
     K->>SE: Structure document
-    SE->>P: Execute Prefect flow
-    P->>SE: Orchestrated extraction
-    SE->>PG: Store structured data
-    PG-->>SE: Confirmation
+    SE->>SE: Read Markdown
+    SE->>SE: Mock Classification (Invoice)
+    SE->>PAI: Generate Config & Extract
+    PAI-->>SE: Structured Data
+    SE->>PG: Store Bill Data
+    SE->>JS: Update job status (COMPLETED)
 ```
 
 ## 📂 Project Structure
@@ -106,19 +110,30 @@ src/backend/doc_processing_system/
 ├── messaging/                     # Event-driven messaging system
 │   ├── consumer.py               # Base consumer with multi-threading
 │   ├── producer.py               # Kafka message producer
-│   └── message_schemas.py        # Standardized message formats
+│   ├── message_utils.py          # Message creation utilities
+│   ├── topics_setup.py           # Kafka topic configuration
+│   └── job_status_consumer.py    # Job status tracking consumer
 ├── pipelines/
-│   ├── document_processing/      # Document processing pipeline
-│   │   ├── consumers/           # Scalable document consumers
-│   │   ├── flows/              # Prefect flow orchestration
+│   ├── document_processing/       # Document processing pipeline
+│   │   ├── consumers/           # File detected consumer
+│   │   ├── flows/              # Document processing flow
 │   │   ├── tasks_core/         # Core processing tasks
-│   │   └── utils/              # Processing utilities
+│   │   │   ├── pdf_validation_tasks.py  # PDF validation & repair
+│   │   │   └── document_processing_task.py  # MinerU processing
+│   │   └── utils/              # Document processor & utilities
 │   └── structured_extraction/   # Structured extraction pipeline
-│       ├── consumers/          # Scalable extraction consumers
-│       ├── core/               # Extraction flow logic
+│       ├── consumers/          # Document pipeline completed consumer
 │       ├── tasks_core/         # Extraction tasks
-│       ├── services/           # Business logic services
-│       └── agents/             # Classification agents
+│       │   ├── read_markdown.py    # Markdown reading
+│       │   ├── config_gen.py       # Config generation
+│       │   └── database_storage.py # Database storage
+│       ├── agents/             # PydanticAI extraction agents
+│       └── models/             # Pipeline state models
+├── core_deps/
+│   └── database/               # Database layer
+│       ├── models.py          # SQLAlchemy models (Bill, Document, Job)
+│       ├── connection_manager.py  # Database connection
+│       └── CRUD/              # Repository pattern CRUD operations
 └── utils/                      # System utilities
     └── file_watcher.py         # File system monitoring
 ```
@@ -130,145 +145,168 @@ src/backend/doc_processing_system/
 ```mermaid
 flowchart LR
     subgraph "Document Processing Tasks"
-        A[Duplicate Detection] --> B[Docling Extraction]
-        B --> C[Vision Enhancement]
-        C --> D[Advanced Chunking]
-        D --> E[Document Saving]
-        E --> F[Vector Storage]
+        A[Duplicate Detection] --> B[PDF Validation]
+        B --> C[PDF Repair]
+        C --> D[PDF Cleaning]
+        D --> E[MinerU Processing]
+        E --> F[Document Saving]
+        F --> G[Pipeline Completion Message]
     end
 
     subgraph "Features"
-        G[VLM Integration]
-        H[Semantic Chunking]
-        I[Weaviate Storage]
-        J[Metadata Extraction]
+        H[Multi-Tool PDF Validation]
+        I[Ghostscript/QPDF/pikepdf Repair]
+        J[PyMuPDF Cleaning]
+        K[MinerU Extraction]
+        L[Job Status Tracking]
     end
 
-    C -.-> G
-    D -.-> H
-    F -.-> I
-    B -.-> J
+    B -.-> H
+    C -.-> I
+    D -.-> J
+    E -.-> K
+    G -.-> L
 ```
 
 **Key Features:**
-- **Duplicate Detection**: Fast hash-based duplicate checking
-- **Docling Extraction**: Advanced PDF/image text extraction with table detection
-- **Vision Enhancement**: Optional VLM processing for complex documents
-- **Novel 2-Stage Chunking**: Chonkie framework integration with semantic chunking + boundary refinement
-- **Vector Storage**: Automatic embedding generation and Weaviate storage
-- **Prefect Orchestration**: Task dependency management, retry logic, and monitoring
+- **Duplicate Detection**: Hash-based duplicate checking using PostgreSQL
+- **PDF Validation**: Multi-tool validation (pdfinfo, pikepdf, PyMuPDF)
+- **PDF Repair**: Multi-stage repair (Ghostscript → QPDF → pikepdf)
+- **PDF Cleaning**: PyMuPDF optimization and compression
+- **MinerU Processing**: Advanced document extraction with table detection
+- **Job Tracking**: Real-time status updates via Kafka
 
 ### Structured Extraction Pipeline
 
 ```mermaid
 flowchart LR
     subgraph "Extraction Pipeline"
-        A[Document Chunking] --> B[Classification]
+        A[Read Markdown] --> B[Mock Classification]
         B --> C[Config Generation]
-        C --> D[Structured Extraction]
+        C --> D[PydanticAI Extraction]
         D --> E[Database Storage]
     end
 
     subgraph "Extraction Types"
         F[Invoice Processing]
-        G[Contract Analysis]
-        H[Legal Documents]
-        I[Report Parsing]
+        G[Bill Data Extraction]
+        H[Malaysian Date Parsing]
+        I[Amount Parsing]
     end
 
     C -.-> F
-    C -.-> G
-    C -.-> H
-    C -.-> I
+    D -.-> G
+    D -.-> H
+    D -.-> I
 ```
 
 **Key Features:**
-- **LangExtract Integration**: Advanced structured extraction with intelligent processing
-- **Document Classification**: Automatic document type identification
-- **Dynamic Config Generation**: Adapts extraction rules per document type using classification routing
+- **PydanticAI Integration**: Advanced structured extraction with intelligent processing
+- **Mock Classification**: Simplified invoice classification (no complex classification needed)
+- **Dynamic Config Generation**: Adapts extraction rules for invoice processing
 - **Structured Output**: JSON tables, line items, key-value pairs stored in PostgreSQL
-- **Prefect Orchestration**: Task dependency management with error handling and retries
+- **Malaysian Date Support**: Robust parsing of Malaysian date formats
+- **Job Status Integration**: Real-time processing status updates
 
 ## 🧠 Advanced Technologies
 
-### Novel 2-Stage Chunking with Chonkie Framework
+### MinerU-Powered Document Processing
 
-Our innovative chunking approach combines the power of the **Chonkie framework** with a novel 2-stage methodology:
+Our document processing leverages the **MinerU framework** for advanced document extraction:
 
 ```mermaid
 flowchart LR
-    subgraph "Stage 1: Semantic Chunking"
-        A[Document Text] --> B[Semantic Chunker]
-        B --> C[Initial Chunks]
+    subgraph "MinerU Processing"
+        A[PDF/Image Input] --> B[MinerU Backend]
+        B --> C[Content List JSON]
+        C --> D[Markdown Generation]
+        D --> E[Table Extraction]
     end
 
-    subgraph "Stage 2: Boundary Refinement"
-        C --> D[Boundary Agent]
-        D --> E[LLM Boundary Analysis]
-        E --> F[Refined Chunks]
+    subgraph "Output Structure"
+        F[Page 0 Content]
+        G[Structured Tables]
+        H[Metadata]
+        I[Clean File Structure]
     end
 
-    subgraph "Chonkie Integration"
-        G[BaseChunker Interface]
-        H[OverlapRefinery]
-        I[SentenceTransformer Embeddings]
-    end
-
-    B -.-> G
-    D -.-> H
-    F -.-> I
+    C -.-> F
+    E -.-> G
+    B -.-> H
+    D -.-> I
 ```
 
-**Key Innovations:**
-- **Chonkie Framework Integration**: Built on the cutting-edge Chonkie chunking framework
-- **Semantic Awareness**: Uses similarity thresholds to detect natural content boundaries
-- **Boundary Refinement**: LLM-powered agents review and refine chunk boundaries for optimal RAG performance
-- **Concurrent Processing**: Up to 10 boundary review agents working in parallel
-- **Embedding Integration**: Automatic embedding generation with customizable models
+**MinerU Advantages:**
+- **Advanced Table Detection**: Superior table extraction with original column names
+- **Page-Focused Processing**: Optimized markdown with page 0 content only
+- **Direct JSON Processing**: Eliminates markdown parsing overhead
+- **Clean Output Structure**: Simple directory structure for easy management
+- **Automatic Cleanup**: Prevents disk space accumulation
 
-### LangExtract-Powered Zero-Cost Extraction
+### PDF Validation and Repair System
 
-The structured extraction pipeline leverages **LangExtract** for intelligent document parsing:
+A comprehensive PDF processing pipeline ensures document integrity:
 
 ```mermaid
 flowchart TB
-    subgraph "Document Classification"
-        A[Document Text] --> B[Classification Agent]
-        B --> C[Document Type]
+    subgraph "PDF Validation"
+        A[PDF Input] --> B[pdfinfo Validation]
+        B --> C[pikepdf Validation]
+        C --> D[PyMuPDF Cross-check]
     end
 
-    subgraph "Config Router"
-        C --> D[Invoice Config]
-        C --> E[Contract Config]
-        C --> F[Legal Config]
-        C --> G[Report Config]
+    subgraph "Repair Pipeline"
+        D --> E{Needs Repair?}
+        E -->|Yes| F[Ghostscript Repair]
+        F --> G{QPDF Repair}
+        G --> H[pikepdf Repair]
+        H --> I[PyMuPDF Cleaning]
+        E -->|No| J[Use Original]
     end
 
-    subgraph "LangExtract Engine"
-        D --> H[LangExtract Processor]
-        E --> H
-        F --> H
-        G --> H
-        H --> I[Structured JSON Output]
+    subgraph "Output"
+        I --> K[Optimized PDF]
+        J --> K
     end
-
-    subgraph "Processing Benefits"
-        J[Optimized API Usage]
-        K[Intelligent Extraction]
-        L[High Accuracy Parsing]
-    end
-
-    H -.-> J
-    H -.-> K
-    H -.-> L
 ```
 
-**LangExtract Advantages:**
-- **Optimized Processing**: Intelligent extraction with cost-effective API usage
-- **High Accuracy**: Advanced extraction algorithms with 95%+ accuracy
-- **Classification Routing**: Dynamic config generation based on document type
-- **Structured Output**: Clean JSON format with tables, line items, and metadata
-- **Scalable Processing**: Handles thousands of documents efficiently
+**PDF Processing Benefits:**
+- **Multi-Tool Validation**: Comprehensive corruption detection
+- **Graceful Degradation**: Functions with subset of tools available
+- **Safe Processing**: Prevents data loss with backup strategies
+- **Structure Optimization**: Removes PDF bloat and unnecessary objects
+
+### PydanticAI-Powered Structured Extraction
+
+The structured extraction pipeline uses **PydanticAI** for intelligent document parsing:
+
+```mermaid
+flowchart TB
+    subgraph "Extraction Flow"
+        A[Markdown Content] --> B[Mock Classification]
+        B --> C[Config Generation]
+        C --> D[PydanticAI Agent]
+        D --> E[Structured JSON]
+    end
+
+    subgraph "Processing Features"
+        F[Malaysian Date Parsing]
+        G[Amount Extraction]
+        H[Bill Field Mapping]
+        I[Error Handling]
+    end
+
+    D -.-> F
+    D -.-> G
+    D -.-> H
+    D -.-> I
+```
+
+**PydanticAI Benefits:**
+- **Intelligent Processing**: Advanced extraction with high accuracy
+- **Malaysian Localization**: Robust date and currency parsing
+- **Field Mapping**: Automatic mapping to BillModel fields
+- **Error Resilience**: Comprehensive error handling and fallbacks
 
 ## ⚡ Horizontal Scaling
 
@@ -279,6 +317,9 @@ graph TB
     subgraph "Kafka Topics"
         T1[file_detected]
         T2[document_pipeline_completed]
+        T3[job_status_updates]
+        T4[structured_extraction_completed]
+        T5[rag_pipeline_completed]
     end
 
     subgraph "Document Processing Consumers"
@@ -299,6 +340,10 @@ graph TB
         SE6[Consumer 6]
     end
 
+    subgraph "Job Status Consumer"
+        JS1[Job Status Consumer]
+    end
+
     T1 --> DP1
     T1 --> DP2
     T1 --> DP3
@@ -312,22 +357,24 @@ graph TB
     T2 --> SE4
     T2 --> SE5
     T2 --> SE6
+
+    T3 --> JS1
 ```
 
 **Scaling Configuration:**
-- **Current Setup**: 6 consumers per pipeline (12 total)
-- **Theoretical Limit**: Unlimited based on hardware
+- **Current Setup**: 6 consumers per pipeline (12 total) + 1 job status consumer
+- **Kafka Topics**: 5 topics with 6 partitions each for optimal load distribution
 - **Load Balancing**: Automatic via Kafka consumer groups
 - **Fault Tolerance**: Consumer failures don't affect others
+- **Job Tracking**: Centralized job status management
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.9+
+- Python 3.10+ (3.12 recommended)
 - Kafka 2.8+
-- PostgreSQL 13+ (for structured data storage)
-- Weaviate (for vector embeddings and RAG)
-- Prefect 2.0+ (for workflow orchestration)
+- PostgreSQL 13+ (for structured data storage and job tracking)
+- MinerU dependencies (CUDA 12.9 compatible)
 
 ### Installation
 
@@ -336,12 +383,15 @@ graph TB
 git clone <repository-url>
 cd scaled_processing
 
-# Install dependencies
-uv add confluent-kafka prefect docling weaviate-client psycopg2-binary chonkie langextract
+# Install dependencies using uv (recommended)
+uv sync
+
+# Or install manually
+pip install -e .
 
 # Setup environment
 cp .env.example .env
-# Configure PostgreSQL, Weaviate, Kafka, and API keys
+# Configure PostgreSQL, Kafka, and API keys
 ```
 
 ### Running the System
@@ -354,11 +404,8 @@ kafka-server-start.sh config/server.properties
 # Start PostgreSQL
 systemctl start postgresql
 
-# Start Weaviate
-docker run -p 8080:8080 semitechnologies/weaviate:latest
-
-# Start Prefect server (optional - for monitoring)
-prefect server start
+# Create Kafka topics
+python -m src.backend.doc_processing_system.messaging.topics_setup
 ```
 
 2. **Start File Watcher**
@@ -376,7 +423,12 @@ python -m src.backend.doc_processing_system.pipelines.document_processing.consum
 python -m src.backend.doc_processing_system.pipelines.structured_extraction.consumers.document_pipeline_completed_consumer
 ```
 
-5. **Add Documents**
+5. **Start Job Status Consumer**
+```bash
+python -m src.backend.doc_processing_system.messaging.job_status_consumer
+```
+
+6. **Add Documents**
 ```bash
 # Copy files to watched directory
 cp your_invoices.pdf data/documents/raw/
@@ -388,34 +440,31 @@ cp your_invoices.pdf data/documents/raw/
 |--------|-------|
 | **Daily Processing** | 12,000+ documents |
 | **Average Processing Time** | 2-5 seconds per document |
-| **Concurrent Consumers** | 12 (6 per pipeline) |
+| **Concurrent Consumers** | 13 (6 per pipeline + 1 job status) |
 | **Supported Formats** | PDF, JPG, PNG, Multi-page |
 | **Extraction Accuracy** | 95%+ for invoices |
+| **PDF Repair Success** | 90%+ for corrupted PDFs |
 | **System Uptime** | 99.9% |
 
 ## 🎯 Use Cases
 
 ### Invoice Processing
-- **Input**: PDF/Image invoices
+- **Input**: PDF/Image invoices (Malaysian utility bills)
 - **Output**: Structured JSON with line items, totals, vendor info
 - **Volume**: 10,000+ invoices/day
 - **Accuracy**: 95%+ field extraction
-
-### Contract Analysis
-- **Input**: Legal contracts (PDF)
-- **Output**: Key terms, parties, dates, obligations
-- **Features**: Classification, risk assessment
-- **Integration**: Legal databases
+- **Features**: Malaysian date parsing, amount extraction, duplicate detection
 
 ### Document Intelligence
 - **Input**: Mixed document types
-- **Output**: Structured data + vector embeddings
+- **Output**: Structured data + processed markdown
 - **Applications**: Search, analytics, compliance
+- **Storage**: PostgreSQL for structured data, file system for processed documents
 
 ## 🔮 Future Enhancements
 
-### Agentic Analysis Layer
-The next major feature is an **agentic layer for advanced analysis**:
+### Enhanced Processing Pipeline
+The next major features include:
 
 ```mermaid
 graph TB
@@ -423,8 +472,8 @@ graph TB
         A[Structured Data] --> B[Database Storage]
     end
 
-    subgraph "Future Agentic Layer"
-        B --> C[Analysis Agents]
+    subgraph "Future Enhancements"
+        B --> C[Advanced Analytics]
         C --> D[Trend Analysis]
         C --> E[Anomaly Detection]
         C --> F[Predictive Insights]
@@ -440,10 +489,12 @@ graph TB
 ```
 
 **Planned Features:**
-- **Trend Analysis**: Automatic pattern detection in processed invoices
+- **Advanced Analytics**: Pattern detection in processed invoices
 - **Anomaly Detection**: Identify unusual transactions or pricing
 - **Predictive Analytics**: Forecast based on historical data
 - **Compliance Monitoring**: Automatic regulatory compliance checking
+- **API Enhancements**: RESTful API for document processing
+- **Web Dashboard**: Real-time processing monitoring
 
 ## 🤝 Contributing
 
@@ -459,13 +510,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Prefect**: Robust workflow orchestration and monitoring
-- **Chonkie**: Cutting-edge chunking framework for advanced text segmentation
-- **LangExtract**: Advanced structured extraction engine
-- **PostgreSQL**: Reliable structured data storage
-- **Weaviate**: Advanced vector database for RAG systems
-- **Docling**: Advanced document processing capabilities
-- **Kafka**: High-throughput event streaming platform
+- **Kafka**: High-throughput event streaming platform for scalable messaging
+- **MinerU**: Advanced document processing framework for PDF/image extraction
+- **PydanticAI**: Intelligent structured data extraction with AI agents
+- **PostgreSQL**: Reliable structured data storage and job tracking
+- **SQLAlchemy**: Robust ORM for database operations
+- **PyMuPDF**: Advanced PDF processing and optimization
+- **Ghostscript**: PDF repair and processing capabilities
+- **pikepdf**: Python-native PDF manipulation and repair
 
 ---
 
