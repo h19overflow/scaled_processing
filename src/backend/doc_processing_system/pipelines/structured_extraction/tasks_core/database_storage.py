@@ -8,6 +8,7 @@ import decimal
 from typing import Dict, Any, Optional
 from datetime import datetime
 from decimal import Decimal
+from sqlalchemy.exc import IntegrityError
 
 from ..models.state import PipelineState
 from ....core_deps.database import ConnectionManager, BillStatus
@@ -74,7 +75,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         existing_bill_id = bill_crud.get_bill_by_document_id(document_id)
 
         if existing_bill_id:
-            logger.warning(f"Bill already exists for document_id '{document_id}' (document: '{document_name}') with ID: {existing_bill_id}")
+            logger.info(f"Duplicate detected: Bill already exists for document_id '{document_id}' (document: '{document_name}') with ID: {existing_bill_id}")
             return {
                 "status": "storage_skipped",
                 "error": f"Bill already exists for document_id '{document_id}'",
@@ -91,6 +92,15 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
                 "stored_count": 1,
                 "total_extractions": len(extractions),
                 "stored_ids": [bill_id],
+                "document_id": document_id
+            }
+        except IntegrityError as e:
+            # Unique constraint violation - duplicate document_name (race condition)
+            logger.info(f"Duplicate bill detected (race condition): document '{document_name}' already exists")
+            return {
+                "status": "storage_skipped",
+                "error": f"Bill already exists for document '{document_name}' (race condition)",
+                "stored_count": 0,
                 "document_id": document_id
             }
         except Exception as e:

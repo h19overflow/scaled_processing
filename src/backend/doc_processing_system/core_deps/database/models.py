@@ -41,7 +41,7 @@ class BillModel(Base):
     __tablename__ = "bill"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    document_name = Column(String(255), nullable=False, index=True)
+    document_name = Column(String(255), nullable=False, unique=True, index=True)
     issue_date = Column(DateTime(timezone=True), nullable=False)
     due_date = Column(DateTime(timezone=True), nullable=False)
     amount_due = Column(DECIMAL(10, 2), nullable=False)
