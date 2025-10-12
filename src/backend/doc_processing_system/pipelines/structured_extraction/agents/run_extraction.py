@@ -20,7 +20,7 @@ import asyncio
 import logging
 from typing import Dict, Any
 from dotenv import load_dotenv
-from ..agents.extraction_agent import extraction_agent
+from .extraction_agent import extraction_agent
 
 load_dotenv()
 logger = logging.getLogger(__name__)

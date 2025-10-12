@@ -9,7 +9,7 @@ except ImportError:
     LANGEXTRACT_AVAILABLE = False
 
 from ..models.state import PipelineState
-from ..utils.config_router import process_document
+from ..agents.run_extraction import process_document
 from typing import Any
 import logging
 

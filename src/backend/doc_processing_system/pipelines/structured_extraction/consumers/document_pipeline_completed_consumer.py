@@ -115,7 +115,6 @@ class StructuringConsumer(ConsumerHandler):
     def _run_extraction_pipeline(self, initial_state: PipelineState) -> PipelineState:
         """Run extraction pipeline without Prefect orchestration."""
         try:
-            from ..config.settings import Settings
             from ..tasks_core.read_markdown import read_markdown
             from ..tasks_core.config_gen import generate_config
             from ..tasks_core.database_storage import store_in_database
@@ -123,7 +122,6 @@ class StructuringConsumer(ConsumerHandler):
             self.logger.info("Starting structured extraction pipeline.")
             
             # Initialize settings
-            settings = Settings()
             
             # Convert Pydantic model to dict for state management
             state_dict = initial_state.model_dump()
