@@ -7,7 +7,7 @@ import json
 import logging
 from src.backend.doc_processing_system.messaging.consumer import ConsumerHandler
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
-from src.backend.doc_processing_system.messaging.message_schemas import create_message
+from src.backend.doc_processing_system.messaging.message_utils import create_message
 from src.backend.doc_processing_system.pipelines.document_processing.flows.document_processing_flow import process_document_with_flow
 
 

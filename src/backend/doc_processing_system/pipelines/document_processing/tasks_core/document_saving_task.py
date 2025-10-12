@@ -9,12 +9,12 @@ from datetime import datetime
 
 from src.backend.doc_processing_system.pipelines.document_processing.utils.document_output_manager import DocumentOutputManager
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
-from src.backend.doc_processing_system.messaging.message_schemas import create_message
+from src.backend.doc_processing_system.messaging.message_utils import create_message
 
 logger = logging.getLogger(__name__)
 
 def document_saving_task(
-    vision_enhanced_markdown_path: str,
+    markdown_path: str,
     document_id: str,
     content_length: int,
     page_count: int,
@@ -24,7 +24,7 @@ def document_saving_task(
     """Save vision-enhanced document to structured directory using path-based I/O.
 
     Args:
-        vision_enhanced_markdown_path: Path to vision-enhanced markdown file
+        markdown_path: Path to vision-enhanced markdown file
         document_id: Document identifier
         content_length: Length of processed content
         page_count: Number of pages in document
@@ -45,15 +45,15 @@ def document_saving_task(
     with open(entry_debug_file, 'w', encoding='utf-8') as f:
         f.write(f"document_saving_task CALLED at {datetime.now().isoformat()}\n")
         f.write(f"Document ID: {document_id}\n")
-        f.write(f"Vision enhanced path: {vision_enhanced_markdown_path}\n")
+        f.write(f"Vision enhanced path: {markdown_path}\n")
         f.write(f"Raw file path: {raw_file_path}\n")
     logger.info(f"🐛 DEBUG ENTRY: Created entry debug file {entry_debug_file}")
 
     try:
         # Read vision-enhanced content from file
-        enhanced_markdown_path = Path(vision_enhanced_markdown_path)
+        enhanced_markdown_path = Path(markdown_path)
         if not enhanced_markdown_path.exists():
-            raise FileNotFoundError(f"Vision-enhanced markdown not found: {vision_enhanced_markdown_path}")
+            raise FileNotFoundError(f"Vision-enhanced markdown not found: {markdown_path}")
         
         with open(enhanced_markdown_path, 'r', encoding='utf-8') as f:
             processed_content = f.read()
@@ -103,7 +103,7 @@ def document_saving_task(
                 f.write(f"=== DEBUG INFO ===\n")
                 f.write(f"Document ID: {document_id}\n")
                 f.write(f"Original file: {raw_file_path}\n")
-                f.write(f"Vision enhanced file: {vision_enhanced_markdown_path}\n")
+                f.write(f"Vision enhanced file: {markdown_path}\n")
                 f.write(f"Saved file path: {save_result.get('processed_file_path', 'N/A')}\n")
                 f.write(f"Content length: {len(final_processed_content)}\n")
                 f.write(f"Content is empty: {len(final_processed_content) == 0}\n")
@@ -183,7 +183,7 @@ def main():
     try:
         # Run the document saving task
         result = document_saving_task(
-            vision_enhanced_markdown_path=test_vision_path,
+            markdown_path=test_vision_path,
             document_id="test-batch1-0001",
             content_length=1972,
             page_count=1,

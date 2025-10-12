@@ -2,7 +2,7 @@ from typing import Dict, Any
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
 from logging import getLogger
 from pathlib import Path
-from src.backend.doc_processing_system.messaging.message_schemas import create_message
+from src.backend.doc_processing_system.messaging.message_utils import create_message
 from datetime import datetime, timezone
 logger = getLogger(__name__)
 

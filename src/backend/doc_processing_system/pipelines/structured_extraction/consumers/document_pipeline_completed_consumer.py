@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from src.backend.doc_processing_system.messaging.consumer import ConsumerHandler
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
-from src.backend.doc_processing_system.messaging.message_schemas import create_message
+from src.backend.doc_processing_system.messaging.message_utils import create_message
 from src.backend.doc_processing_system.pipelines.structured_extraction.models.state import PipelineState
 
 class StructuringConsumer(ConsumerHandler):

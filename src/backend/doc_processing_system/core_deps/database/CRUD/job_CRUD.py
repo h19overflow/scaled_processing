@@ -6,7 +6,7 @@ Handles all database operations related to jobs.
 from src.backend.doc_processing_system.core_deps.database.CRUD.base_repository import BaseRepository
 from src.backend.doc_processing_system.core_deps.database.models import JobModel,JobStatus
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
-from src.backend.doc_processing_system.messaging.message_schemas import create_message
+from src.backend.doc_processing_system.messaging.message_utils import create_message
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
 from typing import Optional
 import os

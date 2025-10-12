@@ -10,7 +10,7 @@ from src.backend.doc_processing_system.pipelines.document_processing.utils.docum
 
 logger = logging.getLogger(__name__)
 
-def docling_processing_task(
+def document_processing_task(
     raw_file_path: str,
     document_id: str,
 ) -> Dict[str, Any]:

@@ -21,7 +21,7 @@ from src.backend.api.schemas import (
     StatusResponse
 )
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
-from src.backend.doc_processing_system.messaging.message_schemas import create_message
+from src.backend.doc_processing_system.messaging.message_utils import create_message
 from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
 from src.backend.doc_processing_system.core_deps.database.models import BillModel
 from src.backend.api.endpoints.utils import _validate_file, _wait_for_completion, _fetch_bill_data, get_kafka_producer, get_db_manager,UPLOAD_DIR,logger

@@ -13,7 +13,7 @@ from src.backend.doc_processing_system.pipelines.document_processing.tasks_core 
 from src.backend.doc_processing_system.pipelines.document_processing.tasks_core import duplicate_detection_task
 
 
-def test_docling_processing_task_success(tmp_path, monkeypatch):
+def test_document_processing_task_success(tmp_path, monkeypatch):
     # Create dummy raw file
     raw = tmp_path / 'file.pdf'
     raw.write_bytes(b'%PDF-1.4 dummy')
@@ -39,13 +39,13 @@ def test_docling_processing_task_success(tmp_path, monkeypatch):
     monkeypatch.setattr(document_processing_task, 'DocumentProcessor', FakeProcessor)
 
     # Execute the prefect task synchronously via .run
-    res = document_processing_task.docling_processing_task.run(str(raw), 'doc1')
+    res = document_processing_task.document_processing_task.run(str(raw), 'doc1')
     assert res['status'] == 'completed'
     assert res['document_id'] == 'doc1'
     assert 'processed_markdown_path' in res
 
 
-def test_docling_processing_task_failure(tmp_path, monkeypatch):
+def test_document_processing_task_failure(tmp_path, monkeypatch):
     raw = tmp_path / 'file2.pdf'
     raw.write_bytes(b'%PDF-1.4')
 
@@ -56,7 +56,7 @@ def test_docling_processing_task_failure(tmp_path, monkeypatch):
             return {'status': 'error', 'error': 'parse failed', 'error_details': ''}
 
     monkeypatch.setattr(document_processing_task, 'DocumentProcessor', FakeProcessorErr)
-    res = document_processing_task.docling_processing_task.run(str(raw), 'doc2')
+    res = document_processing_task.document_processing_task.run(str(raw), 'doc2')
     assert res['status'] == 'error'
     assert res['document_id'] == 'doc2'
 

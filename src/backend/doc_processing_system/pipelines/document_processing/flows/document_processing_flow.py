@@ -4,11 +4,11 @@ import logging
 from datetime import datetime
 
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
-from src.backend.doc_processing_system.messaging.message_schemas import create_message
+from src.backend.doc_processing_system.messaging.message_utils import create_message
 
 from src.backend.doc_processing_system.pipelines.document_processing.tasks_core import (
     duplicate_detection_task,
-    docling_processing_task,
+    document_processing_task,
     document_saving_task,
 )
 from src.backend.doc_processing_system.pipelines.document_processing.tasks_core.pdf_validation_tasks import (
@@ -88,9 +88,9 @@ async def process_document_with_flow(
         else:
             logger.info(f"⏭️ STEP 2 SKIPPED: Not a PDF or validation disabled")
 
-        # STEP 3: Document Processing (MinerU/Docling)
+        # STEP 3: Document Processing (MinerU)
         logger.info(f"📄 STEP 3: Starting document processing for {document_id}")
-        docling_result = docling_processing_task(final_file_path, document_id)
+        docling_result = document_processing_task(final_file_path, document_id)
         logger.info(f"✅ STEP 3 COMPLETE: Document processing - Status: {docling_result.get('status')}")
         if docling_result["status"] != "completed":
             # Cleanup temp files before returning error
@@ -137,7 +137,7 @@ async def process_document_with_flow(
 
         logger.info("🔄 STEP 5: Saving document metadata...")
         save_result = document_saving_task(
-            vision_enhanced_markdown_path=markdown_path,
+            markdown_path=markdown_path,
             document_id=document_id,
             content_length=content_length,
             page_count=page_count,
