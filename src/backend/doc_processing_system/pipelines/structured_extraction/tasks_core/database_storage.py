@@ -45,7 +45,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         else:
             logger.error(f"Unexpected extraction data format: {type(extraction_data)}")
             return {
-                "status": "storage_failed1",
+                "status": "storage_error",
                 "error": f"Unexpected extraction data format: {type(extraction_data)}",
                 "stored_count": 0
             }
@@ -57,22 +57,27 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
                 "stored_count": 0
             }
 
-        # Use document_id as document_name if name is not provided
+        # Validate document_name exists
         if not document_name:
-            document_name = document_id
+            logger.error(f"Missing document_name for document_id: {document_id}")
+            return {
+                "status": "storage_error",
+                "error": f"Missing document_name for document_id: {document_id}",
+                "stored_count": 0
+            }
 
         # Initialize database connection
         connection_manager = ConnectionManager()
 
-        # Check if bill already exists for this document
+        # Check if bill already exists for this document (by document_id)
         bill_crud = BillCRUD(connection_manager)
-        existing_bill_id = bill_crud.get_bill_by_document_name(document_name)
+        existing_bill_id = bill_crud.get_bill_by_document_id(document_id)
 
         if existing_bill_id:
-            logger.warning(f"Bill already exists for document '{document_name}' with ID: {existing_bill_id}")
+            logger.warning(f"Bill already exists for document_id '{document_id}' (document: '{document_name}') with ID: {existing_bill_id}")
             return {
                 "status": "storage_skipped",
-                "error": f"Bill already exists for document '{document_name}'",
+                "error": f"Bill already exists for document_id '{document_id}'",
                 "stored_count": 0,
                 "existing_bill_id": existing_bill_id,
                 "document_id": document_id
@@ -80,7 +85,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
 
         # Create and store bill record
         try:
-            bill_id = _create_and_store_bill(extractions, document_name, connection_manager)
+            bill_id = _create_and_store_bill(extractions, document_name, document_id, connection_manager)
             return {
                 "status": "storage_completed",
                 "stored_count": 1,
@@ -91,7 +96,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         except Exception as e:
             logger.error(f"Failed to store bill: {e}")
             return {
-                "status": "storage_failed2",
+                "status": "storage_error",
                 "error": str(e),
                 "stored_count": 0
             }
@@ -102,19 +107,21 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         logger.error(f"Database storage failed: {e}")
         logger.error(f"Full traceback:\n{error_trace}")
         return {
-            "status": "storage_failed3",
+            "status": "storage_error",
             "error": f"{str(e)} | Traceback: {error_trace}",
             "stored_count": 0
         }
 
 
-def _create_and_store_bill(extractions: list, document_name: str, connection_manager: ConnectionManager) -> str:
+def _create_and_store_bill(extractions: list, document_name: str, document_id: str, connection_manager: ConnectionManager) -> str:
     """Create and store bill record from extractions."""
     # Map extraction fields to BillModel
     CORE_FIELDS = {'amount_due', 'due_date', 'issue_date'}
 
     core_data = {}
-    jsonb_data = {}
+    jsonb_data = {
+        'document_id': document_id  # Store document_id for duplicate checking
+    }
 
     logger.info(f"🔍 Processing {len(extractions)} extractions")
     logger.info(f"📋 Raw extractions data: {extractions}")

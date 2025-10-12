@@ -73,6 +73,11 @@ class StructuringConsumer(ConsumerHandler):
                     # Fetch bill data from the result (if available in extractions)
                     bill_data = self._extract_bill_data(result)
                     self._publish_job_status(job_id, "COMPLETED", bill_data=bill_data)
+            elif result.status == "completed_duplicate":
+                self.logger.info(f"Document {initial_state.document_name} already processed (duplicate)")
+                # Publish COMPLETED status for duplicates (successful skip)
+                if job_id:
+                    self._publish_job_status(job_id, "COMPLETED", error=result.error)
             else:
                 self.logger.warning(f"Structured extraction completed with status: {result.status}")
                 if result.error:
@@ -177,13 +182,20 @@ class StructuringConsumer(ConsumerHandler):
                     total_extractions = state_dict.get("total_extractions", 0)
                     self.logger.info(f"Pipeline completed successfully. Stored {stored_count}/{total_extractions} extractions")
                 elif state_dict.get("status") == "storage_skipped":
-                    state_dict["status"] = state_dict.get('error')
-                    self.logger.warning("Pipeline completed but no results were stored")
+                    # Check if it's a duplicate (which is a successful skip)
+                    error_msg = state_dict.get('error', '')
+                    if 'already exists' in error_msg:
+                        state_dict["status"] = "completed_duplicate"
+                        self.logger.info(f"Document already processed: {error_msg}")
+                    else:
+                        state_dict["status"] = "error"
+                        self.logger.warning(f"Pipeline skipped storage: {error_msg}")
                 else:
-                    self.logger.error(f"Storage failed: {state_dict.get('status', 'Unknown error')}")
+                    state_dict["status"] = "error"
+                    self.logger.error(f"Storage failed: {state_dict.get('error', 'Unknown error')}")
             else:
-                state_dict["status"] = state_dict.get('error')
-                self.logger.error("Config generation failed")
+                state_dict["status"] = "error"
+                self.logger.error(f"Config generation failed: {state_dict.get('error', 'Unknown error')}")
             
             # Return final state
             final_state = PipelineState(**state_dict)
@@ -195,7 +207,7 @@ class StructuringConsumer(ConsumerHandler):
             # Return a failed state
             state_dict = initial_state.model_dump()
             state_dict.update({
-                "status": state_dict.get('error'),
+                "status": "error",
                 "error": str(e)
             })
             return PipelineState(**state_dict)

@@ -3,6 +3,7 @@ from ..models import BillModel
 from ..connection_manager import ConnectionManager
 from datetime import datetime
 from ..models import BillStatus
+from sqlalchemy import cast, String
 class BillCRUD(BaseRepository):
     """CRUD operations for bill entities."""
     
@@ -36,7 +37,24 @@ class BillCRUD(BaseRepository):
     def get_bill_by_document_name(self, document_name: str) -> str | None:
         """Get a bill ID by document name. Returns bill_id or None if not found."""
         with self.connection_manager.get_session() as session:
-            bill = session.query(BillModel).filter(BillModel.document_name == document_name).first()
+            bill = session.query(BillModel).filter(
+                BillModel.document_name == document_name,
+                BillModel.status == BillStatus.PENDING,
+                BillModel.id.isnot(None)
+            ).first()
+            if bill:
+                return str(bill.id)  # Access ID while session is active
+            return None
+
+    def get_bill_by_document_id(self, document_id: str) -> str | None:
+        """Get a bill ID by document_id stored in extracted_jsonb. Returns bill_id or None if not found."""
+        with self.connection_manager.get_session() as session:
+            # Query JSONB field for document_id using cast to String
+            bill = session.query(BillModel).filter(
+                cast(BillModel.extracted_jsonb['document_id'], String) == document_id,
+                BillModel.status == BillStatus.PENDING,
+                BillModel.id.isnot(None)
+            ).first()
             if bill:
                 return str(bill.id)  # Access ID while session is active
             return None
