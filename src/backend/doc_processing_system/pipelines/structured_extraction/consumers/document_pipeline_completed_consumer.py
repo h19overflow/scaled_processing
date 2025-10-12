@@ -37,12 +37,6 @@ class StructuringConsumer(ConsumerHandler):
             event_type = message.get("event_type")
             job_id = data.get("job_id") or key  # Extract job_id for tracking
 
-            self.logger.info(f"📋 Message structure:")
-            self.logger.info(f"  - Event type: {event_type}")
-            self.logger.info(f"  - Data keys: {list(data.keys())}")
-            self.logger.info(f"  - Filename: {data.get('filename', 'MISSING')}")
-            self.logger.info(f"  - Job ID: {job_id}")
-            self.logger.info(f"  - Has processed_content: {'processed_content' in data}")
             if 'processed_content' in data:
                 content_len = len(data.get('processed_content', ''))
                 self.logger.info(f"  - Content length: {content_len}")
@@ -122,7 +116,7 @@ class StructuringConsumer(ConsumerHandler):
         """Run extraction pipeline without Prefect orchestration."""
         try:
             from ..config.settings import Settings
-            from ..tasks_core.chunking import read_markdown
+            from ..tasks_core.read_markdown import read_markdown
             from ..tasks_core.config_gen import generate_config
             from ..tasks_core.database_storage import store_in_database
             

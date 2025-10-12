@@ -4,7 +4,7 @@ Contains LangGraph node functions.
 """
 
 from .config_gen import generate_config
-from .chunking import read_markdown
+from .read_markdown import read_markdown
 
 __all__ = [
     "generate_config",
