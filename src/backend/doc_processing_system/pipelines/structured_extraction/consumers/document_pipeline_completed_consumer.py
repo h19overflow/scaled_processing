@@ -177,12 +177,12 @@ class StructuringConsumer(ConsumerHandler):
                     total_extractions = state_dict.get("total_extractions", 0)
                     self.logger.info(f"Pipeline completed successfully. Stored {stored_count}/{total_extractions} extractions")
                 elif state_dict.get("status") == "storage_skipped":
-                    state_dict["status"] = "completed_no_storage"
+                    state_dict["status"] = state_dict.get('error')
                     self.logger.warning("Pipeline completed but no results were stored")
                 else:
                     self.logger.error(f"Storage failed: {state_dict.get('status', 'Unknown error')}")
             else:
-                state_dict["status"] = "config_generation_failed"
+                state_dict["status"] = state_dict.get('error')
                 self.logger.error("Config generation failed")
             
             # Return final state
@@ -195,7 +195,7 @@ class StructuringConsumer(ConsumerHandler):
             # Return a failed state
             state_dict = initial_state.model_dump()
             state_dict.update({
-                "status": "pipeline_failed",
+                "status": state_dict.get('error'),
                 "error": str(e)
             })
             return PipelineState(**state_dict)

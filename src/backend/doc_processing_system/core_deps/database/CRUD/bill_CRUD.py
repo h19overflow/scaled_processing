@@ -9,7 +9,7 @@ class BillCRUD(BaseRepository):
     def __init__(self, connection_manager: ConnectionManager):
         super().__init__(connection_manager)
         self.model = BillModel
-    def create(self, document_name: str,
+    def  create(self, document_name: str,
                issue_date: datetime,
                due_date: datetime, amount_due:
                    float, status: BillStatus,

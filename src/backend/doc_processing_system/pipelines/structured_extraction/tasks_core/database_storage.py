@@ -10,7 +10,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from ..models.state import PipelineState
-from ....core_deps.database import ConnectionManager, BillModel, BillStatus
+from ....core_deps.database import ConnectionManager, BillStatus
 from ....core_deps.database.CRUD.bill_CRUD import BillCRUD
 
 logger = logging.getLogger(__name__)
