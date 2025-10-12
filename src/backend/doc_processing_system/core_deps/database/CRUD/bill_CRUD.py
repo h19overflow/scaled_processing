@@ -24,15 +24,19 @@ class BillCRUD(BaseRepository):
                            extracted_jsonb=extracted_jsonb,
                            version=version)
             session.add(bill)
-            session.commit()
-            session.refresh(bill)  # Refresh to get the generated ID
-            return str(bill.id)
+            session.flush()  # Flush to get the ID without committing
+            bill_id = str(bill.id)  # Get ID while session is still active
+            return bill_id
+            # Context manager will commit on exit
     def get_bill_by_id(self, bill_id: str) -> BillModel:
         """Get a bill by ID."""
         with self.connection_manager.get_session() as session:
             return session.query(BillModel).filter(BillModel.id == bill_id).first()
     
-    def get_bill_by_document_name(self, document_name: str) -> BillModel:
-        """Get a bill by document name."""
+    def get_bill_by_document_name(self, document_name: str) -> str | None:
+        """Get a bill ID by document name. Returns bill_id or None if not found."""
         with self.connection_manager.get_session() as session:
-            return session.query(BillModel).filter(BillModel.document_name == document_name).first()
+            bill = session.query(BillModel).filter(BillModel.document_name == document_name).first()
+            if bill:
+                return str(bill.id)  # Access ID while session is active
+            return None

@@ -66,15 +66,15 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
 
         # Check if bill already exists for this document
         bill_crud = BillCRUD(connection_manager)
-        existing_bill = bill_crud.get_bill_by_document_name(document_name)
-        
-        if existing_bill:
-            logger.warning(f"Bill already exists for document '{document_name}' with ID: {existing_bill.id}")
+        existing_bill_id = bill_crud.get_bill_by_document_name(document_name)
+
+        if existing_bill_id:
+            logger.warning(f"Bill already exists for document '{document_name}' with ID: {existing_bill_id}")
             return {
                 "status": "storage_skipped",
                 "error": f"Bill already exists for document '{document_name}'",
                 "stored_count": 0,
-                "existing_bill_id": str(existing_bill.id),
+                "existing_bill_id": existing_bill_id,
                 "document_id": document_id
             }
 
@@ -97,10 +97,13 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
             }
 
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
         logger.error(f"Database storage failed: {e}")
+        logger.error(f"Full traceback:\n{error_trace}")
         return {
             "status": "storage_failed3",
-            "error": str(e),
+            "error": f"{str(e)} | Traceback: {error_trace}",
             "stored_count": 0
         }
 
