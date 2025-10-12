@@ -3,16 +3,12 @@ Document chunking node.
 """
 
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Dict, Any
 
-import tiktoken
-
-from ..config.settings import Settings
-from ..models.document import DocumentChunk
 from ..models.state import PipelineState
 
 
-def chunk_document(state: PipelineState, settings: Settings) -> Dict[str, Any]:
+def read_markdown(state: PipelineState) -> Dict[str, Any]:
     """Chunk document into processing batches."""
     try:
         document_input = state.document_text
@@ -26,18 +22,14 @@ def chunk_document(state: PipelineState, settings: Settings) -> Dict[str, Any]:
         else:
             # It's actual document content
             text = document_input
-        
-        chunks = []
-
         return {
-            "chunks": chunks,
             "document_text": text,  # Include actual document content for downstream tasks_core
-            "status": "chunked"
+            "status": "markdown_read"
         }
 
     except Exception as e:
         return {
-            "error": f"Document chunking failed: {str(e)}",
+            "error": f"Document markdown reading failed: {str(e)}",
             "status": "error"
         }
 

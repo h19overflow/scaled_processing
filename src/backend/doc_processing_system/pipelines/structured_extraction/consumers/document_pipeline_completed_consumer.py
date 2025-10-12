@@ -117,7 +117,7 @@ class StructuringConsumer(ConsumerHandler):
         """Run extraction pipeline without Prefect orchestration."""
         try:
             from ..config.settings import Settings
-            from ..tasks_core.chunking import chunk_document
+            from ..tasks_core.chunking import read_markdown
             from ..tasks_core.config_gen import generate_config
             from ..tasks_core.database_storage import store_in_database
             
@@ -131,22 +131,19 @@ class StructuringConsumer(ConsumerHandler):
             self.logger.info(f"Initial state: {state_dict}")
             
             # Step 1: Chunk the document
-            self.logger.info("Step 1: Chunking document...")
-            chunk_result = chunk_document(initial_state, settings)
+            self.logger.info("Step 1: Reading markdown document...")
+            chunk_result = read_markdown(initial_state)
             
             # Update state with chunking results
             state_dict.update(chunk_result)
-            chunks = state_dict.get('chunks', [])
-            chunks_count = len(chunks) if chunks is not None else 0
-            self.logger.info(f"After chunking: status={state_dict.get('status')}, chunks_count={chunks_count}")
             
             # Check if chunking was successful
             if state_dict.get("status") == "error":
-                self.logger.error(f"Chunking failed: {state_dict.get('error')}")
+                self.logger.error(f"Markdown reading failed: {state_dict.get('error')}")
                 return PipelineState(**state_dict)
             
             temp_state = PipelineState(**state_dict)
-            
+            # Mock classification results, Since the only type we are working with is invoices , there is no need to classify the document.
             updated_state = {
                 "classification": 'invoice',
                 "classification_confidence": 0.95,
@@ -183,8 +180,7 @@ class StructuringConsumer(ConsumerHandler):
                     state_dict["status"] = "completed_no_storage"
                     self.logger.warning("Pipeline completed but no results were stored")
                 else:
-                    state_dict["status"] = "storage_failed"
-                    self.logger.error(f"Storage failed: {state_dict.get('error', 'Unknown error')}")
+                    self.logger.error(f"Storage failed: {state_dict.get('status', 'Unknown error')}")
             else:
                 state_dict["status"] = "config_generation_failed"
                 self.logger.error("Config generation failed")

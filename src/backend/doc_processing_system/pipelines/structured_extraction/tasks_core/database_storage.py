@@ -45,7 +45,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         else:
             logger.error(f"Unexpected extraction data format: {type(extraction_data)}")
             return {
-                "status": "storage_failed",
+                "status": "storage_failed1",
                 "error": f"Unexpected extraction data format: {type(extraction_data)}",
                 "stored_count": 0
             }
@@ -91,7 +91,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
         except Exception as e:
             logger.error(f"Failed to store bill: {e}")
             return {
-                "status": "storage_failed",
+                "status": "storage_failed2",
                 "error": str(e),
                 "stored_count": 0
             }
@@ -99,7 +99,7 @@ def store_in_database(state: PipelineState) -> dict[str, Any] | None:
     except Exception as e:
         logger.error(f"Database storage failed: {e}")
         return {
-            "status": "storage_failed",
+            "status": "storage_failed3",
             "error": str(e),
             "stored_count": 0
         }
