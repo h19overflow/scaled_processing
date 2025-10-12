@@ -398,11 +398,6 @@ cp .env.example .env
 
 1. **Start Infrastructure Services**
 ```bash
-# Start Kafka
-kafka-server-start.sh config/server.properties
-
-# Start PostgreSQL
-systemctl start postgresql
 
 # Create Kafka topics
 python -m src.backend.doc_processing_system.messaging.topics_setup
@@ -495,18 +490,8 @@ graph TB
 - **Compliance Monitoring**: Automatic regulatory compliance checking
 - **API Enhancements**: RESTful API for document processing
 - **Web Dashboard**: Real-time processing monitoring
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
-
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
