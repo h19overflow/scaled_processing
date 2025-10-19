@@ -32,7 +32,6 @@ def duplicate_detection_task(raw_file_path: str) -> Dict[str, Any]:
         # Create lightweight DocumentCRUD directly (no heavy processors)
         connection_manager = ConnectionManager()
         document_crud = DocumentCRUD(connection_manager)
-        # TODO Check logic
         # Fast duplicate check using file hash only
         is_duplicate, existing_doc_id = document_crud.check_duplicate_by_raw_file(str(raw_path))
         

@@ -90,7 +90,6 @@ async def _wait_for_completion(
         # Wait before next poll
         await asyncio.sleep(2)
 
-# TODO , Make test cases for this function and check what happens if the bill is not found , or if the bill is found but the data is not in the database
 async def _fetch_bill_data(document_name: str, db_manager: ConnectionManager) -> Optional[dict]:
     """
     Fetch bill data from database.
