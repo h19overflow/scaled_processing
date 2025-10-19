@@ -8,12 +8,17 @@ from uuid import uuid4
 import enum
 
 from sqlalchemy import (
-    Column, String, Integer, DateTime, Float, Text, Boolean,
-    ForeignKey, JSON, ARRAY, UniqueConstraint, DECIMAL, Enum
+    Column,
+    String,
+    Integer,
+    DateTime,
+    Text,
+    JSON,
+    DECIMAL,
+    Enum,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 Base = declarative_base()
@@ -21,6 +26,7 @@ Base = declarative_base()
 
 class BillStatus(enum.Enum):
     """Bill processing status enum."""
+
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
@@ -30,6 +36,7 @@ class BillStatus(enum.Enum):
 
 class JobStatus(enum.Enum):
     """Job processing status enum for tracking async document processing."""
+
     QUEUED = "QUEUED"
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
@@ -38,6 +45,7 @@ class JobStatus(enum.Enum):
 
 class BillModel(Base):
     """SQLAlchemy model for bills table."""
+
     __tablename__ = "bill"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -48,7 +56,9 @@ class BillModel(Base):
     status = Column(Enum(BillStatus), nullable=False, default=BillStatus.PENDING)
     extracted_jsonb = Column(JSON)
     created_at = Column(DateTime(timezone=True), default=func.now())
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), default=func.now(), onupdate=func.now()
+    )
     version = Column(Integer, nullable=False, default=1)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -63,14 +73,15 @@ class BillModel(Base):
             "extracted_jsonb": self.extracted_jsonb or {},
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "version": self.version
+            "version": self.version,
         }
 
 
 class DocumentModel(Base):
     """SQLAlchemy model for documents table."""
+
     __tablename__ = "documents"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     filename = Column(String(255), nullable=False)
     file_type = Column(String(50), nullable=False)
@@ -80,19 +91,25 @@ class DocumentModel(Base):
     file_size = Column(Integer, nullable=False)
     page_count = Column(Integer)
     content_path = Column(String(500))
-    content_hash = Column(String(64), nullable=False, index=True, unique=True)  # SHA-256 hash for duplicate detection
+    content_hash = Column(
+        String(64), nullable=False, index=True, unique=True
+    )  # SHA-256 hash for duplicate detection
     created_at = Column(DateTime(timezone=True), default=func.now())
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
-    
+    updated_at = Column(
+        DateTime(timezone=True), default=func.now(), onupdate=func.now()
+    )
+
     # Relationships
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
         return {
             "id": str(self.id),
             "filename": self.filename,
             "file_type": self.file_type,
-            "upload_timestamp": self.upload_timestamp.isoformat() if self.upload_timestamp else None,
+            "upload_timestamp": self.upload_timestamp.isoformat()
+            if self.upload_timestamp
+            else None,
             "user_id": self.user_id,
             "processing_status": self.processing_status,
             "file_size": self.file_size,
@@ -100,12 +117,9 @@ class DocumentModel(Base):
             "content_path": self.content_path,
             "content_hash": self.content_hash,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
-
-
-    
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary."""
         return {
@@ -120,24 +134,27 @@ class DocumentModel(Base):
             "description": self.description,
             "char_start_pos": self.char_start_pos,
             "char_end_pos": self.char_end_pos,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
-
-
 
 
 class JobModel(Base):
     """SQLAlchemy model for job tracking table."""
+
     __tablename__ = "jobs"
 
     job_id = Column(String(255), primary_key=True)
     document_name = Column(String(255), nullable=False, index=True)
     file_path = Column(String(500), nullable=False)
-    status = Column(Enum(JobStatus), nullable=False, default=JobStatus.QUEUED, index=True)
+    status = Column(
+        Enum(JobStatus), nullable=False, default=JobStatus.QUEUED, index=True
+    )
     bill_data = Column(JSON)
     error = Column(Text)
     created_at = Column(DateTime(timezone=True), default=func.now(), index=True)
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), default=func.now(), onupdate=func.now()
+    )
     completed_at = Column(DateTime(timezone=True))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -151,7 +168,7 @@ class JobModel(Base):
             "error": self.error,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None
+            "completed_at": self.completed_at.isoformat()
+            if self.completed_at
+            else None,
         }
-
-

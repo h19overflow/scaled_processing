@@ -17,7 +17,11 @@ from src.backend.doc_processing_system.pipelines.document_processing.tasks_core.
     clean_with_pymupdf_task,
     cleanup_pdf_processing_temp,
 )
-from src.backend.doc_processing_system.pipelines.document_processing.flows.utils import get_markdown_path_for_processing, send_completion_message , logger
+from src.backend.doc_processing_system.pipelines.document_processing.flows.utils import (
+    get_markdown_path_for_processing,
+    send_completion_message,
+    logger,
+)
 
 
 async def process_document_with_flow(
@@ -26,7 +30,7 @@ async def process_document_with_flow(
     enable_chunking: bool = True,
     enable_pdf_validation: bool = True,
     force_pdf_repair: bool = False,
-    job_id: str = None
+    job_id: str = None,
 ) -> Dict[str, Any]:
     """
     Document processing logic.
@@ -42,7 +46,7 @@ async def process_document_with_flow(
             return {
                 "status": "duplicate",
                 "document_id": duplicate_result["document_id"],
-                "message": f"Document already exists: {duplicate_result['document_id']}"
+                "message": f"Document already exists: {duplicate_result['document_id']}",
             }
 
         if duplicate_result["status"] == "error":
@@ -54,7 +58,7 @@ async def process_document_with_flow(
         final_file_path = raw_file_path
         pdf_processing_steps = {}
 
-        if raw_file_path.lower().endswith('.pdf') and enable_pdf_validation:
+        if raw_file_path.lower().endswith(".pdf") and enable_pdf_validation:
             logger.info(f"🔍 STEP 2A: PDF Validation for {document_id}")
 
             validation_result = validate_pdf_task(raw_file_path)
@@ -77,10 +81,14 @@ async def process_document_with_flow(
 
                     if clean_result["status"] == "cleaned":
                         final_file_path = clean_result["clean_path"]
-                        logger.info(f"✅ Using cleaned PDF: {Path(final_file_path).name}")
+                        logger.info(
+                            f"✅ Using cleaned PDF: {Path(final_file_path).name}"
+                        )
                     else:
                         final_file_path = repaired_path
-                        logger.info(f"✅ Using repaired PDF: {Path(final_file_path).name}")
+                        logger.info(
+                            f"✅ Using repaired PDF: {Path(final_file_path).name}"
+                        )
                 else:
                     logger.warning(f"⚠️ PDF repair failed, using original file")
             else:
@@ -91,7 +99,9 @@ async def process_document_with_flow(
         # STEP 3: Document Processing (MinerU)
         logger.info(f"📄 STEP 3: Starting document processing for {document_id}")
         docling_result = document_processing_task(final_file_path, document_id)
-        logger.info(f"✅ STEP 3 COMPLETE: Document processing - Status: {docling_result.get('status')}")
+        logger.info(
+            f"✅ STEP 3 COMPLETE: Document processing - Status: {docling_result.get('status')}"
+        )
         if docling_result["status"] != "completed":
             # Cleanup temp files before returning error
             cleanup_pdf_processing_temp(document_id)
@@ -102,7 +112,7 @@ async def process_document_with_flow(
 
         # Read content from the markdown file
         content_path = Path(markdown_path)
-        with open(content_path, 'r', encoding='utf-8') as f:
+        with open(content_path, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Get page count and content length from docling result
@@ -119,20 +129,25 @@ async def process_document_with_flow(
                 "pdf_processing": pdf_processing_steps,
                 "document_extraction": docling_result.get("status"),
                 "chunking": "disabled",
-                "document_saving": "disabled"
+                "document_saving": "disabled",
             }
 
             # Cleanup temp files
             cleanup_pdf_processing_temp(document_id)
 
             # Send completion message with processed content
-            send_completion_message(document_id, raw_file_path, user_id, processing_steps, content, job_id)
+            send_completion_message(
+                document_id, raw_file_path, user_id, processing_steps, content, job_id
+            )
 
             return {
                 "status": "completed",
                 "document_id": document_id,
-                "chunking_result": {"status": "disabled", "message": "Chunking disabled"},
-                "processing_steps": processing_steps
+                "chunking_result": {
+                    "status": "disabled",
+                    "message": "Chunking disabled",
+                },
+                "processing_steps": processing_steps,
             }
 
         logger.info("🔄 STEP 5: Saving document metadata...")
@@ -142,7 +157,7 @@ async def process_document_with_flow(
             content_length=content_length,
             page_count=page_count,
             raw_file_path=raw_file_path,
-            user_id=user_id
+            user_id=user_id,
         )
         if save_result.get("save_result", {}).get("status") != "saved":
             # Cleanup temp files before returning error
@@ -153,19 +168,21 @@ async def process_document_with_flow(
             "duplicate_detection": duplicate_result.get("status"),
             "pdf_processing": pdf_processing_steps,
             "document_extraction": docling_result.get("status"),
-            "document_saving": save_result.get("save_result", {}).get("status")
+            "document_saving": save_result.get("save_result", {}).get("status"),
         }
 
         # Cleanup temp files after successful processing
         cleanup_pdf_processing_temp(document_id)
 
         # Send completion message with processed content
-        send_completion_message(document_id, raw_file_path, user_id, processing_steps, content, job_id)
+        send_completion_message(
+            document_id, raw_file_path, user_id, processing_steps, content, job_id
+        )
 
         return {
             "status": "completed",
             "document_id": document_id,
-            "processing_steps": processing_steps
+            "processing_steps": processing_steps,
         }
 
     except Exception as e:
@@ -173,7 +190,7 @@ async def process_document_with_flow(
 
         # Attempt cleanup on error if document_id is available
         try:
-            if 'document_id' in locals():
+            if "document_id" in locals():
                 cleanup_pdf_processing_temp(document_id)
         except:
             pass
@@ -181,12 +198,18 @@ async def process_document_with_flow(
         return {
             "status": "error",
             "error": str(e),
-            "message": f"Document processing flow failed: {e}"
+            "message": f"Document processing flow failed: {e}",
         }
-
 
 
 if __name__ == "__main__":
     import asyncio
-    test_file_path = "C:\\Users\\User\\Projects\\scaled_processing\\data\\invoices\\batch1-0499.jpg"
-    result = asyncio.run(process_document_with_flow(test_file_path, user_id="test_user", enable_chunking=True))
+
+    test_file_path = (
+        "C:\\Users\\User\\Projects\\scaled_processing\\data\\invoices\\batch1-0499.jpg"
+    )
+    result = asyncio.run(
+        process_document_with_flow(
+            test_file_path, user_id="test_user", enable_chunking=True
+        )
+    )

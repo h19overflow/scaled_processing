@@ -1,11 +1,11 @@
-
 from pydantic_ai import Agent
 from ..models.extraction_schemas import BillExtractionResult
 from dotenv import load_dotenv
+
 load_dotenv()
 # Create PydanticAI agent for bill extraction
 extraction_agent = Agent(
-    'gemini-2.0-flash',
+    "gemini-2.0-flash",
     result_type=BillExtractionResult,
     system_prompt="""You are an expert at extracting structured information from Malaysian utility bills.
 
@@ -33,4 +33,5 @@ Example patterns:
 - Due date: "Sila bayar sebelum 31 Ogos 2025" → extract "31 Ogos 2025"
 - Amount: "JUMLAH BIL ANDA RM170,358.25" → extract 170358.25 (numeric only)
 - Date: "TARIKH BIL: 01.08.2025" → extract "01.08.2025"
-""")
+""",
+)

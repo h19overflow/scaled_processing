@@ -10,12 +10,14 @@ logger = logging.getLogger(__name__)
 # Import PDF processing libraries
 try:
     import pikepdf
+
     PIKEPDF_AVAILABLE = True
 except ImportError:
     PIKEPDF_AVAILABLE = False
 
 try:
     import ghostscript as gs
+
     GHOSTSCRIPT_AVAILABLE = True
 except (ImportError, RuntimeError):
     GHOSTSCRIPT_AVAILABLE = False
@@ -29,7 +31,7 @@ def check_external_dependencies() -> Dict[str, bool]:
         "pikepdf": False,
         "ghostscript": False,
         "ghostscript_python": False,
-        "pymupdf": False
+        "pymupdf": False,
     }
 
     # Check pdfinfo (poppler-utils)
@@ -64,6 +66,7 @@ def check_external_dependencies() -> Dict[str, bool]:
     # Check PyMuPDF
     try:
         import fitz
+
         dependencies["pymupdf"] = True
     except ImportError:
         pass
@@ -84,12 +87,12 @@ def validate_pdf_task(raw_file_path: str) -> Dict[str, Any]:
     logger.info(f"🔍 Validating PDF: {Path(raw_file_path).name}")
 
     # Check if file is actually a PDF
-    if not raw_file_path.lower().endswith('.pdf'):
+    if not raw_file_path.lower().endswith(".pdf"):
         return {
             "status": "skipped",
             "needs_repair": False,
             "validation_errors": [],
-            "message": "File is not a PDF, skipping validation"
+            "message": "File is not a PDF, skipping validation",
         }
 
     if not Path(raw_file_path).exists():
@@ -97,7 +100,7 @@ def validate_pdf_task(raw_file_path: str) -> Dict[str, Any]:
             "status": "error",
             "needs_repair": True,
             "validation_errors": ["File does not exist"],
-            "message": f"PDF file not found: {raw_file_path}"
+            "message": f"PDF file not found: {raw_file_path}",
         }
 
     validation_errors = []
@@ -110,10 +113,7 @@ def validate_pdf_task(raw_file_path: str) -> Dict[str, Any]:
     if deps["pdfinfo"]:
         try:
             result = subprocess.run(
-                ["pdfinfo", raw_file_path],
-                capture_output=True,
-                text=True,
-                timeout=30
+                ["pdfinfo", raw_file_path], capture_output=True, text=True, timeout=30
             )
             if result.returncode != 0:
                 validation_errors.append(f"pdfinfo failed: {result.stderr}")
@@ -129,7 +129,7 @@ def validate_pdf_task(raw_file_path: str) -> Dict[str, Any]:
                 ["qpdf", "--check", raw_file_path],
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
             if result.returncode != 0:
                 validation_errors.append(f"qpdf check failed: {result.stderr}")
@@ -169,7 +169,7 @@ def validate_pdf_task(raw_file_path: str) -> Dict[str, Any]:
             "status": "no_tools",
             "needs_repair": False,
             "validation_errors": ["No validation tools available"],
-            "message": "PDF validation skipped - no tools available"
+            "message": "PDF validation skipped - no tools available",
         }
 
     status = "needs_repair" if needs_repair else "valid"
@@ -179,7 +179,7 @@ def validate_pdf_task(raw_file_path: str) -> Dict[str, Any]:
         "status": status,
         "needs_repair": needs_repair,
         "validation_errors": validation_errors,
-        "message": f"PDF validation completed with {len(validation_errors)} errors"
+        "message": f"PDF validation completed with {len(validation_errors)} errors",
     }
 
 
@@ -201,7 +201,7 @@ def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
             "status": "error",
             "repaired_path": raw_file_path,
             "repair_method": "none",
-            "message": f"Source file not found: {raw_file_path}"
+            "message": f"Source file not found: {raw_file_path}",
         }
 
     # Create processing directory
@@ -228,11 +228,22 @@ def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
                     continue
 
             if gs_cmd:
-                result = subprocess.run([
-                    gs_cmd, "-q", "-dNOPAUSE", "-dBATCH", "-sDEVICE=pdfwrite",
-                    "-dPDFSETTINGS=/prepress", "-dCompatibilityLevel=1.4",
-                    f"-sOutputFile={repaired_path}", str(raw_path)
-                ], capture_output=True, text=True, timeout=120)
+                result = subprocess.run(
+                    [
+                        gs_cmd,
+                        "-q",
+                        "-dNOPAUSE",
+                        "-dBATCH",
+                        "-sDEVICE=pdfwrite",
+                        "-dPDFSETTINGS=/prepress",
+                        "-dCompatibilityLevel=1.4",
+                        f"-sOutputFile={repaired_path}",
+                        str(raw_path),
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
 
                 if result.returncode == 0 and repaired_path.exists():
                     logger.info(f"✅ Ghostscript repair successful: {repaired_path}")
@@ -240,7 +251,7 @@ def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
                         "status": "repaired",
                         "repaired_path": str(repaired_path),
                         "repair_method": "ghostscript",
-                        "message": "PDF repaired successfully with Ghostscript"
+                        "message": "PDF repaired successfully with Ghostscript",
                     }
                 else:
                     logger.warning(f"⚠️ Ghostscript repair failed: {result.stderr}")
@@ -252,9 +263,12 @@ def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
         try:
             qpdf_repaired_path = processing_dir / f"{raw_path.stem}_qpdf_repaired.pdf"
 
-            result = subprocess.run([
-                "qpdf", "--repair", str(raw_path), str(qpdf_repaired_path)
-            ], capture_output=True, text=True, timeout=60)
+            result = subprocess.run(
+                ["qpdf", "--repair", str(raw_path), str(qpdf_repaired_path)],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
 
             if result.returncode == 0 and qpdf_repaired_path.exists():
                 logger.info(f"✅ QPDF repair successful: {qpdf_repaired_path}")
@@ -262,7 +276,7 @@ def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
                     "status": "repaired",
                     "repaired_path": str(qpdf_repaired_path),
                     "repair_method": "qpdf",
-                    "message": "PDF repaired successfully with QPDF"
+                    "message": "PDF repaired successfully with QPDF",
                 }
             else:
                 logger.warning(f"⚠️ QPDF repair failed: {result.stderr}")
@@ -272,7 +286,9 @@ def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
     # Fallback to pikepdf repair
     if deps["pikepdf"]:
         try:
-            pikepdf_repaired_path = processing_dir / f"{raw_path.stem}_pikepdf_repaired.pdf"
+            pikepdf_repaired_path = (
+                processing_dir / f"{raw_path.stem}_pikepdf_repaired.pdf"
+            )
 
             # Open with pikepdf and save (this can fix some corruption issues)
             with pikepdf.open(raw_path, allow_overwriting_input=False) as pdf:
@@ -284,7 +300,7 @@ def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
                     "status": "repaired",
                     "repaired_path": str(pikepdf_repaired_path),
                     "repair_method": "pikepdf",
-                    "message": "PDF repaired successfully with pikepdf"
+                    "message": "PDF repaired successfully with pikepdf",
                 }
         except Exception as e:
             logger.warning(f"⚠️ pikepdf repair error: {str(e)}")
@@ -295,7 +311,7 @@ def repair_pdf_task(raw_file_path: str) -> Dict[str, Any]:
         "status": "failed",
         "repaired_path": raw_file_path,
         "repair_method": "none",
-        "message": "All PDF repair methods failed, using original file"
+        "message": "All PDF repair methods failed, using original file",
     }
 
 
@@ -316,7 +332,7 @@ def clean_with_pymupdf_task(pdf_path: str) -> Dict[str, Any]:
         return {
             "status": "error",
             "clean_path": pdf_path,
-            "message": f"Source file not found: {pdf_path}"
+            "message": f"Source file not found: {pdf_path}",
         }
 
     deps = check_external_dependencies()
@@ -324,7 +340,7 @@ def clean_with_pymupdf_task(pdf_path: str) -> Dict[str, Any]:
         return {
             "status": "skipped",
             "clean_path": pdf_path,
-            "message": "PyMuPDF not available, skipping cleaning"
+            "message": "PyMuPDF not available, skipping cleaning",
         }
 
     try:
@@ -347,20 +363,22 @@ def clean_with_pymupdf_task(pdf_path: str) -> Dict[str, Any]:
             size_diff = original_size - clean_size
 
             logger.info(f"✅ PyMuPDF cleaning successful: {clean_path}")
-            logger.info(f"📊 Size change: {original_size} → {clean_size} bytes ({size_diff:+d})")
+            logger.info(
+                f"📊 Size change: {original_size} → {clean_size} bytes ({size_diff:+d})"
+            )
 
             return {
                 "status": "cleaned",
                 "clean_path": str(clean_path),
                 "original_size": original_size,
                 "clean_size": clean_size,
-                "message": f"PDF cleaned successfully, size change: {size_diff:+d} bytes"
+                "message": f"PDF cleaned successfully, size change: {size_diff:+d} bytes",
             }
         else:
             return {
                 "status": "failed",
                 "clean_path": pdf_path,
-                "message": "Cleaning completed but output file not found"
+                "message": "Cleaning completed but output file not found",
             }
 
     except Exception as e:
@@ -368,7 +386,7 @@ def clean_with_pymupdf_task(pdf_path: str) -> Dict[str, Any]:
         return {
             "status": "failed",
             "clean_path": pdf_path,
-            "message": f"PyMuPDF cleaning failed: {str(e)}"
+            "message": f"PyMuPDF cleaning failed: {str(e)}",
         }
 
 

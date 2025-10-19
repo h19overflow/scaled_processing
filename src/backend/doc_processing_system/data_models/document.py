@@ -10,12 +10,9 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-
-
-
-
 class ProcessingStatus(str, Enum):
     """Document processing status values."""
+
     UPLOADED = "uploaded"
     PARSING = "parsing"
     CHUNKING = "chunking"
@@ -27,6 +24,7 @@ class ProcessingStatus(str, Enum):
 
 class Document(BaseModel):
     """Core document model for database storage."""
+
     id: Optional[UUID] = None
     filename: str
     file_type: str
@@ -35,15 +33,17 @@ class Document(BaseModel):
     processing_status: ProcessingStatus = ProcessingStatus.UPLOADED
     file_size: int
     page_count: Optional[int] = None
-    
+
     def get_id(self) -> str:
         """Get document ID as string."""
         return str(self.id) if self.id else ""
-    
+
     def get_content(self) -> str:
         """Get document content - to be implemented by specific storage layer."""
-        raise NotImplementedError("Content retrieval must be implemented by storage layer")
-    
+        raise NotImplementedError(
+            "Content retrieval must be implemented by storage layer"
+        )
+
     def get_metadata(self) -> Dict[str, Any]:
         """Get document metadata as dictionary."""
         return {
@@ -52,17 +52,13 @@ class Document(BaseModel):
             "upload_timestamp": self.upload_timestamp.isoformat(),
             "user_id": self.user_id,
             "file_size": self.file_size,
-            "page_count": self.page_count
+            "page_count": self.page_count,
         }
-    
+
     def validate(self) -> bool:
         """Validate document data."""
-        return (
-            bool(self.filename) and
-            bool(self.user_id) and
-            self.file_size > 0
-        )
-    
+        return bool(self.filename) and bool(self.user_id) and self.file_size > 0
+
     def update_metadata(self, new_metadata: Dict[str, Any]) -> bool:
         """Update document metadata."""
         try:

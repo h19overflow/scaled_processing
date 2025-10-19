@@ -16,6 +16,7 @@ Role in System:
 - Provides a unified process_document function for structured extraction.
 - Integrates with PydanticAI agents for robust data parsing.
 """
+
 import asyncio
 import logging
 from typing import Dict, Any
@@ -58,9 +59,8 @@ def process_document(text: str) -> Dict[str, Any]:
         result = loop.run_until_complete(extraction_agent.run(text))
 
         # Convert agent result to expected format
-        
-        extractions = result.data if hasattr(result, 'data') else []
 
+        extractions = result.data if hasattr(result, "data") else []
 
         return {
             "extractions": extractions.to_extraction_list(),
@@ -75,7 +75,7 @@ def process_document(text: str) -> Dict[str, Any]:
             "document_id": None,
             "status": "failed",
             "error": str(e),
-            "total_extractions": 0
+            "total_extractions": 0,
         }
 
 
@@ -104,4 +104,4 @@ Ref-1: 401234567890
     result = process_document(text)
     print("Extraction Result:")
     print(f"Status: {result['status']}")
-    print(result.get('extractions'))
+    print(result.get("extractions"))

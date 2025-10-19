@@ -17,6 +17,7 @@ from .consumer import ConsumerHandler
 from ..core_deps.database.connection_manager import ConnectionManager
 from ..core_deps.database.CRUD.job_CRUD import JobCRUD
 
+
 class JobStatusConsumer(ConsumerHandler):
     """
     Consumer for job status updates from Kafka.
@@ -37,11 +38,13 @@ class JobStatusConsumer(ConsumerHandler):
             broker=broker,
             topics=["job_status_updates"],
             group_id="job_status_processors",
-            num_consumers=3
+            num_consumers=3,
         )
         self.db_manager = db_manager
         self.logger = logging.getLogger(__name__)
-        self.logger.info("JobStatusConsumer initialized - listening for job status updates")
+        self.logger.info(
+            "JobStatusConsumer initialized - listening for job status updates"
+        )
 
     def handle_message(self, topic: str, key: str, value: str) -> None:
         """
@@ -84,10 +87,7 @@ class JobStatusConsumer(ConsumerHandler):
 
             # Update job in database
             success = JobCRUD(self.db_manager).update_job_status(
-                job_id=job_id,
-                status=status,
-                error=error,
-                bill_data=bill_data
+                job_id=job_id, status=status, error=error, bill_data=bill_data
             )
 
             if success:

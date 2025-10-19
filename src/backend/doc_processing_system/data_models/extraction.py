@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 class FieldSpecification(BaseModel):
     """Model for field specification in extraction schema."""
+
     field_name: str
     field_type: str
     description: str
@@ -19,6 +20,7 @@ class FieldSpecification(BaseModel):
 
 class FieldInitRequest(BaseModel):
     """Model for field initialization request."""
+
     document_id: str
     page_count: int
     sampling_strategy: str = "random"
@@ -27,6 +29,7 @@ class FieldInitRequest(BaseModel):
 
 class AgentScalingConfig(BaseModel):
     """Model for agent scaling configuration."""
+
     document_id: str
     page_count: int
     agent_count: int
@@ -36,6 +39,7 @@ class AgentScalingConfig(BaseModel):
 
 class ExtractionResult(BaseModel):
     """Model for structured document extraction results."""
+
     document_id: str
     document_name: str
     extraction_class: str
@@ -48,25 +52,25 @@ class ExtractionResult(BaseModel):
     char_start_pos: int
     char_end_pos: int
     timestamp: Optional[datetime] = None
-    
+
     def get_data(self) -> Dict[str, Any]:
         """Get extracted attributes."""
         return self.attributes
-    
+
     def get_text_length(self) -> int:
         """Get length of extracted text."""
         return self.char_end_pos - self.char_start_pos
-    
+
     def is_valid(self) -> bool:
         """Check if extraction result is valid."""
         return (
-            bool(self.document_id) and
-            bool(self.document_name) and
-            bool(self.extraction_class) and
-            bool(self.extraction_text) and
-            self.char_end_pos > self.char_start_pos
+            bool(self.document_id)
+            and bool(self.document_name)
+            and bool(self.extraction_class)
+            and bool(self.extraction_text)
+            and self.char_end_pos > self.char_start_pos
         )
-    
+
     def is_aligned(self) -> bool:
         """Check if extraction is properly aligned."""
         return self.alignment_status in ["match_exact", "match_fuzzy"]
@@ -74,15 +78,16 @@ class ExtractionResult(BaseModel):
 
 class ExtractionSchema(BaseModel):
     """Model for extraction schema containing field specifications."""
+
     fields: List[FieldSpecification]
     validation_rules: Dict[str, Any] = {}
     created_by: str = "system"
     created_at: Optional[datetime] = None
-    
+
     def get_fields(self) -> List[FieldSpecification]:
         """Get field specifications."""
         return self.fields
-    
+
     def add_field(self, field: FieldSpecification) -> bool:
         """Add a field specification."""
         try:
@@ -90,12 +95,12 @@ class ExtractionSchema(BaseModel):
             return True
         except Exception:
             return False
-    
+
     def validate_data(self, data: Dict[str, Any]) -> bool:
         """Validate data against schema."""
         required_fields = [f.field_name for f in self.fields if f.is_required]
         return all(field in data for field in required_fields)
-    
+
     def to_json(self) -> str:
         """Convert schema to JSON string."""
         return self.json()

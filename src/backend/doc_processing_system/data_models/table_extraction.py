@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 class TableFieldMapping(BaseModel):
     """Model for individual table field mapping configuration."""
+
     field_name: str
     english_translation: str
     table_id: int
@@ -66,7 +67,7 @@ class TableFieldMapping(BaseModel):
                 row_data = data[index]
 
                 # Handle field access after the index
-                remaining_path = path[bracket_end + 1:]
+                remaining_path = path[bracket_end + 1 :]
 
                 if remaining_path.startswith("['") and remaining_path.endswith("']"):
                     # Handle "data[0]['field name']" format
@@ -99,13 +100,13 @@ class TableFieldMapping(BaseModel):
         if self.field_type == "float":
             try:
                 # Handle formatted numbers like "950.00kW"
-                clean_value = ''.join(c for c in str_value if c.isdigit() or c == '.')
+                clean_value = "".join(c for c in str_value if c.isdigit() or c == ".")
                 return float(clean_value) if clean_value else None
             except ValueError:
                 return None
         elif self.field_type == "int":
             try:
-                clean_value = ''.join(c for c in str_value if c.isdigit())
+                clean_value = "".join(c for c in str_value if c.isdigit())
                 return int(clean_value) if clean_value else None
             except ValueError:
                 return None
@@ -115,6 +116,7 @@ class TableFieldMapping(BaseModel):
 
 class TableExtractionConfig(BaseModel):
     """Model for table extraction configuration."""
+
     document_type: str
     description: str
     field_mappings: List[TableFieldMapping]
@@ -138,18 +140,21 @@ class TableExtractionConfig(BaseModel):
                     "value": value,
                     "english_translation": mapping.english_translation,
                     "table_id": mapping.table_id,
-                    "field_type": mapping.field_type
+                    "field_type": mapping.field_type,
                 }
 
         return results
 
     def get_required_fields(self) -> List[str]:
         """Get list of required field names."""
-        return [mapping.field_name for mapping in self.field_mappings if mapping.is_required]
+        return [
+            mapping.field_name for mapping in self.field_mappings if mapping.is_required
+        ]
 
 
 class TableExtractionResult(BaseModel):
     """Model for table extraction results."""
+
     document_id: str
     document_name: str
     table_extractions: Dict[str, Any]
@@ -171,14 +176,14 @@ class TableExtractionResult(BaseModel):
                     "table_id": field_data.get("table_id", 0),
                     "field_type": field_data.get("field_type", "string"),
                     "extraction_config": self.extraction_config,
-                    "source": "table_extraction"
+                    "source": "table_extraction",
                 },
                 "alignment_status": "match_exact",
                 "extraction_index": len(results),
                 "group_index": 0,
                 "description": f"Table field: {field_name}",
                 "char_start_pos": 0,
-                "char_end_pos": len(str(field_data.get("value", "")))
+                "char_end_pos": len(str(field_data.get("value", ""))),
             }
             results.append(result)
 
