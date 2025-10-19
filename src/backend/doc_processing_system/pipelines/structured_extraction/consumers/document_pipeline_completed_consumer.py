@@ -10,7 +10,8 @@ from src.backend.doc_processing_system.messaging.consumer import ConsumerHandler
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
 from src.backend.doc_processing_system.messaging.message_utils import create_message
 from src.backend.doc_processing_system.pipelines.structured_extraction.models.state import PipelineState
-
+from dotenv import load_dotenv
+load_dotenv()
 class StructuringConsumer(ConsumerHandler):
     """Consumer for document pipeline completed events to trigger structured extraction."""
 

@@ -1,6 +1,8 @@
 
 from pydantic_ai import Agent
 from ..models.extraction_schemas import BillExtractionResult
+from dotenv import load_dotenv
+load_dotenv()
 # Create PydanticAI agent for bill extraction
 extraction_agent = Agent(
     'gemini-2.0-flash',

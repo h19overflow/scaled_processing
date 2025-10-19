@@ -1,0 +1,14 @@
+{
+  "document_id": "GSPP_0602_202507_Billing_NEM_38114d64",
+  "user_id": "default",
+  "processing_timestamp": "2025-10-12T08:54:49.559511",
+  "filename": "GSPP_0602_202507_Billing_NEM.pdf",
+  "page_count": 0,
+  "content_length": 2473,
+  "file_type": "pdf",
+  "file_size": 227835,
+  "vision_processing": true,
+  "document_directory": "data\\documents\\processed\\GSPP_0602_202507_Billing_NEM_38114d64",
+  "processed_file": "GSPP_0602_202507_Billing_NEM_38114d64_processed.md",
+  "status": "completed"
+}

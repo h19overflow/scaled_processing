@@ -1,4 +1,4 @@
-document_saving_task CALLED at 2025-10-11T15:48:08.923574
+document_saving_task CALLED at 2025-10-12T11:19:27.058310
 Document ID: GSPP_0901_202507_Billing_99a15404
 Vision enhanced path: data\temp\mineru\GSPP_0901_202507_Billing_99a15404\GSPP_0901_202507_Billing_99a15404.md
 Raw file path: C:\Users\User\Projects\scaled_processing\data\temp\uploads\GSPP_0901_202507_Billing.pdf

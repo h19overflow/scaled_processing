@@ -1,4 +1,0 @@
-document_saving_task CALLED at 2025-10-11T17:58:48.969508
-Document ID: GSPP_5407_202508_Billing_5217dccc
-Vision enhanced path: data\temp\mineru\GSPP_5407_202508_Billing_5217dccc\GSPP_5407_202508_Billing_5217dccc.md
-Raw file path: C:\Users\User\Projects\scaled_processing\data\temp\uploads\GSPP_5407_202508_Billing.pdf

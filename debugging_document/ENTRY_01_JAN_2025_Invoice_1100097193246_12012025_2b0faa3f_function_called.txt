@@ -1,0 +1,4 @@
+document_saving_task CALLED at 2025-10-12T17:41:58.639297
+Document ID: 01_JAN_2025_Invoice_1100097193246_12012025_2b0faa3f
+Vision enhanced path: data\temp\mineru\01_JAN_2025_Invoice_1100097193246_12012025_2b0faa3f\01_JAN_2025_Invoice_1100097193246_12012025_2b0faa3f.md
+Raw file path: C:\Users\User\Projects\scaled_processing\data\temp\uploads\01) JAN 2025 - Invoice-1100097193246-12012025.pdf

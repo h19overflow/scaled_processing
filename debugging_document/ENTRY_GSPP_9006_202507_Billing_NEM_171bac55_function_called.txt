@@ -1,4 +1,4 @@
-document_saving_task CALLED at 2025-10-11T15:43:47.206070
+document_saving_task CALLED at 2025-10-12T11:20:24.012512
 Document ID: GSPP_9006_202507_Billing_NEM_171bac55
 Vision enhanced path: data\temp\mineru\GSPP_9006_202507_Billing_NEM_171bac55\GSPP_9006_202507_Billing_NEM_171bac55.md
 Raw file path: C:\Users\User\Projects\scaled_processing\data\temp\uploads\GSPP_9006_202507_Billing_NEM.pdf

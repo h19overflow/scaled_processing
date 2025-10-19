@@ -1,0 +1,54 @@
+=== DEBUG INFO ===
+Document ID: 01_JAN_2025_Invoice_1100097193246_12012025_2b0faa3f
+Original file: C:\Users\User\Projects\scaled_processing\data\temp\uploads\01) JAN 2025 - Invoice-1100097193246-12012025.pdf
+Vision enhanced file: data\temp\mineru\01_JAN_2025_Invoice_1100097193246_12012025_2b0faa3f\01_JAN_2025_Invoice_1100097193246_12012025_2b0faa3f.md
+Saved file path: data\documents\processed\01_JAN_2025_Invoice_1100097193246_12012025_2b0faa3f\01_JAN_2025_Invoice_1100097193246_12012025_2b0faa3f_processed.md
+Content length: 1670
+Content is empty: False
+
+=== ACTUAL CONTENT ===
+# Processed Document: 01) JAN 2025 - Invoice-1100097193246-12012025.pdf
+
+**Document ID**: 01_JAN_2025_Invoice_1100097193246_12012025_2b0faa3f
+**Pages**: 0
+**Processing Date**: 2025-10-12 17:41:58
+**Content Length**: 1,383 characters
+
+---
+
+## Document Content with AI Vision Enhancement
+
+# Invoice
+
+Digi Telecommunications Sdn Bhd (201283 - M)
+
+Lot 10, Jalan Delima 1/1, Subang Hi-Tech Industrial Park, 40000,Subang Jaya,Selangor Darul Ehsan,Malaysia SST License No :B16-1808-31023868
+
+P.O.Box 7551,40718 Shah Alam,Selangor Darul Ehsan T:016 2211800 digi.my
+
+Mobile No.:0164387249 Account No. :1100097193246 Invoice No.:250100000001011328139 Invoice Date :12 Jan 2025 Invoice Period :12 Dec 2024 - 11 Jan 2025 Credit Limit :RM 90
+
+# Summary of Charges / Payments
+
+# Current Bill Analysis
+
+# Break-down Pie Chart of Total Usage Charges without Discount
+
+Monthly Fixed Charges100.0%
+
+# Payment Slip
+
+Please make the cheque payable to :   
+DIGI TELECOMMUNICATIONS SDN BHD and post it along with this payment slip to :   
+Customer Payment Centre   
+P.O.Box 7551,40718 Shah Alam,   
+Selangor Darul Ehsan.
+
+Thank you for prompt payment of the bill.
+
+
+# Page 0 Tables
+
+## Table 1
+
+<table><tr><td>Previous Balance RM Previous Bill(s) 4.68</td></tr><tr><td>Payments(see details in next section) 0.00</td></tr><tr><td>Adjustments 0.00 Previous Overdue Amount 4.68</td></tr><tr><td>*Pay Immediately to avoid suspension of line. Current Charges</td></tr><tr><td>Monthly Fixed Charges 30.00</td></tr><tr><td>Usage 0.00</td></tr><tr><td>Discounts 0.00 Service Tax 6% /8% 1.80</td></tr><tr><td>Current Bill Amount 31.80</td></tr><tr><td>Total Outstanding Amount 36.48</td></tr></table>

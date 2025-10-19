@@ -1,0 +1,14 @@
+{
+  "document_id": "02_FEB_2025_Invoice_1100097193246_12022025_c4b54457",
+  "user_id": "default",
+  "processing_timestamp": "2025-10-12T17:44:17.361032",
+  "filename": "02) FEB 2025 - Invoice-1100097193246-12022025.pdf",
+  "page_count": 0,
+  "content_length": 2571,
+  "file_type": "pdf",
+  "file_size": 147825,
+  "vision_processing": true,
+  "document_directory": "data\\documents\\processed\\02_FEB_2025_Invoice_1100097193246_12022025_c4b54457",
+  "processed_file": "02_FEB_2025_Invoice_1100097193246_12022025_c4b54457_processed.md",
+  "status": "completed"
+}
