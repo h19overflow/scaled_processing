@@ -7,14 +7,13 @@ import logging
 import sys
 import time
 from pathlib import Path
+
 project_root = Path(__file__).parent.parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.backend.doc_processing_system.core_deps.database.connection_manager import (
     ConnectionManager,
 )
-
-
 
 
 def setup_logging():

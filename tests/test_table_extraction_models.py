@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import sys
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -19,8 +20,8 @@ def test_table_field_mapping_extracts_float_and_int_and_handles_bounds():
             "table_id": 1,
             "data": [
                 {"Amount (RM)": "950.00", "Count": "10"},
-                {"Amount (RM)": "1,200.50", "Count": "5"}
-            ]
+                {"Amount (RM)": "1,200.50", "Count": "5"},
+            ],
         }
     ]
 
@@ -32,7 +33,7 @@ def test_table_field_mapping_extracts_float_and_int_and_handles_bounds():
         extraction_path="data[0]['Amount (RM)']",
         example_value="950.00",
         field_type="float",
-        is_required=True
+        is_required=True,
     )
 
     val = fm_float.extract_value(tables_data)
@@ -47,7 +48,7 @@ def test_table_field_mapping_extracts_float_and_int_and_handles_bounds():
         extraction_path="data[0]['Count']",
         example_value="10",
         field_type="int",
-        is_required=False
+        is_required=False,
     )
 
     val_int = fm_int.extract_value(tables_data)
@@ -62,7 +63,7 @@ def test_table_field_mapping_extracts_float_and_int_and_handles_bounds():
         extraction_path="data[5]['Count']",
         example_value="",
         field_type="string",
-        is_required=False
+        is_required=False,
     )
 
     assert fm_oob.extract_value(tables_data) is None
@@ -76,7 +77,7 @@ def test_table_extraction_config_and_result_methods():
         extraction_path="data[0]['x']",
         example_value="",
         field_type="string",
-        is_required=True
+        is_required=True,
     )
 
     mapping2 = TableFieldMapping(
@@ -86,17 +87,17 @@ def test_table_extraction_config_and_result_methods():
         extraction_path="data[0]['y']",
         example_value="",
         field_type="int",
-        is_required=False
+        is_required=False,
     )
 
-    config = TableExtractionConfig(document_type="invoice", description="desc", field_mappings=[mapping1, mapping2])
+    config = TableExtractionConfig(
+        document_type="invoice", description="desc", field_mappings=[mapping1, mapping2]
+    )
 
     assert config.get_field_mapping("amount") is mapping1
     assert config.get_field_mapping("missing") is None
 
-    tables_data = [
-        {"table_id": 2, "data": [{"x": "foo", "y": "12"}]}
-    ]
+    tables_data = [{"table_id": 2, "data": [{"x": "foo", "y": "12"}]}]
 
     extracted = config.extract_all_fields(tables_data)
     assert "amount" in extracted
@@ -108,10 +109,15 @@ def test_table_extraction_config_and_result_methods():
         document_id="doc1",
         document_name="Doc 1",
         table_extractions={
-            "amount": {"value": "100", "english_translation": "Amount", "table_id": 2, "field_type": "string"}
+            "amount": {
+                "value": "100",
+                "english_translation": "Amount",
+                "table_id": 2,
+                "field_type": "string",
+            }
         },
         extraction_config="cfg1",
-        tables_count=1
+        tables_count=1,
     )
 
     converted = result.to_extraction_results()

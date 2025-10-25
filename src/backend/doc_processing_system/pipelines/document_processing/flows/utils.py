@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
 from logging import getLogger
 from pathlib import Path
@@ -27,7 +27,7 @@ def send_completion_message(
     user_id: str,
     processing_steps: Dict[str, Any],
     processed_content: str = "",
-    job_id: str = None,
+    job_id: Optional[str] = None,
 ) -> None:
     """Send document_pipeline_completed message."""
     try:
