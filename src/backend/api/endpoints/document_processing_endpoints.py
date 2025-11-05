@@ -4,27 +4,33 @@ Document processing API endpoints.
 Provides REST API for uploading and processing Malaysian utility bills.
 Integrates with Kafka-based document processing pipeline.
 """
-import os
-import uuid
-import asyncio
+
 import shutil
-import logging
-from datetime import datetime
-from typing import Optional
-from pathlib import Path
-from src.backend.doc_processing_system.core_deps.database.models import JobModel
-from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Depends, Response
+from fastapi import (
+    APIRouter,
+    UploadFile,
+    File,
+    HTTPException,
+    Depends,
+    Response,
+)
 
 from src.backend.api.schemas import (
-    ProcessResponse,
     AsyncProcessResponse,
-    StatusResponse
+    StatusResponse,
 )
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
-from src.backend.doc_processing_system.messaging.message_utils import create_message
-from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
-from src.backend.doc_processing_system.core_deps.database.models import BillModel
-from src.backend.api.endpoints.utils import _validate_file, _wait_for_completion, _fetch_bill_data, get_kafka_producer, get_db_manager,UPLOAD_DIR,logger
+from src.backend.doc_processing_system.core_deps.database.connection_manager import (
+    ConnectionManager,
+)
+from src.backend.api.endpoints.utils import (
+    _validate_file,
+    _fetch_bill_data,
+    get_kafka_producer,
+    get_db_manager,
+    UPLOAD_DIR,
+    logger,
+)
 from src.backend.doc_processing_system.core_deps.database.CRUD.job_CRUD import JobCRUD
 
 router = APIRouter(prefix="/document_processing", tags=["Document Processing"])
@@ -35,7 +41,7 @@ async def process_document_async(
     response: Response,
     file: UploadFile = File(...),
     kafka_producer: ProducerHandler = Depends(get_kafka_producer),
-    db_manager: ConnectionManager = Depends(get_db_manager)
+    db_manager: ConnectionManager = Depends(get_db_manager),
 ):
     """
     Process document asynchronously.
@@ -75,8 +81,7 @@ async def process_document_async(
         logger.info(f"File saved to: {file_path}")
         # Create job record in database
         job_created, success = JobCRUD(db_manager).create_job(
-            document_name=file.filename,
-            file_path=str(file_path.absolute())
+            document_name=file.filename, file_path=str(file_path.absolute())
         )
         response.headers["Retry-After"] = "5"
 
@@ -85,7 +90,7 @@ async def process_document_async(
         return AsyncProcessResponse(
             job_id=job_created[0],
             status="queued",
-            message=f"Document queued for processing. Poll GET /api/v1/status/{job_created[0]} every 5 seconds."
+            message=f"Document queued for processing. Poll GET /api/v1/status/{job_created[0]} every 5 seconds.",
         )
 
     except Exception as e:
@@ -93,10 +98,10 @@ async def process_document_async(
         logger.error(f"Error queuing job{job_id_str}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to queue job: {str(e)}")
 
+
 @router.get("/status/{job_id}", response_model=StatusResponse)
 async def get_job_status(
-    job_id: str,
-    db_manager: ConnectionManager = Depends(get_db_manager)
+    job_id: str, db_manager: ConnectionManager = Depends(get_db_manager)
 ):
     """
     Check processing status and retrieve results.
@@ -132,7 +137,5 @@ async def get_job_status(
         bill_data=job.get("bill_data"),
         error=job.get("error"),
         created_at=job.get("created_at"),
-        completed_at=job.get("completed_at")    
+        completed_at=job.get("completed_at"),
     )
-
-

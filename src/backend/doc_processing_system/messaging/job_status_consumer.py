@@ -11,7 +11,6 @@ between pipeline components and the API layer.
 
 import json
 import logging
-from typing import Dict, Any
 
 from .consumer import ConsumerHandler
 from ..core_deps.database.connection_manager import ConnectionManager
@@ -101,16 +100,3 @@ class JobStatusConsumer(ConsumerHandler):
             self.logger.error(f"Error processing job status update: {e}")
             self.logger.error(f"Message content: {value}")
 
-
-def main():
-    """Main function to run the job status consumer."""
-    # Initialize database manager
-    db_manager = ConnectionManager()
-
-    # Create and start consumer
-    consumer = JobStatusConsumer(db_manager=db_manager)
-    consumer.start()
-
-
-if __name__ == "__main__":
-    main()

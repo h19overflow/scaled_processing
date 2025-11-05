@@ -72,14 +72,6 @@ class ConnectionManager:
             self.logger.error(f"Failed to create tables: {e}")
             raise
 
-    def drop_tables(self) -> None:
-        """Drop all database tables."""
-        try:
-            Base.metadata.drop_all(bind=self.engine)
-            self.logger.info("Database tables dropped successfully")
-        except Exception as e:
-            self.logger.error(f"Failed to drop tables: {e}")
-            raise
 
     def health_check(self) -> bool:
         """Check database connectivity."""

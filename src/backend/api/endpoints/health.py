@@ -6,7 +6,7 @@ Used by load balancers, monitoring tools, and for debugging.
 """
 
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 

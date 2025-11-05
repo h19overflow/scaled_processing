@@ -3,23 +3,25 @@ from fastapi import FastAPI
 from fastapi.security import HTTPBearer
 import logging
 import asyncio
-import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-
-# python -m uvicorn src.backend.api.main:app --reload --host 0.0.0.0 --port 8000
-
-load_dotenv()
-
 # Import routers
 from src.backend.api.endpoints.health import router as health_router
-from src.backend.api.endpoints.document_processing_endpoints import router as document_processing_router
+from src.backend.api.endpoints.document_processing_endpoints import (
+    router as document_processing_router,
+)
 from src.backend.api.endpoints.document_health import router as document_health_router
 
 # Import document processing services
 from src.backend.doc_processing_system.messaging.producer import ProducerHandler
-from src.backend.doc_processing_system.core_deps.database.connection_manager import ConnectionManager
+from src.backend.doc_processing_system.core_deps.database.connection_manager import (
+    ConnectionManager,
+)
 from src.backend.doc_processing_system.config.settings import get_settings
+
+# python -m uvicorn src.backend.api.main:app --reload --host 0.0.0.0 --port 8000
+
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
